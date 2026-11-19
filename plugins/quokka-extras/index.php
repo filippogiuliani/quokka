@@ -198,7 +198,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 					return $this->jsonResponse(__FUNCTION__, array('done' => true));
 				}
 			} catch (\Throwable $oException) {
-				$this->Logger()->WriteException($oException);
+				\error_log('Quokka: ' . $oException);
 			}
 			// the sender's server said no: fall back to what people can do themselves
 		}
@@ -233,7 +233,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 				'Accept: application/json'
 			));
 		} catch (\Throwable $oException) {
-			$this->Logger()->WriteException($oException);
+			\error_log('Quokka: ' . $oException);
 			return array('error' => 'ERR_APP_DOWN', 'app' => $sApp);
 		}
 		$iStatus = $oResponse ? (int) $oResponse->status : 0;

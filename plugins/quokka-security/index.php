@@ -243,7 +243,7 @@ class QuokkaSecurityPlugin extends \RainLoop\Plugins\AbstractPlugin
 			$iCount = \SnappyMail\Hibp::password($oPass instanceof \SnappyMail\SensitiveString ? $oPass : new \SnappyMail\SensitiveString((string) $oPass));
 			$aData['pwned'] = array('count' => $iCount, 'time' => \time());
 		} catch (\Throwable $oException) {
-			$this->Manager()->Actions()->Logger()->WriteException($oException);
+			\error_log('Quokka security: ' . $oException);
 		}
 	}
 

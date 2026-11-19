@@ -141,7 +141,7 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$oRequest->block_private_ips = false;           // Pocket ID may well be on the Docker network
 		$oResponse = $oRequest->doRequest($sMethod, $sUrl, $sBody, \array_merge(array('Accept: application/json'), $aHeaders));
 		if (!$oResponse || 200 > $oResponse->status || 300 <= $oResponse->status) {
-			$this->Logger()->Write("Quokka SSO: {$sMethod} {$sUrl} → " . ($oResponse ? $oResponse->status : 'no answer'), \LOG_WARNING);
+			\error_log("Quokka SSO: {$sMethod} {$sUrl} → " . ($oResponse ? $oResponse->status : 'no answer'));
 			return null;
 		}
 		$aData = \json_decode((string) $oResponse->body, true);
@@ -253,11 +253,30 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 			// the same check as the usual sign-in: the mail server says whether they are right
 			\RainLoop\Api::Actions()->LoginProcess($sEmail, new \SnappyMail\SensitiveString($sPassword));
 		} catch (\Throwable $oException) {
-			return $this->linkForm($sTicket, $sEmail, '', $this->t('LINK_WRONG'));
+			// the log says what really went wrong; the page says it in plain words
+			$oPrevious = $oException->getPrevious();
+			\error_log('Quokka SSO: linking ' . $sEmail . ' failed: ' . \get_class($oException)
+				. ' ' . $oException->getCode() . ' ' . $oException->getMessage()
+				. ($oPrevious ? ' <- ' . \get_class($oPrevious) . ': ' . $oPrevious->getMessage() : ''));
+			switch ($oException instanceof \RainLoop\Exceptions\ClientException ? $oException->getCode() : 0) {
+				case \RainLoop\Notifications::ConnectionError:
+				case \RainLoop\Notifications::MailServerError:
+					$sError = 'LINK_NO_SERVER'; break;
+				case \RainLoop\Notifications::DomainNotAllowed:
+				case \RainLoop\Notifications::AccountNotAllowed:
+					$sError = 'LINK_DOMAIN'; break;
+				case \RainLoop\Notifications::AuthError:
+					// a refused password comes as LoginBadCredentialsException, anything else is a server problem
+					$sError = $oPrevious && !($oPrevious instanceof \MailSo\Imap\Exceptions\LoginBadCredentialsException)
+						? 'LINK_NO_SERVER' : 'LINK_WRONG'; break;
+				default:
+					$sError = 'LINK_FAILED';
+			}
+			return $this->linkForm($sTicket, $sEmail, '', $this->t($sError));
 		}
 		$oCacher->Delete('quokka-sso/ticket/' . $sTicket);
 		if (!self::save($aSaved['sub'], $sEmail, $sPassword)) {
-			$this->Logger()->Write('Quokka SSO: cannot write the link', \LOG_ERR);
+			\error_log('Quokka SSO: cannot write the link');
 		}
 		\header('Location: ./');
 		return true;
