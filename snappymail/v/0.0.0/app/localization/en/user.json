@@ -660,6 +660,7 @@
 		"UnknownError": "Unknown error"
 	},
 	"QUOKKA": {
+		"EDITOR_MORE": "More",
 		"CATEGORIES": "Categories",
 		"NEW_FOLDER": "New folder",
 		"MANAGE": "Manage",

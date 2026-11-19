@@ -15,6 +15,36 @@ const
 	htmlToPlain = html => rl.Utils.htmlToPlain(html).trim(),
 	plainToHtml = text => rl.Utils.plainToHtml(text),
 
+	// Quokka: line icons (Lucide, ISC license) instead of letters and emoji, which some systems drew as empty boxes
+	svg = paths => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>',
+	icon = {
+		bold: svg('<path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/>'),
+		italic: svg('<line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/>'),
+		underline: svg('<path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" x2="20" y1="20" y2="20"/>'),
+		strike: svg('<path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" x2="20" y1="12" y2="12"/>'),
+		sub: svg('<path d="m4 5 8 8"/><path d="m12 5-8 8"/><path d="M20 19h-4c0-1.5.44-2 1.5-2.5S20 15.33 20 14c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.62-.9 1.07"/>'),
+		sup: svg('<path d="m4 19 8-8"/><path d="m12 19-8-8"/><path d="M20 12h-4c0-1.5.44-2 1.5-2.5S20 8.33 20 7c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.62-.9 1.07"/>'),
+		ul: svg('<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>'),
+		ol: svg('<path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h2"/><path d="M4 6h1v4"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>'),
+		quote: svg('<path d="M17 6H3"/><path d="M21 12H8"/><path d="M21 18H8"/><path d="M3 12v6"/>'),
+		indentDecrease: svg('<path d="M21 12H11"/><path d="M21 18H11"/><path d="M21 6H11"/><path d="m7 8-4 4 4 4"/>'),
+		indentIncrease: svg('<path d="M21 12H11"/><path d="M21 18H11"/><path d="M21 6H11"/><path d="m3 8 4 4-4 4"/>'),
+		link: svg('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
+		image: svg('<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>'),
+		imageUrl: svg('<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>'),
+		undo: svg('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),
+		redo: svg('<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>'),
+		source: svg('<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>'),
+		removeStyle: svg('<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>'),
+		textColor: svg('<path d="M4 20h16"/><path d="m6 16 6-12 6 12"/><path d="M8 12h8"/>'),
+		backgroundColor: svg('<path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>'),
+		ltr: svg('<path d="M10 3v11"/><path d="M10 9H7a1 1 0 0 1 0-6h8"/><path d="M14 3v11"/><path d="m18 14 4 4H2"/><path d="m22 18-4 4"/>'),
+		rtl: svg('<path d="M14 3v11"/><path d="M14 9h-3a3 3 0 0 1 0-6h9"/><path d="M18 3v11"/><path d="M22 18H2l4-4"/><path d="m6 22-4-4"/>'),
+		more: svg('<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>')
+	},
+	// the groups behind "More": the main row keeps what a family email needs
+	MORE_GROUPS = ['font', 'textstyle', 'indent', 'dir', 'insert', 'code', 'clear', 'mode'],
+
 	forEachObjectValue = (obj, fn) => Object.values(obj).forEach(fn),
 
 	SquireDefaultConfig = {
@@ -50,15 +80,82 @@ class SquireUI
 			},
 
 			actions = {
-				mode: {
-					plain: {
-//						html: '〈〉',
-//						cmd: () => this.setMode('plain' == this.mode ? 'wysiwyg' : 'plain'),
-						select: [
-							[i18n('SETTINGS_GENERAL/EDITOR_HTML'),'wysiwyg'],
-							[i18n('SETTINGS_GENERAL/EDITOR_PLAIN'),'plain']
-						],
-						cmd: s => this.setMode('plain' == s.value ? 'plain' : 'wysiwyg')
+				inline: {
+					bold: {
+						html: icon.bold,
+						cmd: () => this.doAction('bold'),
+						key: 'B',
+						matches: 'B,STRONG'
+					},
+					italic: {
+						html: icon.italic,
+						cmd: () => this.doAction('italic'),
+						key: 'I',
+						matches: 'I'
+					},
+					underline: {
+						html: icon.underline,
+						cmd: () => this.doAction('underline'),
+						key: 'U',
+						matches: 'U'
+					}
+				},
+				colors: {
+					textColor: {
+						html: icon.textColor,
+						cmd: doClr('color')
+					}
+				},
+				block: {
+					ul: {
+						html: icon.ul,
+						cmd: () => this.doList('UL'),
+						key: 'Shift + 9',
+						matches: 'UL'
+					},
+					ol: {
+						html: icon.ol,
+						cmd: () => this.doList('OL'),
+						key: 'Shift + 8',
+						matches: 'OL'
+					},
+					quote: {
+						html: icon.quote,
+						cmd: () => {
+							let parent = squire.getSelectionClosest('UL,OL,BLOCKQUOTE')?.nodeName;
+							('BLOCKQUOTE' == parent) ? squire.decreaseQuoteLevel() : squire.increaseQuoteLevel();
+						},
+						matches: 'BLOCKQUOTE'
+					}
+				},
+				targets: {
+					link: {
+						html: icon.link,
+						cmd: () => {
+							let node = squire.getSelectionClosest('A'),
+								url = prompt("Link", node?.href || "https://");
+							if (url != null) {
+								url.length ? squire.makeLink(url) : (node && squire.removeLink());
+							}
+						},
+						matches: 'A'
+					},
+					imageUpload: {
+						html: icon.image,
+						cmd: () => browseImage.click(),
+						matches: 'IMG'
+					}
+				},
+				changes: {
+					undo: {
+						html: icon.undo,
+						cmd: () => squire.undo(),
+						key: 'Z'
+					},
+					redo: {
+						html: icon.redo,
+						cmd: () => squire.redo(),
+						key: 'Y'
 					}
 				},
 				font: {
@@ -105,152 +202,87 @@ class SquireUI
 // 						}
 // 					}
 				},
-				dir: {
-					dir_ltr: {
-						html: '⁋',
-						cmd: () => squire.setTextDirection('ltr')
-					},
-					dir_rtl: {
-						html: '¶',
-						cmd: () => squire.setTextDirection('rtl')
-					}
-				},
-				colors: {
-					textColor: {
-						html: 'A<sub>▾</sub>',
-						cmd: doClr('color')
-					},
-					backgroundColor: {
-						html: '🎨', /* ▧ */
-						cmd: doClr('backgroundColor')
-					},
-				},
-				inline: {
-					bold: {
-						html: 'B',
-						cmd: () => this.doAction('bold'),
-						key: 'B',
-						matches: 'B,STRONG'
-					},
-					italic: {
-						html: 'I',
-						cmd: () => this.doAction('italic'),
-						key: 'I',
-						matches: 'I'
-					},
-					underline: {
-						html: '<u>U</u>',
-						cmd: () => this.doAction('underline'),
-						key: 'U',
-						matches: 'U'
-					},
+				textstyle: {
 					strike: {
-						html: '<s>S</s>',
+						html: icon.strike,
 						cmd: () => this.doAction('strikethrough'),
 						key: 'Shift + 7',
 						matches: 'S'
 					},
 					sub: {
-						html: 'Xₙ',
+						html: icon.sub,
 						cmd: () => this.doAction('subscript'),
 						key: 'Shift + 5',
 						matches: 'SUB'
 					},
 					sup: {
-						html: 'Xⁿ',
+						html: icon.sup,
 						cmd: () => this.doAction('superscript'),
 						key: 'Shift + 6',
 						matches: 'SUP'
+					},
+					backgroundColor: {
+						html: icon.backgroundColor, /* ▧ */
+						cmd: doClr('backgroundColor')
 					}
 				},
-				block: {
-					ol: {
-						html: '#',
-						cmd: () => this.doList('OL'),
-						key: 'Shift + 8',
-						matches: 'OL'
-					},
-					ul: {
-						html: '⋮',
-						cmd: () => this.doList('UL'),
-						key: 'Shift + 9',
-						matches: 'UL'
-					},
-					quote: {
-						html: '"',
-						cmd: () => {
-							let parent = squire.getSelectionClosest('UL,OL,BLOCKQUOTE')?.nodeName;
-							('BLOCKQUOTE' == parent) ? squire.decreaseQuoteLevel() : squire.increaseQuoteLevel();
-						},
-						matches: 'BLOCKQUOTE'
-					},
+				indent: {
 					indentDecrease: {
-						html: '⇤',
+						html: icon.indentDecrease,
 						cmd: () => squire.changeIndentationLevel('decrease'),
 						key: ']'
 					},
 					indentIncrease: {
-						html: '⇥',
+						html: icon.indentIncrease,
 						cmd: () => squire.changeIndentationLevel('increase'),
 						key: '['
 					}
 				},
-				targets: {
-					link: {
-						html: '🔗',
-						cmd: () => {
-							let node = squire.getSelectionClosest('A'),
-								url = prompt("Link", node?.href || "https://");
-							if (url != null) {
-								url.length ? squire.makeLink(url) : (node && squire.removeLink());
-							}
-						},
-						matches: 'A'
+				dir: {
+					dir_ltr: {
+						html: icon.ltr,
+						cmd: () => squire.setTextDirection('ltr')
 					},
+					dir_rtl: {
+						html: icon.rtl,
+						cmd: () => squire.setTextDirection('rtl')
+					}
+				},
+				insert: {
 					imageUrl: {
-						html: '🖼️',
+						html: icon.imageUrl,
 						cmd: () => {
 							let node = squire.getSelectionClosest('IMG'),
 								src = prompt("Image", node?.src || "https://");
 							src?.length ? squire.insertImage(src) : node?.remove();
 						},
 						matches: 'IMG'
-					},
-					imageUpload: {
-						html: '📂️',
-						cmd: () => browseImage.click(),
-						matches: 'IMG'
 					}
 				},
-/*
-				table: {
-					// TODO
-				},
-*/
-				changes: {
-					undo: {
-						html: '↶',
-						cmd: () => squire.undo(),
-						key: 'Z'
-					},
-					redo: {
-						html: '↷',
-						cmd: () => squire.redo(),
-						key: 'Y'
-					},
+				code: {
 					source: {
-						html: '👁',
+						html: icon.source,
 						cmd: btn => {
 							this.setMode('source' == this.mode ? 'wysiwyg' : 'source');
 							btn.classList.toggle('active', 'source' == this.mode);
 						}
 					}
 				},
-
 				clear: {
 					removeStyle: {
-						html: '⎚',
+						html: icon.removeStyle,
 						cmd: () => squire.setStyle()
+					}
+				},
+				mode: {
+					plain: {
+//						html: '〈〉',
+//						cmd: () => this.setMode('plain' == this.mode ? 'wysiwyg' : 'plain'),
+						select: [
+							[i18n('SETTINGS_GENERAL/EDITOR_HTML'),'wysiwyg'],
+							[i18n('SETTINGS_GENERAL/EDITOR_PLAIN'),'plain']
+						],
+						cmd: s => this.setMode('plain' == s.value ? 'plain' : 'wysiwyg')
 					}
 				}
 			},
@@ -374,8 +406,19 @@ class SquireUI
 				cfg.input = input;
 				toolgroup.append(input);
 			}
+			MORE_GROUPS.includes(group) && toolgroup.classList.add('squire-more');
 			toolgroup.children.length && toolbar.append(toolgroup);
 		}
+
+		// Quokka: "More" opens a second row with the rest
+		const more = createElement('button');
+		more.type = 'button';
+		more.className = 'btn squire-more-toggle';
+		more.innerHTML = icon.more;
+		more.title = i18n('QUOKKA/EDITOR_MORE', 'More');
+		more.tabIndex = -1;
+		more.addEventListener('click', () => more.classList.toggle('active', toolbar.classList.toggle('squire-more-open')));
+		toolbar.querySelector('.squire-more')?.before(more);
 
 		this.modeSelect = actions.mode.plain.input;
 

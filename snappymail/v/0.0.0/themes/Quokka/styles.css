@@ -1190,3 +1190,88 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 	.quokka-sel-actions a { min-width: 36px; }
 	.quokka-selbar { padding-right: 6px; }
 }
+
+/* ── Composer: fields as plain rows with a line under them, a light toolbar with line icons, "More" for the rest ── */
+#V-PopupsCompose .modal-body { padding: 0 !important; }
+#V-PopupsCompose .b-header { background: var(--fm-surface); padding: 8px 24px 0; border-bottom: 0; }
+#V-PopupsCompose .b-header table { border-collapse: collapse; }
+#V-PopupsCompose .b-header tr { border-bottom: 1px solid var(--fm-line); }
+#V-PopupsCompose .b-header td { padding: 6px 0; vertical-align: middle; }
+#V-PopupsCompose .b-header td:first-child { color: var(--fm-muted); font-size: 13px; text-align: left; width: 5.5em; padding-right: 8px; }
+#V-PopupsCompose .b-header td:first-child label { color: inherit; font-size: inherit; margin: 0; }
+#V-PopupsCompose .b-header td:first-child .error-to { color: var(--fm-danger); }
+#V-PopupsCompose .b-header input[type="text"],
+#V-PopupsCompose .b-header .emailaddresses {
+	background: transparent; border: 0; box-shadow: none; border-radius: 0; padding: 4px 0; min-height: 30px; font-size: 14px; color: var(--fm-ink);
+}
+#V-PopupsCompose .b-header input[type="text"]:focus { outline: none; box-shadow: none; }
+#V-PopupsCompose .b-header .emailaddresses .emailaddresses-input,
+#V-PopupsCompose .b-header .emailaddresses input { border: 0 !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; min-height: 0; outline: none; }
+#V-PopupsCompose .b-header input[name="subject"] { font-weight: 600; }
+#V-PopupsCompose .emailaddresses li[draggable] {
+	background: var(--fm-primary-soft); border: 0; border-radius: 999px; box-shadow: none; color: var(--fm-ink); padding: 3px 1.8em 3px 10px; margin: 2px 4px 2px 0;
+}
+#V-PopupsCompose #identity-toggle { color: var(--fm-muted); }
+/* the row under the subject: only the attach button, on the right */
+#V-PopupsCompose .b-header > div[style*="flex"] { padding: 6px 0; gap: 6px; }
+#V-PopupsCompose .b-header > div[style*="flex"]:not(:has(.btn:not([style*="display: none"]))) { display: none !important; }
+#V-PopupsCompose #composeUploadButton { font-size: 0 !important; padding: 0 12px !important; height: 32px; display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--fm-line); color: var(--fm-ink-2); }
+#V-PopupsCompose #composeUploadButton::before { content: ""; width: 16px; height: 16px; background-color: currentColor;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48'/%3E%3C/svg%3E") center / contain no-repeat;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48'/%3E%3C/svg%3E") center / contain no-repeat; }
+#V-PopupsCompose #composeUploadButton::after { content: attr(title); font-size: 13px; font-weight: 500; }
+#V-PopupsCompose #composeUploadButton:hover { background: var(--fm-surface-2); }
+
+/* Message / Attachments tabs: a quiet underline instead of two big boxes */
+#V-PopupsCompose .tabs { background: var(--fm-surface); padding: 0 24px; grid-template-columns: auto auto 1fr; }
+#V-PopupsCompose .tabs > label { background: transparent !important; border: 0 !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important;
+	color: var(--fm-muted); font-size: 13px; font-weight: 600; padding: 10px 4px !important; margin-right: 16px; justify-self: start; }
+#V-PopupsCompose .tabs > input:checked + label { color: var(--fm-primary); border-bottom-color: var(--fm-primary) !important; }
+#V-PopupsCompose .tabs > label i { display: none; }
+#V-PopupsCompose .tabs > label b { background: var(--fm-primary); color: var(--fm-primary-ink); border-radius: 999px; padding: 0 6px; font-size: 11px; }
+#V-PopupsCompose .tabs .tab-content { border: 0 !important; }
+#V-PopupsCompose .attachmentAreaParent { border-top: 1px solid var(--fm-line); }
+
+/* the toolbar */
+.squire-toolbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px 0; min-height: 0;
+	border: 0; border-top: 1px solid var(--fm-line); border-bottom: 1px solid var(--fm-line); background: var(--fm-surface); overflow: visible; white-space: normal; }
+.squire-toolbar .btn-group { display: flex; align-items: center; gap: 2px; margin: 0; padding: 0 6px 0 0; border-right: 1px solid var(--fm-line); }
+.squire-toolbar .btn-group + .btn-group, .squire-toolbar .squire-more-toggle + .btn-group { padding-left: 4px; }
+.squire-toolbar .btn-group:last-of-type { border-right: 0; }
+.squire-toolbar button.btn, .squire-toolbar .squire-more-toggle {
+	width: 34px; height: 34px; padding: 0; margin: 0 !important; display: inline-flex; align-items: center; justify-content: center;
+	background: transparent !important; border: 0 !important; border-radius: 8px !important; box-shadow: none; color: var(--fm-ink-2); font-size: 14px;
+}
+.squire-toolbar button.btn:hover { background: var(--fm-surface-2) !important; color: var(--fm-ink); }
+.squire-toolbar button.btn.active { background: var(--fm-primary-soft) !important; color: var(--fm-primary); }
+.squire-toolbar button.btn:disabled { opacity: .35; background: transparent !important; }
+.squire-toolbar button.btn svg { display: block; pointer-events: none; }
+.squire-toolbar .squire-more-toggle:focus { outline: none; }
+.squire-toolbar select.btn { width: auto; max-width: 11em; height: 34px; padding: 0 28px 0 10px; font-size: 13px; border: 1px solid var(--fm-line); border-radius: 8px !important;
+	background-color: var(--fm-surface); color: var(--fm-ink); box-shadow: none; margin-right: 4px !important; }
+.squire-toolbar select[data-action="fontSize"] { width: auto; }
+/* "More" closed: only the main row */
+.squire-toolbar:not(.squire-more-open) .squire-more { display: none; }
+.squire-toolbar.squire-more-open .squire-more { order: 10; }
+.squire-toolbar.squire-more-open::after { content: ""; order: 9; flex-basis: 100%; height: 0; }
+.squire-toolbar .squire-more { border-right: 1px solid var(--fm-line); }
+/* plain text: no formatting, only the switch back to HTML (and More, which holds it) */
+.squire-mode-plain .squire-toolbar .btn-group:not(.squire-more) { display: none; }
+.squire-mode-plain .squire-toolbar:not(.squire-more-open) #squire-toolgroup-mode { display: flex; order: 10; }
+
+/* the text */
+.squire-wysiwyg, .squire-plain { padding: 16px 20px; line-height: 1.55; font-size: 14px; color: var(--fm-ink); background: var(--fm-surface); }
+.squire-wysiwyg blockquote { border-left: 3px solid var(--fm-line-strong); padding-left: 12px; color: var(--fm-ink-2); }
+
+@media (max-width: 640px) {
+	#V-PopupsCompose .b-header, #V-PopupsCompose .tabs { padding-left: 10px; padding-right: 10px; }
+	.squire-toolbar button.btn, .squire-toolbar .squire-more-toggle { width: 30px; height: 34px; }
+	.squire-toolbar .btn-group { gap: 0; padding: 0 2px 0 0; }
+	.squire-toolbar .btn-group + .btn-group, .squire-toolbar .squire-more-toggle + .btn-group { padding-left: 2px; }
+	#V-PopupsCompose .b-header td:first-child { width: 4.2em; }
+	.squire-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+	.squire-toolbar.squire-more-open { flex-wrap: wrap; }
+	.squire-toolbar .btn-group { flex: none; }
+	.squire-toolbar button[data-action="redo"] { display: none; }
+	.squire-wysiwyg, .squire-plain { padding: 14px 12px; }
+}
