@@ -266,7 +266,15 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 	private function enter(string $sEmail, string $sPassword) : bool
 	{
 		$sHash = \RainLoop\Api::CreateUserSsoHash($sEmail, $sPassword);
-		\header('Location: ./?Sso&hash=' . \rawurlencode((string) $sHash));
+		// Not a redirect: a redirect would still belong to the page load Pocket ID started, and SnappyMail rightly refuses
+		// ?Sso from other sites. This page moves on by itself, so ?Sso is a load started by Quokka.
+		$sUrl = \htmlspecialchars('./?Sso&hash=' . \rawurlencode((string) $sHash), ENT_QUOTES, 'UTF-8');
+		\header('Content-Type: text/html; charset=utf-8');
+		\header('Cache-Control: no-store');
+		\header("Content-Security-Policy: default-src 'none'; base-uri 'none'; frame-ancestors 'none'");
+		\header('Referrer-Policy: no-referrer');
+		echo "<!doctype html><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"0;url={$sUrl}\"><title>Quokka</title>"
+			. "<p style=\"font:15px system-ui;text-align:center;margin-top:30vh\"><a href=\"{$sUrl}\">Quokka</a></p>";
 		return true;
 	}
 
