@@ -337,7 +337,18 @@ trait Accounts
 	public function DoAccountsAndIdentities(): array
 	{
 		// https://github.com/the-djmaze/snappymail/issues/571
+		// Quokka: the main account is labelled with the name of its own main identity (added accounts have a
+		// name of their own), read from the main account, not from the one you are currently in
+		$sMainName = '';
+		$oMainAccount = $this->getMainAccountFromToken();
+		foreach ($this->IdentitiesProvider()->GetIdentities($oMainAccount, false) as $oIdentity) {
+			if ($oIdentity->IsAccountIdentities()) {
+				$sMainName = $oIdentity->Name();
+				break;
+			}
+		}
 		return $this->DefaultResponse(array(
+			'mainIdentityName' => $sMainName,
 			'Accounts' => \array_values(\array_map(function($value){
 					return [
 						'email' => IDN::emailToUtf8($value['email'] ?? $value[1]),

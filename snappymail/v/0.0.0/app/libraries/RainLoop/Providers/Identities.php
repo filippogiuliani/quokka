@@ -53,6 +53,10 @@ class Identities extends AbstractProvider
 			$primaryIdentity->exists = !\RainLoop\Api::Config()->Get('webmail', 'popup_identity', true);
 			$identities[] = $primaryIdentity;
 		}
+		// Quokka: an account added with a name ("Pluto") sends as that name until the identity gets one of its own
+		if ('' === $primaryIdentity->Name() && '' !== $account->Name()) {
+			$primaryIdentity->SetName($account->Name());
+		}
 
 		// Return only primary identity or all identities
 		return $allowMultipleIdentities ? $identities : [$primaryIdentity];
