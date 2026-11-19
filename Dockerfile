@@ -3,11 +3,17 @@
 # Built like upstream's .docker/release/Dockerfile, with only the PHP extensions a family install uses
 # (no LDAP, MySQL, Postgres, Redis, ImageMagick): smaller and quicker to build.
 
+# package.json without its version: raising the version (on every build) must not reinstall all the
+# JavaScript dependencies. This stage reruns, but its result is the same, so the install below stays cached.
+FROM alpine:3.24.3 AS manifest
+COPY package.json yarn.lock /manifest/
+RUN sed -i -E 's/^(\s*"version":\s*)"[^"]*"/\1"0.0.0"/' /manifest/package.json
+
 FROM alpine:3.24.3 AS builder
 RUN apk add --no-cache php85 php85-json php-phar php-zip npm \
  && npm install -g gulp yarn
 WORKDIR /source
-COPY package.json yarn.lock ./
+COPY --from=manifest /manifest/ ./
 RUN yarn install --frozen-lockfile
 COPY . .
 RUN php cli/release.php --phar
