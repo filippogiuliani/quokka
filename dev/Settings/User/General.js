@@ -4,7 +4,7 @@ import { SMAudio } from 'Common/Audio';
 import { SaveSettingStatus } from 'Common/Enums';
 import { LayoutSideView, LayoutBottomView } from 'Common/EnumsUser';
 import { setRefreshFoldersInterval } from 'Common/Folders';
-import { Settings, SettingsGet } from 'Common/Globals';
+import { Settings, SettingsGet, SettingsCapa } from 'Common/Globals';
 import { WYSIWYGS } from 'Common/HtmlEditor';
 import { addSubscribablesTo, addComputablesTo } from 'External/ko';
 import { i18n, translateTrigger, translatorReload, convertLangName } from 'Common/Translator';
@@ -38,11 +38,17 @@ export class UserSettingsGeneral extends AbstractViewSettings {
 		this.soundNotification = SMAudio.notifications;
 		this.notificationSound = ko.observable(SettingsGet('NotificationSound'));
 		this.notificationSounds = ko.observableArray(SettingsGet('newMailSounds'));
+		// Quokka: the sounds by name ("due-note" → "Due note"; SnappyMail's own ones in Italian)
+		// Quokka: the sounds by name, in the interface's language (QUOKKA/SOUND_<FILE>, e.g. two-notes → SOUND_TWO_NOTES)
+		this.soundLabel = name => i18n('QUOKKA/SOUND_' + name.toUpperCase().replace(/-/g, '_'), null, name);
 
 		this.minRefreshInterval = SettingsGet('minRefreshInterval');
 
 		this.desktopNotifications = NotificationUserStore.enabled;
 		this.isDesktopNotificationAllowed = NotificationUserStore.allowed;
+		// Quokka: browsers give notifications to https pages only; signing and encrypting only where turned on
+		this.secureContext = !!window.isSecureContext;
+		this.canCrypto = SettingsCapa('OpenPGP') || SettingsCapa('GnuPG');
 
 		const i18nSort = s => i18n('MESSAGE_LIST/SORT_'+s);
 		this.sortSupported = FolderUserStore.hasCapability('SORT');
@@ -166,7 +172,7 @@ export class UserSettingsGeneral extends AbstractViewSettings {
 
 		this.addSettings([
 			'requestReadReceipt', 'requestDsn', 'requireTLS', 'pgpSign', 'pgpEncrypt',
-			'ViewHTML', 'ViewImages', 'ViewImagesWhitelist', 'RemoveColors', 'AllowStyles', 'AllowDraftAutosave',
+			'ViewHTML', 'RemoveColors', 'AllowStyles', 'AllowDraftAutosave',
 			'HideDeleted', 'ListInlineAttachments', 'simpleAttachmentsList', 'CollapseBlockquotes',
 			'UseCheckboxesInList', 'listGrouped', 'ReplySameFolder', 'allowSpellcheck',
 			'messageReadAuto', 'showNextMessage', 'messageNewWindow', 'markdown',

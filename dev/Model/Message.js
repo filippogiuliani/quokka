@@ -1,3 +1,4 @@
+import { CATEGORY_KEYS, categoryOf } from 'Common/Categories';
 import ko from 'ko';
 
 import { i18n } from 'Common/Translator';
@@ -208,6 +209,10 @@ export class MessageModel extends AbstractModel {
 				return this.threadsLen() + (unseenLen > 0 ? '/' + unseenLen : '');
 			},
 
+			// Quokka: the category the sorter (or a person) put on it
+			categoryKey: () => categoryOf(this.flags())?.[0] || '',
+			categoryLabel: () => categoryOf(this.flags())?.[1] || '',
+
 			isUnseen: () => !this.flags().includes('\\seen'),
 			isFlagged: () => this.flags().includes('\\flagged'),
 			isDeleted: () => this.flags().includes('\\deleted'),
@@ -276,6 +281,11 @@ export class MessageModel extends AbstractModel {
 			mailRoute.search(),
 			mailRoute.threadUid(),
 			this.uid);
+	}
+
+	/** Quokka: one category instead of the current one ('' = none). The sorter learns from this change. */
+	setCategory(key) {
+		CATEGORY_KEYS.forEach(k => (k === key) !== this.flags().includes(k) && toggleTag(this, k));
 	}
 
 	toggleTag(keyword) {

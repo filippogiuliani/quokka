@@ -1,5 +1,5 @@
 <div class="form-horizontal">
-	<div class="legend" data-i18n="SETTINGS_SECURITY/LEGEND_SECURITY"></div>
+	<div class="legend" data-i18n="QUOKKA/SEC_TITLE"></div>
 	<div class="control-group">
 		<label data-i18n="SETTINGS_SECURITY/LABEL_AUTOLOGOUT"></label>
 		<div data-bind="component: {
@@ -13,6 +13,8 @@
 			}
 		}"></div>
 	</div>
+	<!-- Quokka: encryption only where it is turned on (QUOKKA_ENCRYPTION) -->
+	<!-- ko if: canOpenPGP || canGnuPG -->
 	<div class="control-group">
 		<label data-i18n="SETTINGS_SECURITY/FORGET_KEY_PASS"></label>
 		<div data-bind="component: {
@@ -26,8 +28,111 @@
 			}
 		}"></div>
 	</div>
+	<!-- /ko -->
+
+	<!-- Quokka: two-step verification, sign-ins, stolen passwords, privacy (plugins/quokka-security) -->
+	<div class="legend" data-i18n="QUOKKA/TWO_STEP"></div>
+	<p class="quokka-intro" data-i18n="QUOKKA/TWO_STEP_INTRO"></p>
+	<!-- ko if: sec() && !sec().available -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA/TWO_STEP_UNAVAILABLE"></span></div>
+	<!-- /ko -->
+	<!-- ko if: sec() && sec().available -->
+		<!-- ko if: backupShown().length -->
+		<div class="control-group quokka-backup" data-bind="i18nUpdate: true">
+			<span data-i18n="[html]QUOKKA/BACKUP_CODES"></span>
+			<ol data-bind="foreach: backupShown"><li data-bind="text: $data"></li></ol>
+			<button class="btn btn-primary" data-bind="click: backupDone" data-i18n="QUOKKA/BACKUP_SAVED"></button>
+		</div>
+		<!-- /ko -->
+		<!-- ko if: !backupShown().length && !sec().totp && !totpSetup() -->
+		<div class="control-group" data-bind="i18nUpdate: true">
+			<label data-i18n="QUOKKA/TWO_STEP_OFF"></label>
+			<button class="btn btn-primary" data-bind="click: totpStart, enable: !secBusy()" data-i18n="QUOKKA/TURN_ON"></button>
+		</div>
+		<!-- /ko -->
+		<!-- ko with: totpSetup -->
+		<div class="control-group quokka-totp-setup" data-bind="i18nUpdate: true">
+			<div class="quokka-qr" data-bind="html: qr"></div>
+			<div class="quokka-totp-steps">
+				<p data-i18n="[html]QUOKKA/TOTP_STEP1"></p>
+				<code data-bind="text: secret"></code>
+				<a class="quokka-open-app" data-bind="attr: {href: uri}" data-i18n="QUOKKA/TOTP_OPEN_IN_APP"></a>
+				<p data-i18n="[html]QUOKKA/TOTP_STEP2"></p>
+				<div class="quokka-code-row">
+					<input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123456" data-bind="textInput: $parent.totpCode">
+					<button class="btn btn-primary" data-bind="click: () => $parent.totpConfirm(), enable: $parent.totpCodeReady" data-i18n="QUOKKA/CONFIRM"></button>
+					<button class="btn" data-bind="click: () => $parent.totpCancel()" data-i18n="GLOBAL/CANCEL"></button>
+				</div>
+			</div>
+		</div>
+		<!-- /ko -->
+		<!-- ko if: !backupShown().length && sec().totp -->
+		<div class="control-group" data-bind="i18nUpdate: true">
+			<label><span data-bind="text: totpSince"></span><small class="quokka-sub" data-bind="text: backupLeftText"></small></label>
+			<div class="quokka-inline" data-bind="visible: !codeFor()">
+				<button class="btn" data-bind="click: () => askCode('backup')" data-i18n="QUOKKA/NEW_BACKUP_CODES"></button>
+				<button class="btn" data-bind="click: () => askCode('disable')" data-i18n="QUOKKA/TURN_OFF"></button>
+			</div>
+		</div>
+		<div class="control-group" data-bind="i18nUpdate: true, visible: codeFor">
+			<label data-bind="text: codeForText"></label>
+			<div class="quokka-code-row">
+				<input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="9" placeholder="123456" data-bind="textInput: totpCode">
+				<button class="btn btn-primary" data-bind="click: codeConfirm, enable: totpCodeReady" data-i18n="QUOKKA/CONFIRM"></button>
+				<button class="btn" data-bind="click: totpCancel" data-i18n="GLOBAL/CANCEL"></button>
+			</div>
+		</div>
+		<!-- /ko -->
+	<!-- /ko -->
+	<div class="quokka-sec-message" data-bind="visible: secMessage, text: secMessage, css: {'quokka-error': secError}"></div>
+
+	<div class="legend" data-i18n="QUOKKA/LOGINS"></div>
+	<p class="quokka-intro" data-i18n="QUOKKA/LOGINS_INTRO"></p>
+	<div class="quokka-logins" data-bind="visible: logins().length, foreach: logins">
+		<div class="quokka-login" data-bind="i18nUpdate: true, css: {wrong: !ok}">
+			<div class="quokka-login-main">
+				<span class="device" data-bind="text: device"></span>
+				<span class="here" data-bind="visible: here" data-i18n="QUOKKA/THIS_DEVICE"></span>
+			</div>
+			<div class="quokka-login-sub" data-bind="text: when + ' · ' + where + ' · ' + how"></div>
+		</div>
+	</div>
+	<div class="control-group quokka-note" data-bind="visible: sec() && !logins().length"><span data-i18n="QUOKKA/NO_LOGINS"></span></div>
+
+	<div class="legend" data-i18n="QUOKKA/STOLEN"></div>
+	<div class="control-group">
+		<div data-bind="component: {
+			name: 'Checkbox',
+			params: {
+				label: 'QUOKKA/STOLEN_CHECK',
+				value: pwnedCheck
+			}
+		}"></div>
+		<div class="quokka-row-note"><span data-i18n="QUOKKA/STOLEN_HELP"></span></div>
+	</div>
+	<div class="control-group quokka-note" data-bind="visible: pwnedText, css: {'quokka-danger': sec() && sec().pwned && sec().pwned.count}"><span data-bind="text: pwnedText"></span></div>
+
+	<div class="legend" data-i18n="QUOKKA/PRIVACY"></div>
+	<p class="quokka-intro" data-i18n="QUOKKA/PRIVACY_INTRO"></p>
+	<div class="control-group">
+		<label data-i18n="SETTINGS_GENERAL/EXTERNAL_IMAGES"></label>
+		<div>
+			<select data-bind="value: viewImages">
+				<option value="ask" data-i18n="SETTINGS_GENERAL/IMAGES_OPTION_ASK"></option>
+				<option value="match" data-i18n="SETTINGS_GENERAL/IMAGES_OPTION_WHITELIST"></option>
+				<option value="always" data-i18n="SETTINGS_GENERAL/IMAGES_OPTION_ALWAYS"></option>
+			</select>
+		</div>
+	</div>
+	<div class="control-group" data-bind="visible: 'match' === viewImages()">
+		<label data-i18n="SETTINGS_GENERAL/IMAGES_WHITELIST"></label>
+		<div>
+			<textarea data-bind="textInput: viewImagesWhitelist" data-i18n="[placeholder]QUOKKA/WHITELIST_PLACEHOLDER"></textarea>
+		</div>
+	</div>
 </div>
 
+<!-- ko if: canOpenPGP || canGnuPG -->
 <div class="legend">OpenPGP</div>
 <button class="btn" data-bind="click: addOpenPgpKey" data-icon="✚" data-i18n="SETTINGS_OPENPGP/BUTTON_IMPORT_KEY"></button>
 <!-- ko if: canOpenPGP || canGnuPG -->
@@ -193,3 +298,4 @@
 	</tbody>
 </table>
 </details>
+<!-- /ko -->

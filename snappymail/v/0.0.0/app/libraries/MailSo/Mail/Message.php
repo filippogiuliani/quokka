@@ -105,6 +105,17 @@ class Message implements \JsonSerializable
 		return $this->oFrom;
 	}
 
+	/** Quokka: a preview worked out here when the server has no PREVIEW (see MailClient::postaPreviews) */
+	public function SetPreview(?string $sPreview): void
+	{
+		$this->sPreview = $sPreview;
+	}
+
+	public function HasPreview(): bool
+	{
+		return null !== $this->sPreview && '' !== $this->sPreview;
+	}
+
 	public function Uid(): int
 	{
 		return $this->Uid;

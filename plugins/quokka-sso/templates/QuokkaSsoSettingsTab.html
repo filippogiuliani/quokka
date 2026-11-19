@@ -1,0 +1,17 @@
+<div class="form-horizontal quokka-apps-settings">
+	<div class="legend" data-i18n="QUOKKA_SSO/SETTINGS_TITLE"></div>
+	<!-- ko if: configured -->
+	<div class="control-group" data-bind="i18nUpdate: true">
+		<span data-bind="visible: linked, html: linkedText"></span>
+		<span data-bind="visible: !linked()" data-i18n="QUOKKA_SSO/NOT_LINKED"></span>
+	</div>
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true, visible: linked">
+		<span data-i18n="QUOKKA_SSO/PASSWORD_CHANGED"></span>
+		<a href="#" data-bind="click: unlink" data-i18n="QUOKKA_SSO/UNLINK"></a>
+	</div>
+	<div class="control-group quokka-note" data-bind="visible: message"><span data-bind="text: message"></span></div>
+	<!-- /ko -->
+	<!-- ko ifnot: configured -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_SSO/NOT_CONFIGURED"></span></div>
+	<!-- /ko -->
+</div>

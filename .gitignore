@@ -29,3 +29,6 @@
 /vendors/vanillaqr.js/
 /integrations/nextcloud/rainloop
 /integrations/owncloud/rainloop
+
+# Quokka: the real settings of the stack (POSTA_SECRET, Pocket ID secret)
+deploy/.env

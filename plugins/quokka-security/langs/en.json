@@ -1,0 +1,10 @@
+{
+	"QUOKKA_SECURITY": {
+		"CODE_PLACEHOLDER": "Verification code",
+		"CODE_REQUIRED": "Type the six-digit code of the authenticator app (or a backup code)",
+		"CODE_WRONG": "Wrong code: try again with the one the app shows now",
+		"CODE_LOCKED": "Too many wrong codes: try again in ten minutes",
+		"STOLEN_ALERT": "This mailbox's password appears %COUNT% times in lists of stolen passwords. Whoever knows it could get in: change it at your mail provider.",
+		"GO_TO_SECURITY": "Go to Security"
+	}
+}

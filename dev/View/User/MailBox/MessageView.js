@@ -53,9 +53,13 @@ import { PgpUserStore } from 'Stores/User/Pgp';
 import { MimeToMessage } from 'Mime/Utils';
 
 import { MessageModel } from 'Model/Message';
+import { CATEGORIES } from 'Common/Categories';
+import { readBill, euros, dayMonth } from 'Common/Bill';
 
 import { showScreenPopup } from 'Knoin/Knoin';
 import { OpenPgpImportPopupView } from 'View/Popup/OpenPgpImport';
+import { AskPopupView } from 'View/Popup/Ask';
+import { suspiciousReasons } from 'Common/Suspicious';
 import { GnuPGUserStore } from 'Stores/User/GnuPG';
 import { OpenPGPUserStore } from 'Stores/User/OpenPGP';
 
@@ -80,6 +84,9 @@ const
 	attachmentListed = item =>
 		(SettingsUserStore.listInlineAttachments() || !item.isLinked())
 		&& !(currentMessage()?.smimeEncrypted() && (item.mimeType || '').toLowerCase().includes('pkcs7'));
+
+/** Quokka: an error of the quokka-extras plugin ({error: 'ERR_…', app, status}) in the person's language */
+const appError = r => i18n('QUOKKA_EXTRAS/' + r.error, { APP: r.app || '', STATUS: r.status || '' });
 
 export class MailMessageView extends AbstractViewRight {
 	constructor() {
@@ -172,6 +179,136 @@ export class MailMessageView extends AbstractViewRight {
 
 		// viewer
 		this.viewHash = '';
+
+		// Quokka: the email's category, to change in one step (the sorter learns from it)
+		this.categoryChoices = ko.computed(() => [{ key: '', label: i18n('QUOKKA/CATEGORY_NONE') }].concat(CATEGORIES().map(([key, label]) => ({ key, label }))));
+		// Quokka: a bill's amount, due date and period, and the way to paTrack and doTrack
+		this.billStatus = ko.observable('');
+		this.billBusy = ko.observable(false);
+		this.bill = ko.computed(() => {
+			const message = currentMessage();
+			if (!message || 'bills' !== message.categoryKey()) {
+				return null;
+			}
+			const text = message.plain() || (message.html() || '').replace(/<(style|script)[\s\S]*?<\/\1>|<[^>]+>/gi, ' ')
+				.replace(/&nbsp;/g, ' ').replace(/&euro;/g, '€').replace(/&#?\w+;/g, ' ');
+			const found = readBill(text),
+				pdf = message.attachments().find(a => /pdf$/i.test(a.mimeType) || /\.pdf$/i.test(a.fileName));
+			return {
+				amount: found.amount ? euros(found.amount) : '',
+				due: found.due ? dayMonth(found.due) : '',
+				dueIso: found.due,
+				period: found.period || '',
+				pdf: pdf || null,
+				what: pdf ? pdf.fileName : i18n('QUOKKA/BILL_WHOLE_EMAIL'),
+				patrackTitle: i18n('QUOKKA/BILL_PATRACK_TITLE', { WHAT: pdf ? pdf.fileName : i18n('QUOKKA/BILL_WHOLE_EMAIL') }),
+				dotrackTitle: found.due ? '' : i18n('QUOKKA/BILL_NO_DUE')
+			};
+		});
+		this.bill.subscribe(() => this.billStatus(''));
+		this.billToPatrack = () => {
+			const message = currentMessage(), bill = this.bill();
+			if (!message || !bill || this.billBusy()) return;
+			this.billBusy(true);
+			this.billStatus(i18n('QUOKKA/BILL_SENDING_PATRACK'));
+			rl.pluginRemoteRequest((iError, oData) => {
+				this.billBusy(false);
+				const r = oData?.Result;
+				this.billStatus(iError ? i18n('QUOKKA/BILL_PATRACK_DOWN') : r?.error ? appError(r) : i18n('duplicate' === r?.status ? 'QUOKKA/BILL_PATRACK_DUPLICATE' : 'QUOKKA/BILL_PATRACK_DONE'));
+			}, 'QuokkaExtrasToPatrack', {
+				folder: message.folder,
+				uid: message.uid,
+				mimeIndex: bill.pdf ? bill.pdf.mimeIndex : '',
+				fileName: bill.pdf ? bill.pdf.fileName : (message.subject() || 'email') + '.eml',
+				title: [message.from?.[0]?.name || message.from?.[0]?.email, bill.period || message.subject()].filter(Boolean).join(' – ')
+			}, 60000);
+		};
+		this.billToDotrack = () => {
+			const message = currentMessage(), bill = this.bill();
+			if (!message || !bill?.dueIso || this.billBusy()) return;
+			this.billBusy(true);
+			this.billStatus(i18n('QUOKKA/BILL_SENDING_DOTRACK'));
+			rl.pluginRemoteRequest((iError, oData) => {
+				this.billBusy(false);
+				const r = oData?.Result;
+				this.billStatus(iError ? i18n('QUOKKA/BILL_DOTRACK_DOWN') : r?.error ? appError(r) : i18n('QUOKKA/BILL_DOTRACK_DONE'));
+			}, 'QuokkaExtrasToDotrack', {
+				title: i18n('QUOKKA/BILL_PAY', { WHAT: [message.from?.[0]?.name || message.from?.[0]?.email, bill.period].filter(Boolean).join(' – ')
+					+ (bill.amount ? ' (' + bill.amount + ')' : '') }),
+				dueDate: bill.dueIso,
+				notes: message.subject()
+			});
+		};
+		this.notABill = () => currentMessage()?.setCategory('');
+
+		// Quokka: an email that may be a scam (Common/Suspicious.js); "Mi fido" is remembered on this device
+		const trustedKey = 'quokka-trusted-senders',
+			readTrusted = () => { try { return JSON.parse(localStorage.getItem(trustedKey) || '[]'); } catch (e) { return []; } };
+		this.trustedSenders = ko.observableArray(readTrusted());
+		this.suspicious = ko.computed(() => {
+			const message = currentMessage();
+			if (!message || this.isSpamFolder?.()) return [];
+			message.html(); message.plain();          // again once the body has arrived
+			const email = (message.from?.[0]?.email || '').toLowerCase();
+			return this.trustedSenders().includes(email) ? [] : suspiciousReasons(message);
+		});
+		this.trustSender = () => {
+			const email = (currentMessage()?.from?.[0]?.email || '').toLowerCase();
+			if (!email) return;
+			const list = readTrusted().filter(e => e !== email).concat(email).slice(-200);
+			try { localStorage.setItem(trustedKey, JSON.stringify(list)); } catch (e) {}
+			this.trustedSenders(list);
+		};
+
+		// Quokka: "Annulla iscrizione" on newsletters (List-Unsubscribe); the server reads the header again and,
+		// when the sender allows it (one-click), unsubscribes by itself
+		this.unsubscribeStatus = ko.observable('');
+		this.unsubscribeBusy = ko.observable(false);
+		this.canUnsubscribe = ko.computed(() => {
+			const message = currentMessage();
+			return !!message && /<\s*(https?|mailto):/i.test(message.headers().valueByName('List-Unsubscribe') || '');
+		});
+		currentMessage.subscribe(() => this.unsubscribeStatus(''));
+		this.unsubscribe = () => {
+			const message = currentMessage();
+			if (!message || this.unsubscribeBusy()) return;
+			const who = message.from?.[0]?.name || message.from?.[0]?.email || i18n('QUOKKA/UNSUBSCRIBE_THIS_SENDER');
+			AskPopupView.showModal([
+				i18n('QUOKKA/UNSUBSCRIBE_ASK', { WHO: who }),
+				() => {
+					this.unsubscribeBusy(true);
+					this.unsubscribeStatus(i18n('QUOKKA/UNSUBSCRIBING'));
+					rl.pluginRemoteRequest((iError, oData) => {
+						this.unsubscribeBusy(false);
+						const r = oData?.Result;
+						if (iError || !r) {
+							this.unsubscribeStatus(i18n('QUOKKA/UNSUBSCRIBE_FAILED'));
+						} else if (r.done) {
+							this.unsubscribeStatus(i18n('QUOKKA/UNSUBSCRIBE_DONE', { WHO: who }));
+						} else if (r.mailto) {
+							this.unsubscribeStatus(i18n('QUOKKA/UNSUBSCRIBE_MAILTO'));
+							mailToHelper(r.mailto);
+						} else if (r.url) {
+							this.unsubscribeStatus(i18n('QUOKKA/UNSUBSCRIBE_PAGE'));
+							window.open(r.url, '_blank', 'noopener,noreferrer');
+						} else {
+							this.unsubscribeStatus(r.error ? appError(r) : i18n('QUOKKA/UNSUBSCRIBE_FAILED'));
+						}
+					}, 'QuokkaExtrasUnsubscribe', { folder: message.folder, uid: message.uid }, 30000);
+				},
+				null, true, 0, 'QUOKKA/UNSUBSCRIBE'
+			]);
+		};
+
+		// Quokka: the sender's initial, in a circle next to the name
+		this.senderInitial = ko.computed(() => {
+			const from = currentMessage()?.from?.[0];
+			return ((from?.name || from?.email || '?').trim().charAt(0) || '?').toUpperCase();
+		});
+		this.messageCategory = ko.computed({
+			read: () => currentMessage()?.categoryKey() || '',
+			write: key => currentMessage()?.setCategory(key)
+		});
 
 		addComputablesTo(this, {
 			allowAttachmentControls: () => arrayLength(attachmentsActions) && SettingsCapa('AttachmentsActions'),

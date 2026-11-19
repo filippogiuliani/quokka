@@ -1,23 +1,29 @@
 {
-	"name": "SnappyMail Webmail",
-	"short_name": "SnappyMail",
-	"description": "Simple, modern & fast web-based email client",
+	"name": "Quokka",
+	"short_name": "Quokka",
+	"description": "The family webmail",
 	"display": "standalone",
-	"background_color": "white",
-	"theme_color": "black",
+	"background_color": "#f7f8fa",
+	"theme_color": "#1e3a5f",
 	"icons": [{
-		"src": "apple-touch-icon.png",
-		"sizes": "64x64",
-		"type": "image/png"
-	}, {
 		"src": "android-icon.png",
 		"sizes": "192x192",
-		"type": "image/png"
+		"type": "image/png",
+		"purpose": "any"
 	}, {
 		"src": "logo-512.png",
 		"sizes": "512x512",
 		"type": "image/png",
-		"purpose": "any maskable"
+		"purpose": "any"
+	}, {
+		"src": "icon-maskable-512.png",
+		"sizes": "512x512",
+		"type": "image/png",
+		"purpose": "maskable"
+	}, {
+		"src": "apple-touch-icon.png",
+		"sizes": "180x180",
+		"type": "image/png"
 	}],
 	"start_url": "../../../../"
 }

@@ -1,4 +1,6 @@
 <div class="b-folders g-ui-user-select-none">
+	<!-- Quokka: the app's name -->
+	<div class="quokka-brand"><span class="quokka-wordmark" role="img" aria-label="Quokka">qu<svg viewBox="0 0 300 320" aria-hidden="true"><circle class="qf-fur" cx="70" cy="62" r="44" stroke-width="26"></circle><circle class="qf-fur" cx="230" cy="62" r="44" stroke-width="26"></circle><ellipse class="qf-fur" cx="150" cy="180" rx="122" ry="118" stroke-width="30"></ellipse><circle cx="108" cy="166" r="15" fill="#1e3a5f"></circle><circle cx="192" cy="166" r="15" fill="#1e3a5f"></circle><ellipse cx="150" cy="202" rx="20" ry="14" fill="#1e3a5f"></ellipse><path class="qf-smile" d="M120 232 Q150 258 180 232" stroke-width="16" stroke-linecap="round"></path></svg>kka</span></div>
 	<div class="b-toolbar btn-toolbar">
 		<a class="btn buttonCompose" data-bind="click: composeClick, css: {'btn-warning': composeInEdit, 'btn-success': !composeInEdit()}" data-i18n="[title]FOLDER_LIST/BUTTON_NEW_MESSAGE">
 			<i class="icon-paper-plane"></i>
@@ -19,6 +21,14 @@
 				</a>
 			</li>
 		</ul>
+		<div class="b-categories-title" data-bind="visible: categories().length" data-i18n="QUOKKA/CATEGORIES"></div>
+		<ul class="b-categories" data-bind="foreach: categories">
+			<li>
+				<a data-bind="attr: {href: href, 'data-category': key}, css: {selected: selected}">
+					<span class="dot"></span><!-- ko text: label --><!-- /ko -->
+				</a>
+			</li>
+		</ul>
 		<hr>
 		<div class="search-input-wrp" data-bind="visible: foldersFilterVisible">
 			<input type="search" id="folderSearchInput" data-bind="textInput: foldersFilter" data-i18n="[placeholder]GLOBAL/SEARCH">
@@ -30,7 +40,18 @@
 		</div>
 		<ul class="b-folders-user" data-bind="css: {unreadOnly: filterUnseen}, template: { name: 'MailFolderListItem', foreach: folderListVisible }"></ul>
 		<div class="move-action-content-wrapper" data-bind="visible: moveAction"></div>
+		<!-- Quokka: folders are made and arranged from here (the footer of upstream is hidden) -->
+		<div class="quokka-folder-actions">
+			<a href="#" data-bind="click: createFolder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg><span data-i18n="QUOKKA/NEW_FOLDER"></span></a>
+			<a href="#" data-bind="click: configureFolders" data-i18n="[title]QUOKKA/MANAGE_FOLDERS"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg><span data-i18n="QUOKKA/MANAGE"></span></a>
+		</div>
 	</div>
+	<!-- Quokka: who is signed in; settings -->
+	<a class="quokka-account" data-bind="attr: {href: settingsHref, title: accountEmail}">
+		<span class="quokka-avatar" data-bind="text: accountInitial"></span>
+		<span class="quokka-account-email" data-bind="text: accountEmail"></span>
+		<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>
+	</a>
 	<div class="b-footer btn-toolbar">
 		<div class="btn-group">
 			<a class="btn fontastic toggleLeft" data-bind="click: toggleLeftPanel"></a>

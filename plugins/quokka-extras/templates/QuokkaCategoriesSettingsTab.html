@@ -1,0 +1,15 @@
+<div class="form-horizontal quokka-categories-settings">
+	<div class="legend" data-i18n="QUOKKA_EXTRAS/TAB_CATEGORIES"></div>
+	<p class="quokka-intro" data-i18n="QUOKKA_EXTRAS/CATEGORIES_INTRO"></p>
+	<ul class="quokka-categories" data-bind="foreach: categories">
+		<li data-bind="attr: {'data-category': key}">
+			<label>
+				<span class="dot"></span>
+				<span class="name" data-bind="text: label"></span>
+				<input type="checkbox" data-bind="checked: on">
+				<span class="switch" aria-hidden="true"></span>
+			</label>
+		</li>
+	</ul>
+	<div class="quokka-save"><span data-bind="text: message, css: {'quokka-error': error}"></span></div>
+</div>

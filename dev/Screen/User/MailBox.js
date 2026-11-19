@@ -81,6 +81,8 @@ export class MailBoxUserScreen extends AbstractScreen {
 				|| MessagelistUserStore.page() !== page
 				|| MessagelistUserStore.listSearch() !== search
 				|| MessagelistUserStore.threadUid() !== mailRoute.threadUid()
+				// Quokka: back from Settings the list may have been emptied there (thread options): load it again
+				|| (!MessagelistUserStore().length && !MessagelistUserStore.isLoading())
 			) {
 				// A mailbox is selected, load everything
 				FolderUserStore.currentFolder(folder);

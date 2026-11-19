@@ -3,7 +3,11 @@ import { AccountUserStore } from 'Stores/User/Account';
 //import { FolderUserStore } from 'Stores/User/Folder';
 
 import { ScopeMessageList, ScopeMessageView, ScopeSettings } from 'Common/Enums';
-import { settings } from 'Common/Links';
+import { settings, mailBox } from 'Common/Links';
+import { getFolderHashFromCacheList } from 'Common/Cache';
+import { FolderUserStore } from 'Stores/User/Folder';
+import { UNUSED_OPTION_VALUE } from 'Common/Consts';
+import ko from 'ko';
 
 import { showScreenPopup } from 'Knoin/Knoin';
 import { AbstractViewRight } from 'Knoin/AbstractViews';
@@ -12,7 +16,7 @@ import { KeyboardShortcutsHelpPopupView } from 'View/Popup/KeyboardShortcutsHelp
 import { AccountPopupView } from 'View/Popup/Account';
 import { ContactsPopupView } from 'View/Popup/Contacts';
 
-import { fireEvent, stopEvent, SettingsCapa, registerShortcut } from 'Common/Globals';
+import { fireEvent, stopEvent, SettingsCapa, registerShortcut, leftPanelDisabled, toggleLeftPanel } from 'Common/Globals';
 
 import Remote from 'Remote/User/Fetch';
 import { getNotification } from 'Common/Translator';
@@ -30,6 +34,13 @@ export class SystemDropDownUserView extends AbstractViewRight {
 		this.accountEmail = AccountUserStore.email;
 
 		this.accounts = AccountUserStore;
+
+		// Quokka: the phone's bottom menu (Mail, Categories, Archive, Settings), on every screen
+		this.inboxHref = ko.computed(() => (FolderUserStore.folderList(), mailBox(getFolderHashFromCacheList('INBOX'))));
+		this.archiveHref = ko.computed(() => {
+			const archive = FolderUserStore.archiveFolder();
+			return archive && archive !== UNUSED_OPTION_VALUE ? mailBox(getFolderHashFromCacheList(archive)) : '';
+		});
 		this.accountsLoading = AccountUserStore.loading;
 /*
 		this.accountsUnreadCount = : koComputable(() => 0);
@@ -94,6 +105,16 @@ export class SystemDropDownUserView extends AbstractViewRight {
 	accountName() {
 		const email = AccountUserStore.email();
 		return AccountUserStore.find(account => account.email == email)?.label() || IDN.toUnicode(email);
+	}
+
+	/** Quokka: the folders and categories; from Settings, back to the mail first */
+	categoriesClick() {
+		if ((location.hash || '').startsWith('#/settings')) {
+			hasher.setHash(this.inboxHref());
+			setTimeout(() => leftPanelDisabled(false), 300);
+		} else {
+			toggleLeftPanel();
+		}
 	}
 
 	settingsClick() {

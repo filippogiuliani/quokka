@@ -41,7 +41,10 @@ trait User
 				new \SnappyMail\SensitiveString($this->GetActionParam('Password', ''))
 			);
 		} catch (\Throwable $oException) {
-			$this->loginErrorDelay();
+			// Quokka: the password was right and only the second step's code is missing: no reason to wait
+			if (!($oException instanceof \RainLoop\Exceptions\ClientException && 'QUOKKA_2FA_REQUIRED' === $oException->getAdditionalMessage())) {
+				$this->loginErrorDelay();
+			}
 			throw $oException;
 		}
 

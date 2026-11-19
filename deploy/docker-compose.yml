@@ -1,0 +1,65 @@
+# Quokka (family webmail) for Portainer: Stacks → Add stack → paste this, and the variables of .env.example below it
+# (Portainer: "Environment variables" → "Advanced mode", one NAME=value per line).
+# Behind Nginx Proxy Manager: a proxy host to http://quokka:8888, with NPM attached to the "quokka" network
+# (no port is published here). See README.md in this folder.
+services:
+  quokka:
+    image: ${QUOKKA_REGISTRY:?the registry with the images, e.g. registry.example.com}/quokka:${QUOKKA_TAG:-latest}
+    container_name: quokka
+    restart: unless-stopped
+    environment:
+      # the domains people sign in with (space separated) and your mail provider's servers
+      MAIL_DOMAINS: ${MAIL_DOMAINS:?the domain of your addresses, e.g. example.it}
+      IMAP_HOST: ${IMAP_HOST:?your mail provider's IMAP server, e.g. imap.example.com}
+      IMAP_PORT: ${IMAP_PORT:-993}
+      IMAP_SECURITY: ${IMAP_SECURITY:-ssl}
+      SMTP_HOST: ${SMTP_HOST:?your mail provider's SMTP server, e.g. smtp.example.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURITY: ${SMTP_SECURITY:-ssl}
+      # Quokka's own address, e.g. https://mail.example.it (Pocket ID's callback is <this>/?QuokkaSsoCallback)
+      QUOKKA_PUBLIC_URL: ${QUOKKA_PUBLIC_URL:?the https address of Quokka}
+      # the key of what is kept encrypted (Pocket ID links, two-step secrets, the sorter's passwords):
+      # at least 32 random characters (openssl rand -hex 32). Only here, never in the data folder; changing it
+      # forgets the Pocket ID links and the two-step verification
+      QUOKKA_SECRET: ${QUOKKA_SECRET:?at least 32 random characters}
+      # sign in with Pocket ID (optional: empty = only the usual sign-in)
+      QUOKKA_OIDC_ISSUER: ${QUOKKA_OIDC_ISSUER:-}
+      QUOKKA_OIDC_CLIENT_ID: ${QUOKKA_OIDC_CLIENT_ID:-}
+      QUOKKA_OIDC_CLIENT_SECRET: ${QUOKKA_OIDC_CLIENT_SECRET:-}
+      # the family apps (optional), for "Archivia in paTrack" and "Promemoria in doTrack"
+      QUOKKA_PATRACK_URL: ${QUOKKA_PATRACK_URL:-}
+      QUOKKA_DOTRACK_URL: ${QUOKKA_DOTRACK_URL:-}
+      QUOKKA_TITLE: ${QUOKKA_TITLE:-Quokka}
+      QUOKKA_LANGUAGE: ${QUOKKA_LANGUAGE:-it}
+      QUOKKA_ENCRYPTION: ${QUOKKA_ENCRYPTION:-Off}
+      SECURE_COOKIES: "true"
+      UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-25M}
+      TZ: ${TZ:?your time zone, e.g. Europe/Berlin}
+    volumes:
+      - ${QUOKKA_DATA:?folder for settings, contacts and caches}:/var/lib/snappymail
+    networks:
+      - quokka
+
+  # Puts a category on the new emails and learns from the changes made in Quokka. It signs in to each mailbox of
+  # accounts.json, whose passwords are encrypted with QUOKKA_SECRET (README.md: "The sorter's mailboxes").
+  # It runs as user 1000: on the host, chown 1000:1000 accounts.json and its data folder, chmod 600 the file.
+  sorter:
+    image: ${QUOKKA_REGISTRY:?the registry with the images, e.g. registry.example.com}/quokka-sorter:${QUOKKA_TAG:-latest}
+    container_name: quokka-sorter
+    restart: unless-stopped
+    environment:
+      IMAP_HOST: ${IMAP_HOST:?your mail provider's IMAP server, e.g. imap.example.com}
+      IMAP_PORT: ${IMAP_PORT:-993}
+      IMAP_SECURITY: ${IMAP_SECURITY:-ssl}
+      QUOKKA_SECRET: ${QUOKKA_SECRET:?at least 32 random characters}
+      FIRST_DAYS: ${SORTER_FIRST_DAYS:-30}
+      TZ: ${TZ:?your time zone, e.g. Europe/Berlin}
+    volumes:
+      - ${SORTER_ACCOUNTS:?path of accounts.json on the host}:/config/accounts.json:ro
+      - ${SORTER_DATA:?folder for what it learns}:/data
+    networks:
+      - quokka
+
+networks:
+  quokka:
+    name: quokka

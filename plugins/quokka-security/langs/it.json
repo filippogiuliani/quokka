@@ -1,0 +1,10 @@
+{
+	"QUOKKA_SECURITY": {
+		"CODE_PLACEHOLDER": "Codice di verifica",
+		"CODE_REQUIRED": "Scrivi il codice di sei cifre dell'app di autenticazione (o un codice di riserva)",
+		"CODE_WRONG": "Codice non valido: riprova con quello che vedi ora nell'app",
+		"CODE_LOCKED": "Troppi codici sbagliati: riprova tra dieci minuti",
+		"STOLEN_ALERT": "La password di questa casella compare %COUNT% volte in elenchi di password rubate. Chi la conosce potrebbe entrare: cambiala dal pannello del tuo fornitore di posta.",
+		"GO_TO_SECURITY": "Vai a Sicurezza"
+	}
+}

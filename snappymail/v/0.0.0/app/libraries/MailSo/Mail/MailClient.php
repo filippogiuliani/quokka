@@ -77,6 +77,7 @@ class MailClient
 			MimeHeader::AUTHENTICATION_RESULTS,
 			MimeHeader::X_DKIM_AUTHENTICATION_RESULTS,
 			MimeHeader::LIST_UNSUBSCRIBE,
+			MimeHeader::LIST_UNSUBSCRIBE_POST,   // Quokka: one-click unsubscribe (RFC 8058)
 			// https://autocrypt.org/level1.html#the-autocrypt-header
 			MimeHeader::AUTOCRYPT
 		);
@@ -602,6 +603,7 @@ class MailClient
 			$aFetchIterator = $this->oImapClient->FetchIterate($aFetchItems, (string) $oRange, $oRange->UID);
 			// FETCH does not respond in the id order of the SequenceSet, so we prefill $aCollection for the right sort order.
 			$aCollection = \array_fill_keys($oRange->getArrayCopy(), null);
+			$aTextParts = array();     // Quokka: uid → the part to preview, when the server has no PREVIEW
 			foreach ($aFetchIterator as $oFetchResponse) {
 				$id = $oRange->UID
 					? $oFetchResponse->GetFetchValue(FetchType::UID)
@@ -621,10 +623,94 @@ class MailClient
 						}
 					}
 					$aCollection[$id] = $oMessage;
+					if (!$oMessage->HasPreview() && ($oBody = $oFetchResponse->GetFetchBodyStructure())) {
+						$aParts = $oBody->GetHtmlAndPlainParts();
+						$oPart = null;
+						foreach ($aParts as $oItem) {
+							if ('text/plain' === \strtolower($oItem->ContentType())) { $oPart = $oItem; break; }
+						}
+						$oPart = $oPart ?: ($aParts[0] ?? null);
+						if ($oPart && !$oPart->isPgpEncrypted()) {
+							$aTextParts[$oMessage->Uid] = array($oMessage, $oPart);
+						}
+					}
 				}
 			}
+			$aTextParts && $this->quokkaPreviews($aTextParts);
 			$oMessageCollection->exchangeArray(\array_values(\array_filter($aCollection)));
 		}
+	}
+
+	/**
+	 * Quokka: the first words of each email for the list, on servers without PREVIEW (RFC 8970).
+	 * One FETCH per part number (most emails share "1" or "1.1"), only the first bytes of the text part,
+	 * decoded (quoted-printable, base64, charset), HTML turned to text, quoted replies left out.
+	 * @param array $aTextParts uid => [Message, BodyStructure]
+	 */
+	private function quokkaPreviews(array $aTextParts): void
+	{
+		$aByPart = array();
+		foreach ($aTextParts as $iUid => $aItem) {
+			$aByPart[$aItem[1]->PartID() ?: '1'][] = $iUid;
+		}
+		foreach ($aByPart as $sPart => $aUids) {
+			if (!\preg_match('/^[0-9.]+$/D', $sPart)) {
+				continue;
+			}
+			try {
+				$aResponses = $this->oImapClient->Fetch(
+					array(FetchType::UID, "BODY.PEEK[{$sPart}]<0.1200>"), \implode(',', $aUids), true);
+			} catch (\Throwable $oException) {
+				$this->logException($oException);
+				continue;
+			}
+			foreach ($aResponses as $oResponse) {
+				$iUid = (int) $oResponse->GetFetchValue(FetchType::UID);
+				if (!isset($aTextParts[$iUid])) {
+					continue;
+				}
+				$sRaw = (string) ($oResponse->GetFetchValue("BODY[{$sPart}]<0>") ?? $oResponse->GetFetchValue("BODY[{$sPart}]") ?? '');
+				$sText = static::quokkaPreviewText($sRaw, $aTextParts[$iUid][1]);
+				'' !== $sText && $aTextParts[$iUid][0]->SetPreview($sText);
+			}
+		}
+	}
+
+	private static function quokkaPreviewText(string $sRaw, \MailSo\Imap\BodyStructure $oPart): string
+	{
+		switch (\strtolower($oPart->ContentTransferEncoding())) {
+			case 'quoted-printable':
+				$sRaw = \quoted_printable_decode(\preg_replace('/=[0-9A-Fa-f]?$/', '', $sRaw));
+				break;
+			case 'base64':
+				$sRaw = \preg_replace('/[^A-Za-z0-9+\/=]/', '', $sRaw);
+				$sRaw = \base64_decode(\substr($sRaw, 0, \strlen($sRaw) - \strlen($sRaw) % 4)) ?: '';
+				break;
+		}
+		$sCharset = \MailSo\Base\Utils::NormalizeCharset($oPart->Charset() ?: 'utf-8');
+		if ('utf-8' !== \strtolower($sCharset)) {
+			$sRaw = \MailSo\Base\Utils::ConvertEncoding($sRaw, $sCharset, 'utf-8');
+		}
+		$sRaw = \mb_scrub($sRaw, 'UTF-8');
+		if (\str_contains(\strtolower($oPart->ContentType()), 'html')) {
+			$sRaw = \preg_replace('#<(style|script|head)\b.*?(</\1>|$)#is', ' ', $sRaw);
+			$sRaw = \preg_replace('#<br\s*/?>|</p>|</div>|</tr>#i', "\n", $sRaw);
+			$sRaw = \html_entity_decode(\strip_tags(\preg_replace('/<[^>]*$/', '', $sRaw)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+		}
+		// no quoted replies ("> …", "Il giorno … ha scritto:"), no greetings line alone
+		$aLines = array();
+		foreach (\preg_split('/\R/u', $sRaw) as $sLine) {
+			$sLine = \trim($sLine);
+			if ('' === $sLine || '>' === ($sLine[0] ?? '')) {
+				continue;
+			}
+			if (\preg_match('/^(il|on) .{3,80} (ha scritto|wrote):$/iu', $sLine)) {
+				break;
+			}
+			$aLines[] = $sLine;
+		}
+		$sText = \trim(\preg_replace('/\s+/u', ' ', \implode(' ', $aLines)));
+		return \mb_strlen($sText) > 160 ? \rtrim(\mb_substr($sText, 0, 160)) . '…' : $sText;
 	}
 
 	/**

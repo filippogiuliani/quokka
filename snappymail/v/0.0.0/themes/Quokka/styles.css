@@ -1,0 +1,1192 @@
+/* Quokka: the look of the family apps (weHub, paTrack, doTrack…): cool grays, one navy accent,
+   thin borders instead of shadows, Inter. Light and dark follow the device, like the other apps. */
+
+/* Fredoka (SIL Open Font License, fonts/Fredoka-OFL.txt): only for the name in the logo */
+@font-face {
+	font-family: 'Fredoka';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('fonts/fredoka-latin-700-normal.woff2') format('woff2');
+}
+/* Inter (SIL Open Font License, fonts/OFL.txt), served with the theme: no request to Google */
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url('fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+	unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url('fonts/inter-latin-ext-wght-normal.woff2') format('woff2-variations');
+	unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
+:root {
+	color-scheme: light dark;
+
+	/* the family palette (weHub's app.css) */
+	--fm-bg: light-dark(#f7f8fa, #111317);
+	--fm-surface: light-dark(#ffffff, #1a1d23);
+	--fm-surface-2: light-dark(#f1f3f6, #23272f);
+	--fm-ink: light-dark(#111827, #e8eaed);
+	--fm-ink-2: light-dark(#374151, #c9cdd3);
+	--fm-muted: light-dark(#6b7280, #9aa0a9);
+	--fm-line: light-dark(#e5e7eb, #2c313a);
+	--fm-line-strong: light-dark(#d1d5db, #3a404b);
+	--fm-primary: light-dark(#1e3a5f, #8fb3d9);
+	--fm-primary-ink: light-dark(#ffffff, #0f1a26);
+	--fm-primary-soft: light-dark(#e8eef5, #1f2c3b);
+	--fm-danger: light-dark(#c2410c, #f08a5d);
+	--fm-danger-soft: light-dark(#fdf0ea, #3a241b);
+
+	--font: 'Inter', 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	/* the font of the whole app (upstream sets it per system in @Boot.css) */
+	--fontSans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif, 'Noto Color Emoji' !important;
+	--main-font-size: 14px;
+	--border-radius: 10px;
+	--input-border-radius: 8px;
+	--btn-border-radius: 8px;
+	--dialog-border-radius: 12px;
+
+	/* MAIN */
+	--main-color: var(--fm-ink);
+	--main-bg-color: var(--fm-bg);
+	--main-bg-image: none;
+	--link-color: var(--fm-primary);
+	--border-color: var(--fm-line);
+	--hr-color: var(--fm-line);
+	--spinner-color: var(--fm-muted);
+	--panel-bg-clr: var(--fm-surface);
+
+	/* LOADING */
+	--loading-color: var(--fm-muted);
+	--loading-text-shadow: none;
+
+	/* LOGIN */
+	--login-color: var(--fm-ink);
+	--login-bg-color: var(--fm-surface);
+	--login-box-shadow: none;
+	--login-border: 1px solid var(--fm-line);
+	--login-border-radius: 12px;
+
+	/* MENU */
+	--dropdown-menu-color: var(--fm-ink-2);
+	--dropdown-menu-bg-color: var(--fm-surface);
+	--dropdown-menu-border-clr: var(--fm-line);
+	--dropdown-menu-hover-bg-color: var(--fm-surface-2);
+	--dropdown-menu-hover-color: var(--fm-ink);
+	--dropdown-menu-disable-color: var(--fm-muted);
+
+	/* FOLDERS */
+	--folders-color: var(--fm-ink-2);
+	--folders-disabled-color: var(--fm-muted);
+	--folders-selected-color: var(--fm-primary);
+	--folders-selected-bg-color: var(--fm-primary-soft);
+	--folders-focused-color: var(--fm-primary);
+	--folders-focused-bg-color: var(--fm-primary-soft);
+	--folders-hover-color: var(--fm-ink);
+	--folders-hover-bg-color: var(--fm-surface-2);
+	--folders-drop-color: var(--fm-primary-ink);
+	--folders-drop-bg-color: var(--fm-primary);
+	--unread-count-color: var(--fm-primary);
+	--unread-count-bg-color: transparent;
+
+	/* SETTINGS */
+	--settings-menu-color: var(--fm-ink-2);
+	--settings-menu-selected-color: var(--fm-primary);
+	--settings-menu-selected-bg-color: var(--fm-primary-soft);
+	--settings-menu-hover-color: var(--fm-ink);
+	--settings-menu-hover-bg-color: var(--fm-surface-2);
+
+	/* MESSAGES */
+	--message-list-toolbar-bg-color: var(--fm-surface);
+	--message-header-bg-clr: var(--fm-surface);
+
+	/* DIALOGS */
+	--dialog-clr: var(--fm-ink);
+	--dialog-bg-clr: var(--fm-surface);
+	--dialog-border-clr: var(--fm-line);
+
+	/* FORMS */
+	--btn-clr: var(--fm-ink-2);
+	--btn-bg-clr: var(--fm-surface);
+	--btn-border-clr: var(--fm-line);
+	--btn-success-clr: var(--fm-primary-ink);
+	--btn-success-bg-clr: var(--fm-primary);
+	--btn-danger-clr: #ffffff;
+	--btn-danger-bg-clr: var(--fm-danger);
+	--input-clr: var(--fm-ink);
+	--input-bg-clr: var(--fm-surface);
+	--input-border-clr: var(--fm-line-strong);
+	--input-focus-border-clr: var(--fm-primary);
+
+	/* NOTICES */
+	--error-clr: var(--fm-danger);
+	--error-bg-clr: var(--fm-danger-soft);
+	--error-border-clr: var(--fm-danger-soft);
+	--info-clr: var(--fm-primary);
+	--info-bg-clr: var(--fm-primary-soft);
+	--info-border-clr: var(--fm-primary-soft);
+
+	/* TABLES */
+	--tr-hover-bg-clr: var(--fm-surface-2);
+	--tr-odd-bg-clr: transparent;
+
+	/* TABS */
+	--tab-active-bg-clr: var(--fm-surface);
+	--tab-hover-border-clr: var(--fm-line);
+}
+
+#rl-app[data-color-scheme="light"] { color-scheme: light; }
+#rl-app[data-color-scheme="dark"] { color-scheme: dark; }
+
+body {
+	font-family: var(--font);
+	-webkit-font-smoothing: antialiased;
+}
+
+/* ---------- buttons and fields: flat, thin borders, 8px corners ---------- */
+.btn {
+	background-image: none !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+	border: 1px solid var(--fm-line) !important;
+	border-radius: 8px !important;
+	color: var(--fm-ink-2);
+	background-color: var(--fm-surface);
+}
+.btn:hover { background-color: var(--fm-surface-2); color: var(--fm-ink); }
+.btn.btn-success, .btn.btn-primary, .buttonLogin, .buttonCompose {
+	background-color: var(--fm-primary) !important;
+	border-color: var(--fm-primary) !important;
+	color: var(--fm-primary-ink) !important;
+	font-weight: 600;
+}
+.btn.btn-danger { background-color: var(--fm-danger) !important; border-color: var(--fm-danger) !important; color: #fff !important; }
+input[type="text"], input[type="search"], input[type="email"], input[type="password"], select, textarea {
+	box-shadow: none !important;
+	border-radius: 8px !important;
+}
+input:focus, select:focus, textarea:focus {
+	border-color: var(--fm-primary) !important;
+	outline: 2px solid var(--fm-primary-soft);
+}
+
+/* ---------- left column: a big "Scrivi", folders like the family apps' menus ---------- */
+.b-folders .b-toolbar .buttonCompose {
+	height: 44px;
+	border-radius: 10px !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	font-size: 14px;
+}
+.b-folders .b-content a {
+	border-radius: 8px;
+	margin: 1px 6px;
+	padding-block: 4px;
+}
+.b-folders .b-content a.selected { font-weight: 600; }
+.b-folders hr { border-color: var(--fm-line); }
+
+/* ---------- message list: white rows, a navy dot for the unread, no yellow ---------- */
+.messageList, .messageList .b-content { background-color: var(--fm-surface); }
+.messageList { border-color: var(--fm-line) !important; border-radius: 12px !important; }
+.messageListItem {
+	border-left: 3px solid transparent !important;
+	border-right: 0 !important;
+	border-bottom: 1px solid var(--fm-line);
+	font-size: 14px;
+	line-height: 1.5;
+	padding: 6px 0;
+}
+.messageListItem .sizeParent { display: none; }
+.messageListItem time { opacity: 1; color: var(--fm-muted); font-size: 12px; }
+.messageListItem .senderParent { color: var(--fm-ink); }
+.messageListItem .subjectParent { color: var(--fm-ink-2); }
+.messageListItem .previewParent {
+	color: var(--fm-muted);
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.messageListItem .previewParent:empty { display: none; }
+.messageListItem.unseen, .messageListItem [data-unseen] {
+	background-color: transparent !important;
+	border-left-color: var(--fm-primary) !important;
+}
+.messageListItem.unseen .senderParent, .messageListItem.unseen .subjectParent { font-weight: 650; color: var(--fm-ink); }
+.messageListItem.focused { background-color: var(--fm-surface-2) !important; border-left-color: var(--fm-line-strong) !important; }
+.messageListItem.selected { background-color: var(--fm-primary-soft) !important; border-left-color: var(--fm-primary) !important; border-bottom-color: var(--fm-line); }
+.messageListItem.checked { border-left-color: var(--fm-primary) !important; }
+.messageListItem.msgflag-\\flagged .flagParent::after { color: #b45309; }
+.messageList .groupLabel {
+	padding: 10px 12px 4px;
+	font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+	color: var(--fm-muted);
+	background: transparent;
+	border: 0;
+}
+.messageList .second-toolbar { border-bottom: 1px solid var(--fm-line); }
+.messageList .inputSearch { background-color: var(--fm-surface-2) !important; border-color: transparent !important; }
+
+/* ---------- reading: the body in the text font, not typewriter ---------- */
+#messageItem, .messageView .b-content { background-color: var(--fm-surface); }
+.messageView { border-color: var(--fm-line) !important; border-radius: 12px !important; }
+#messageItem .b-text-part.plain {
+	font-family: var(--font);
+	font-size: 15px;
+	line-height: 1.6;
+	color: var(--fm-ink);
+}
+#messageItem .b-text-part.plain pre { font-family: var(--font); }
+.messageItemHeader { border-bottom-color: var(--fm-line) !important; }
+.attachmentsPlace .attachmentItem {
+	border: 1px solid var(--fm-line) !important;
+	border-radius: 10px !important;
+	box-shadow: none !important;
+	background-color: var(--fm-surface) !important;
+}
+
+/* ---------- menus and dialogs ---------- */
+.dropdown-menu { border-radius: 10px; box-shadow: 0 12px 32px rgba(17, 24, 39, .14); padding: 4px; }
+.dropdown-menu li > a { border-radius: 6px; }
+.modal, dialog { box-shadow: 0 20px 50px rgba(17, 24, 39, .18) !important; }
+
+/* ---------- sign-in: the app's name in navy, a calm card ---------- */
+#V-Login .descWrapper {
+	color: var(--fm-primary);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+#V-Login form, #V-Login .loginForm { border-radius: 12px; }
+#V-Login .buttonLogin, #V-Login button[type="submit"] {
+	text-transform: none;
+	font-size: 15px;
+	height: 44px;
+	border-radius: 10px !important;
+}
+#V-Login .controls input { font-size: 15px; }
+
+/* ---------- categories (Quokka): one colour each, the same everywhere ---------- */
+:root {
+	--cat-bills: light-dark(#b45309, #f0a35c);   --cat-bills-soft: light-dark(#fef3e2, #3a2a17);   --cat-bills-ink: light-dark(#92400e, #f6c48f);
+	--cat-school: light-dark(#2563eb, #7aa2f7);     --cat-school-soft: light-dark(#e6eefc, #1c2740);     --cat-school-ink: light-dark(#1d4ed8, #a9c1fb);
+	--cat-bank: light-dark(#0f766e, #4fb3a9);      --cat-bank-soft: light-dark(#e3f3f1, #15302d);      --cat-bank-ink: light-dark(#0f766e, #8fd3cb);
+	--cat-shipping: light-dark(#7c3aed, #a78bfa); --cat-shipping-soft: light-dark(#f1eafd, #2a2140); --cat-shipping-ink: light-dark(#6d28d9, #c9b8fc);
+	--cat-account: light-dark(#0891b2, #4cc3dc); --cat-account-soft: light-dark(#e2f5f9, #132f36); --cat-account-ink: light-dark(#0e7490, #8fdcec);
+	--cat-social: light-dark(#db2777, #f472b6);     --cat-social-soft: light-dark(#fce7f1, #3a1a2a);     --cat-social-ink: light-dark(#be185d, #f9a8d4);
+	--cat-promotions: light-dark(#9ca3af, #6b7280); --cat-promotions-soft: light-dark(#f1f3f6, #262a31); --cat-promotions-ink: light-dark(#374151, #c9cdd3);
+}
+[data-category="bills"] { --cat: var(--cat-bills); --cat-soft: var(--cat-bills-soft); --cat-ink: var(--cat-bills-ink); }
+[data-category="school"] { --cat: var(--cat-school); --cat-soft: var(--cat-school-soft); --cat-ink: var(--cat-school-ink); }
+[data-category="bank"] { --cat: var(--cat-bank); --cat-soft: var(--cat-bank-soft); --cat-ink: var(--cat-bank-ink); }
+[data-category="shipping"] { --cat: var(--cat-shipping); --cat-soft: var(--cat-shipping-soft); --cat-ink: var(--cat-shipping-ink); }
+[data-category="account"] { --cat: var(--cat-account); --cat-soft: var(--cat-account-soft); --cat-ink: var(--cat-account-ink); }
+[data-category="social"] { --cat: var(--cat-social); --cat-soft: var(--cat-social-soft); --cat-ink: var(--cat-social-ink); }
+[data-category="promotions"] { --cat: var(--cat-promotions); --cat-soft: var(--cat-promotions-soft); --cat-ink: var(--cat-promotions-ink); }
+
+.b-folders .b-categories-title {
+	padding: 12px 16px 4px;
+	font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+	color: var(--fm-muted);
+}
+.b-folders .b-categories { list-style: none; margin: 0; padding: 0; }
+.b-folders .b-categories a {
+	display: flex; align-items: center; gap: 10px;
+	color: var(--folders-color); text-decoration: none;
+	padding: 6px 10px;
+}
+.b-folders .b-categories a:hover { background-color: var(--fm-surface-2); color: var(--fm-ink); }
+.b-folders .b-categories a.selected { background-color: var(--fm-primary-soft); color: var(--fm-primary); font-weight: 600; }
+.b-folders .b-categories .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--cat); flex-shrink: 0; }
+
+.messageListItem .categoryParent {
+	align-self: flex-start;
+	margin-top: 4px;
+	font-size: 11px; font-weight: 600; line-height: 1.6;
+	padding: 0 8px; border-radius: 999px;
+	background: var(--cat-soft); color: var(--cat-ink);
+	white-space: nowrap;
+}
+.messageAssignedTags [class*="msgflag-bills"], .messageAssignedTags [class*="msgflag-school"],
+.messageAssignedTags [class*="msgflag-bank"], .messageAssignedTags [class*="msgflag-shipping"],
+.messageAssignedTags [class*="msgflag-account"], .messageAssignedTags [class*="msgflag-social"],
+.messageAssignedTags [class*="msgflag-promotions"] { display: none; }   /* shown by the Categoria menu instead */
+
+.messageCategory { display: inline-flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; color: var(--fm-muted); }
+.messageCategory select { width: auto; height: 32px; padding: 0 8px; font-size: 13px; }
+.b-folders .b-categories a { font-style: normal; }
+.messageCategory select { padding-right: 28px; }
+
+/* ================= Quokka layout: what makes it look like the family apps, not like SnappyMail =================
+   (icons are thin strokes, drawn with mask-image over the glyphs SnappyMail puts in its buttons) */
+
+#V-MailMessageList .btn-toolbar a.btn[data-bind*="reload"] { font-size: 0 !important; }
+#V-MailMessageList .btn-toolbar a.btn[data-bind*="reload"]::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M21 12a9 9 0 1 1-2.6-6.4L21 8%22/%3E%3Cpath d=%22M21 3v5h-5%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M21 12a9 9 0 1 1-2.6-6.4L21 8%22/%3E%3Cpath d=%22M21 3v5h-5%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.btn-toolbar a.btn[data-bind*="moveCommand"] { font-size: 0 !important; }
+.btn-toolbar a.btn[data-bind*="moveCommand"]::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.btn-toolbar a.btn[data-bind*="archiveCommand"] { font-size: 0 !important; }
+.btn-toolbar a.btn[data-bind*="archiveCommand"]::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%222%22 y=%223%22 width=%2220%22 height=%225%22 rx=%221%22/%3E%3Cpath d=%22M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%222%22 y=%223%22 width=%2220%22 height=%225%22 rx=%221%22/%3E%3Cpath d=%22M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.btn-toolbar a.btn[data-bind*="spamCommand"]:not([data-bind*="notSpam"]) { font-size: 0 !important; }
+.btn-toolbar a.btn[data-bind*="spamCommand"]:not([data-bind*="notSpam"])::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z%22/%3E%3Cpath d=%22M12 9v4M12 17h.01%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z%22/%3E%3Cpath d=%22M12 9v4M12 17h.01%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.btn-toolbar a.btn[data-bind*="deleteCommand"] { font-size: 0 !important; }
+.btn-toolbar a.btn[data-bind*="deleteCommand"]::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#more-list-dropdown-id { font-size: 0 !important; }
+#more-list-dropdown-id::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%225%22 r=%221%22/%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%221%22/%3E%3Ccircle cx=%2212%22 cy=%2219%22 r=%221%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%225%22 r=%221%22/%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%221%22/%3E%3Ccircle cx=%2212%22 cy=%2219%22 r=%221%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#sort-list-dropdown-id { font-size: 0 !important; }
+#sort-list-dropdown-id::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.top-toolbar .buttonClose { font-size: 0 !important; }
+.top-toolbar .buttonClose::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M18 6 6 18M6 6l12 12%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M18 6 6 18M6 6l12 12%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.top-toolbar .buttonUp { font-size: 0 !important; }
+.top-toolbar .buttonUp::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m15 18-6-6 6-6%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m15 18-6-6 6-6%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.top-toolbar .buttonDown { font-size: 0 !important; }
+.top-toolbar .buttonDown::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m9 18 6-6-6-6%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m9 18 6-6-6-6%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.message-fixed-button-toolbar .buttonReply { font-size: 0 !important; }
+.message-fixed-button-toolbar .buttonReply::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M9 14 4 9l5-5%22/%3E%3Cpath d=%22M4 9h11a5 5 0 0 1 5 5v6%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M9 14 4 9l5-5%22/%3E%3Cpath d=%22M4 9h11a5 5 0 0 1 5 5v6%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.message-fixed-button-toolbar .buttonReplyAll { font-size: 0 !important; }
+.message-fixed-button-toolbar .buttonReplyAll::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m7 17-5-5 5-5%22/%3E%3Cpath d=%22m12 17-5-5 5-5%22/%3E%3Cpath d=%22M22 18v-2a4 4 0 0 0-4-4H7%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m7 17-5-5 5-5%22/%3E%3Cpath d=%22m12 17-5-5 5-5%22/%3E%3Cpath d=%22M22 18v-2a4 4 0 0 0-4-4H7%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.message-fixed-button-toolbar .buttonForward { font-size: 0 !important; }
+.message-fixed-button-toolbar .buttonForward::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m15 14 5-5-5-5%22/%3E%3Cpath d=%22M20 9H9a5 5 0 0 0-5 5v6%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m15 14 5-5-5-5%22/%3E%3Cpath d=%22M20 9H9a5 5 0 0 0-5 5v6%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.message-fixed-button-toolbar .dropdown-toggle { font-size: 0 !important; }
+.message-fixed-button-toolbar .dropdown-toggle::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%225%22 r=%221%22/%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%221%22/%3E%3Ccircle cx=%2212%22 cy=%2219%22 r=%221%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%225%22 r=%221%22/%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%221%22/%3E%3Ccircle cx=%2212%22 cy=%2219%22 r=%221%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#top-system-dropdown-id i.fontastic { font-size: 0 !important; }
+#top-system-dropdown-id i.fontastic::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%228%22 r=%224%22/%3E%3Cpath d=%22M4 21a8 8 0 0 1 16 0%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%228%22 r=%224%22/%3E%3Cpath d=%22M4 21a8 8 0 0 1 16 0%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.b-folders .buttonCompose i, #V-MailMessageList .buttonCompose i { font-size: 0 !important; }
+.b-folders .buttonCompose i, #V-MailMessageList .buttonCompose i::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 20h9%22/%3E%3Cpath d=%22M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 20h9%22/%3E%3Cpath d=%22M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.b-folders .buttonContacts { font-size: 0 !important; }
+.b-folders .buttonContacts::before { content: "" !important; display: inline-block; width: 18px; height: 18px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2%22/%3E%3Ccircle cx=%229%22 cy=%227%22 r=%224%22/%3E%3Cpath d=%22M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2%22/%3E%3Ccircle cx=%229%22 cy=%227%22 r=%224%22/%3E%3Cpath d=%22M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.messageListItem .flagParent { font-size: 0 !important; }
+.messageListItem .flagParent::before { content: "" !important; display: inline-block; width: 16px; height: 16px; vertical-align: middle; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#V-MailMessageList .btn-toolbar a.btn[data-bind*="reload"] i { display: none; }
+.b-folders .buttonCompose i, #V-MailMessageList .buttonCompose i { font-style: normal; }
+.messageListItem .flagParent::after { display: none; }
+.messageListItem.msgflag-\\flagged .flagParent::before { color: #b45309; -webkit-mask-image: none; mask-image: none; background: none; content: "★" !important; font-size: 15px; width: auto; height: auto; }
+.b-folders .b-content a[data-icon="📥"]::before { content: "" !important; display: inline-block; width: 16px; height: 16px; margin-right: 10px; vertical-align: -3px; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M22 12h-6l-2 3h-4l-2-3H2%22/%3E%3Cpath d=%22M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M22 12h-6l-2 3h-4l-2-3H2%22/%3E%3Cpath d=%22M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.b-folders .b-content a[data-icon="📧"]::before { content: "" !important; display: inline-block; width: 16px; height: 16px; margin-right: 10px; vertical-align: -3px; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m22 2-7 20-4-9-9-4Z%22/%3E%3Cpath d=%22M22 2 11 13%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m22 2-7 20-4-9-9-4Z%22/%3E%3Cpath d=%22M22 2 11 13%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.b-folders .b-content a[data-icon="🗎"]::before { content: "" !important; display: inline-block; width: 16px; height: 16px; margin-right: 10px; vertical-align: -3px; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 20h9%22/%3E%3Cpath d=%22M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 20h9%22/%3E%3Cpath d=%22M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.b-folders .b-content a[data-icon="⚠"]::before { content: "" !important; display: inline-block; width: 16px; height: 16px; margin-right: 10px; vertical-align: -3px; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z%22/%3E%3Cpath d=%22M12 9v4M12 17h.01%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z%22/%3E%3Cpath d=%22M12 9v4M12 17h.01%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.b-folders .b-content a[data-icon="🗑"]::before { content: "" !important; display: inline-block; width: 16px; height: 16px; margin-right: 10px; vertical-align: -3px; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.b-folders .b-content a[data-icon="🗄"]::before { content: "" !important; display: inline-block; width: 16px; height: 16px; margin-right: 10px; vertical-align: -3px; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%222%22 y=%223%22 width=%2220%22 height=%225%22 rx=%221%22/%3E%3Cpath d=%22M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%222%22 y=%223%22 width=%2220%22 height=%225%22 rx=%221%22/%3E%3Cpath d=%22M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4%22/%3E%3C/svg%3E") center / contain no-repeat; }
+
+/* ---------- toolbars: quiet icon buttons, no frames ---------- */
+#rl-right .btn-toolbar .btn, #rl-right .top-toolbar .btn, .message-fixed-button-toolbar .btn {
+	border-color: transparent !important;
+	background-color: transparent;
+	min-width: 36px; height: 36px; padding: 0 8px;
+	display: inline-flex; align-items: center; justify-content: center;
+	color: var(--fm-ink-2);
+}
+#rl-right .btn-toolbar .btn:hover, #rl-right .top-toolbar .btn:hover, .message-fixed-button-toolbar .btn:hover { background-color: var(--fm-surface-2); }
+#rl-right .btn-toolbar .btn-group > .btn { margin: 0; }
+#top-system-dropdown-id { border-color: var(--fm-line) !important; border-radius: 999px !important; padding: 0 12px; height: 36px; }
+#top-system-dropdown-id::after { content: none; }
+
+/* ---------- the left column: name, a wide Scrivi, folders, categories, the account at the bottom ---------- */
+.b-folders { display: flex; flex-direction: column; }
+.b-folders .quokka-brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px 6px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--fm-ink); }
+.b-folders .quokka-logo { width: 32px; height: 32px; border-radius: 8px; background: var(--fm-primary); display: grid; place-items: center; }
+.b-folders .quokka-logo svg, .quokka-account svg, .quokka-tabbar svg, .quokka-head svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.b-folders .quokka-logo svg { stroke: var(--fm-primary-ink); }
+.b-folders .b-toolbar { padding: 12px 14px !important; display: flex; gap: 6px; }
+.b-folders .b-toolbar .buttonCompose { flex: 1; }
+.b-folders .b-toolbar .buttonContacts { width: 44px; height: 44px; border-radius: 10px !important; display: inline-flex; align-items: center; justify-content: center; }
+.b-folders .b-content { flex: 1; }
+.b-folders .b-content a { display: flex; align-items: center; padding: 8px 10px !important; }
+.quokka-account {
+	display: flex; align-items: center; gap: 10px; margin: 8px 12px; padding: 10px;
+	border: 1px solid var(--fm-line); border-radius: 10px; background: var(--fm-surface);
+	color: var(--fm-ink-2); text-decoration: none; font-size: 13px;
+}
+.quokka-account:hover { background: var(--fm-surface-2); }
+.quokka-account-email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--fm-ink); }
+.quokka-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--fm-primary-soft); color: var(--fm-primary); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+.b-folders .b-footer { border: 0; padding: 0 12px 10px !important; }
+
+/* ---------- the list: heading, filters, rows on several lines ---------- */
+.quokka-head { display: flex; align-items: baseline; gap: 10px; padding: 16px 16px 4px; }
+.quokka-head .quokka-title { margin: 0; flex: 1; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--fm-ink); line-height: 1.3; }
+.quokka-head .quokka-unread { font-size: 12px; color: var(--fm-muted); white-space: nowrap; }
+.quokka-head .quokka-menu { display: none; }
+.messageList .second-toolbar { border-bottom: 0 !important; padding: 8px 16px 4px !important; background: transparent !important; }
+.messageList .second-toolbar .checkboxCheckAll { display: none; }
+.messageList .inputSearch { height: 38px; padding-left: 12px !important; }
+.quokka-filters { display: flex; gap: 6px; padding: 6px 16px 10px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--fm-line); }
+.quokka-filters a {
+	flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+	height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--fm-line);
+	background: var(--fm-surface); color: var(--fm-ink-2); font-size: 12px; text-decoration: none;
+}
+.quokka-filters a.selected { border-color: var(--fm-primary); background: var(--fm-primary-soft); color: var(--fm-primary); font-weight: 600; }
+.quokka-filters .dot { display: none; width: 8px; height: 8px; border-radius: 2px; background: var(--cat); }
+.quokka-filters a[data-category] .dot { display: inline-block; }
+.quokka-filters a.phone-only { display: none; }
+
+.messageListItem { padding: 10px 0 10px 4px; }
+.messageListItem .messageCheckbox { padding-top: 2px; }
+.messageListItem > div:last-child {
+	flex: 1; min-width: 0;
+	display: grid !important;
+	grid-template-columns: minmax(0, 1fr) auto auto;
+	grid-template-areas: "sender time flag" "subject subject attach" "preview preview preview" "chip chip chip";
+	column-gap: 8px; row-gap: 1px; padding-right: 14px; align-items: center;
+}
+.messageListItem .senderParent { grid-area: sender; flex: none !important; font-size: 14px; }
+.messageListItem time { grid-area: time; }
+.messageListItem .flagParent { grid-area: flag; margin: 0 !important; min-width: 0 !important; color: var(--fm-muted); opacity: .6; }
+.messageListItem .subjectParent { grid-area: subject; font-size: 14px; }
+.messageListItem .attachmentParent { grid-area: attach; margin: 0 !important; color: var(--fm-muted); }
+.messageListItem .previewParent { grid-area: preview; font-size: 13px; }
+.messageListItem .categoryParent { grid-area: chip; justify-self: start; margin-top: 5px; }
+.messageListItem .threads-len { grid-area: attach; }
+.messageListItem.unseen .senderParent::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--fm-primary); margin-right: 8px; vertical-align: 1px; }
+.messageListItem.unseen { border-left-color: transparent !important; }
+.messageListItem.selected, .messageListItem.focused.selected { border-left-color: var(--fm-primary) !important; }
+
+/* ---------- reading ---------- */
+.messageItemHeader .subjectParent { font-size: 22px !important; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; }
+.top-toolbar { padding: 8px 12px !important; }
+
+/* ---------- phone ---------- */
+.quokka-tabbar { display: none; }
+@media screen and (max-width: 1023px) {
+	.quokka-head { padding: 12px 14px 4px; align-items: center; }
+	.quokka-head .quokka-menu { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: var(--fm-surface-2); color: var(--fm-ink-2); }
+	.quokka-head .quokka-title { font-size: 22px; }
+	.quokka-filters a.phone-only { display: inline-flex; }
+	.quokka-filters a[href$="attachment=1"] { display: none; }
+	#V-MailMessageList > .btn-toolbar { height: 0; padding: 0; overflow: visible; }
+	#V-MailMessageList > .btn-toolbar > *:not(.buttonCompose) { display: none !important; }
+	.messageList { border-radius: 0 !important; border: 0 !important; }
+	.messageList .b-content { padding-bottom: 140px; }
+	.messageList .b-footer { display: none; }
+	.quokka-tabbar {
+		position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+		display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+		height: calc(64px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+		background: var(--fm-surface); border-top: 1px solid var(--fm-line);
+	}
+	.quokka-tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--fm-muted); font-size: 11px; text-decoration: none; }
+	.quokka-tabbar a.selected { color: var(--fm-primary); font-weight: 600; }
+	.quokka-tabbar svg { width: 22px; height: 22px; }
+	/* Scrivi floats above the menu, under the thumb */
+	#V-MailMessageList .buttonCompose {
+		position: fixed !important; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 91;
+		display: inline-flex !important; align-items: center; gap: 8px;
+		height: 52px; padding: 0 18px !important; border-radius: 16px !important;
+		box-shadow: 0 8px 24px rgba(17, 24, 39, .18) !important; font-size: 14px;
+	}
+	#V-MailMessageList .buttonCompose::after { content: "Scrivi"; font-weight: 600; }
+	#rl-left { width: 82vw !important; box-shadow: 0 0 40px rgba(17, 24, 39, .25); }
+}
+
+/* ---------- fixes after a look at the result ---------- */
+.b-folders .b-categories a, .b-folders .b-categories a * { font-style: normal !important; }
+.quokka-head .toggleLeft::before, .quokka-tabbar .toggleLeft::before { content: none !important; display: none !important; }
+.messageListItem .subjectParent, .messageListItem .senderParent, .messageListItem .previewParent { width: auto !important; max-width: none !important; justify-self: stretch; }
+.b-folders .b-toolbar .buttonCompose { width: 100%; }
+.b-folders .b-footer { display: none; }
+.quokka-account svg { opacity: .6; }
+@media screen and (max-width: 1023px) {
+	.messageListItem .messageCheckbox { display: none; }
+	.messageListItem { padding-left: 14px; }
+	.quokka-head { padding-right: 60px; }
+	.quokka-head .quokka-unread { display: none; }
+}
+.b-folders .b-toolbar { display: flex !important; }
+.b-folders .b-toolbar .buttonCompose { flex: 1 1 auto !important; }
+.b-folders .b-content > .e-checkbox { display: none; }        /* "Non letti" filters folders, not emails: the list has its own filter */
+.messageItemHeader .subjectParent { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
+#rl-left .b-folders .buttonCompose { max-width: none; max-height: none; width: auto; }
+
+/* ================= Settings: like the family apps (menu with icons, cards of options, switches) ================= */
+#V-SettingsMenu nav a[data-route="general"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#V-SettingsMenu nav a[data-route="accounts"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%228%22 r=%224%22/%3E%3Cpath d=%22M4 21a8 8 0 0 1 16 0%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%228%22 r=%224%22/%3E%3Cpath d=%22M4 21a8 8 0 0 1 16 0%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#V-SettingsMenu nav a[data-route="contacts"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2%22/%3E%3Ccircle cx=%229%22 cy=%227%22 r=%224%22/%3E%3Cpath d=%22M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2%22/%3E%3Ccircle cx=%229%22 cy=%227%22 r=%224%22/%3E%3Cpath d=%22M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#V-SettingsMenu nav a[data-route="filters"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M22 3H2l8 9.5V19l4 2v-8.5z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M22 3H2l8 9.5V19l4 2v-8.5z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#V-SettingsMenu nav a[data-route="security"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%2211%22 width=%2218%22 height=%2211%22 rx=%222%22/%3E%3Cpath d=%22M7 11V7a5 5 0 0 1 10 0v4%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%2211%22 width=%2218%22 height=%2211%22 rx=%222%22/%3E%3Cpath d=%22M7 11V7a5 5 0 0 1 10 0v4%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#V-SettingsMenu nav a[data-route="folders"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+#V-SettingsMenu nav a[data-route="themes"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2210%22/%3E%3Cpath d=%22M12 2a10 10 0 0 0 0 20z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2210%22/%3E%3Cpath d=%22M12 2a10 10 0 0 0 0 20z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+
+/* the menu: the app's name, back to the mail, the pages, the account */
+#V-SettingsMenu { display: flex; flex-direction: column; height: 100%; }
+#V-SettingsMenu > .b-toolbar { display: none; }
+#V-SettingsMenu .quokka-back {
+	display: flex; align-items: center; gap: 8px; margin: 10px 14px 4px; height: 40px; padding: 0 12px;
+	border: 1px solid var(--fm-line); border-radius: 10px; background: var(--fm-surface);
+	color: var(--fm-ink-2); text-decoration: none; font-weight: 600; font-size: 14px;
+}
+#V-SettingsMenu .quokka-back:hover { background: var(--fm-surface-2); color: var(--fm-ink); }
+#V-SettingsMenu .quokka-back svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#V-SettingsMenu .quokka-brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px 6px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--fm-ink); }
+#V-SettingsMenu .quokka-logo { width: 32px; height: 32px; border-radius: 8px; background: var(--fm-primary); display: grid; place-items: center; }
+#V-SettingsMenu .quokka-logo svg { width: 18px; height: 18px; fill: none; stroke: var(--fm-primary-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#V-SettingsMenu .quokka-settings-title { padding: 16px 16px 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fm-muted); }
+#V-SettingsMenu nav { display: flex; flex-direction: column; gap: 2px; padding: 0 6px; flex: 1; }
+#V-SettingsMenu nav a {
+	display: flex !important; align-items: center; gap: 10px; padding: 9px 10px !important; border-radius: 8px;
+	color: var(--fm-ink-2) !important; background: none !important; font-size: 14px !important; text-decoration: none;
+}
+#V-SettingsMenu nav a:hover { background: var(--fm-surface-2) !important; color: var(--fm-ink) !important; }
+#V-SettingsMenu nav a.selected { background: var(--fm-primary-soft) !important; color: var(--fm-primary) !important; font-weight: 600; }
+#V-SettingsMenu .quokka-account-static { margin: 8px 12px 12px; }
+
+/* the page: a column of cards on the grey background */
+#V-SettingsPane { background: transparent !important; border: 0 !important; box-shadow: none !important; overflow-y: auto; }
+#V-SettingsPane > .btn-toolbar { display: none; }
+#V-SettingsPane > div:not(.btn-toolbar) { max-width: 760px; margin: 0 auto; padding: 8px 24px 48px; box-sizing: border-box; }
+#V-SettingsPane .form-horizontal { display: flex; flex-direction: column; }
+#V-SettingsPane .legend {
+	font-size: 18px !important; font-weight: 700; letter-spacing: -0.02em; color: var(--fm-ink);
+	border: 0 !important; margin: 26px 0 10px !important; padding: 0 !important; line-height: 1.3;
+}
+#V-SettingsPane .form-horizontal > .legend:first-child { margin-top: 12px !important; }
+#V-SettingsPane .control-group {
+	display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+	margin: 0 !important; padding: 12px 16px; min-height: 52px; box-sizing: border-box;
+	background: var(--fm-surface); border: 1px solid var(--fm-line); border-top-width: 0;
+}
+#V-SettingsPane .legend + .control-group, #V-SettingsPane .form-horizontal > .control-group:first-child { border-top-width: 1px; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+#V-SettingsPane .control-group:has(+ .legend), #V-SettingsPane .control-group:last-child { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+#V-SettingsPane .control-group > label {
+	float: none !important; width: auto !important; text-align: left !important; padding: 0 !important; margin: 0 !important;
+	flex: 1 1 200px; color: var(--fm-ink); font-size: 14px;
+}
+#V-SettingsPane .control-group > div, #V-SettingsPane .control-group > select, #V-SettingsPane .control-group > b { margin: 0 !important; }
+#V-SettingsPane .control-group > div:only-child { flex: 1; }
+#V-SettingsPane .control-group select, #V-SettingsPane .control-group .select { min-width: 220px; height: 38px; }
+#V-SettingsPane .control-group input[type="text"], #V-SettingsPane .control-group input[type="number"] { height: 38px; }
+#V-SettingsPane .editMainIdentity { border-bottom: 0 !important; color: var(--fm-primary); cursor: pointer; font-weight: 600; }
+#V-SettingsPane .btn { height: 38px; }
+
+/* switches instead of SnappyMail's tick boxes */
+.e-checkbox.material-design { display: flex !important; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: 16px; width: 100% !important; cursor: pointer; line-height: 1.4 !important; }
+.e-checkbox.material-design > span { flex: 1; color: var(--fm-ink); font-size: 14px; }
+.e-checkbox.material-design > div { width: 42px !important; height: 24px; flex-shrink: 0; position: relative; }
+.e-checkbox.material-design input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+.e-checkbox.material-design > div > div,
+.e-checkbox.material-design input:checked + div {
+	position: absolute; inset: 0; width: 42px !important; height: 24px !important; border: 0 !important; transform: none !important;
+	border-radius: 999px; background: var(--fm-line-strong); animation: none !important; transition: background .15s;
+}
+.e-checkbox.material-design > div > div::after {
+	content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+	background: #fff; box-shadow: 0 1px 2px rgba(17, 24, 39, .25); transition: left .15s;
+}
+.e-checkbox.material-design input:checked + div { background: var(--fm-primary); }
+.e-checkbox.material-design input:checked + div::after { left: 21px; }
+.e-checkbox.material-design input:focus-visible + div { outline: 2px solid var(--fm-primary); outline-offset: 2px; }
+.e-checkbox.material-design.disabled { opacity: .5; }
+
+/* phone: the pages as a row of pills on top, then the cards */
+@media screen and (max-width: 1023px) {
+	#rl-content:has(#V-SettingsMenu:not([hidden])) { flex-direction: column; }
+	html #rl-left:has(#V-SettingsMenu:not([hidden])) {
+		display: block !important; position: static !important; width: auto !important; height: auto !important;
+		box-shadow: none !important; border: 0 !important; resize: none !important; background: var(--fm-bg) !important;
+	}
+	#V-SettingsMenu .quokka-brand, #V-SettingsMenu .quokka-settings-title, #V-SettingsMenu .quokka-account-static { display: none; }
+	#V-SettingsMenu .quokka-back { margin: 12px 14px 8px; width: max-content; }
+	#V-SettingsMenu nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; padding: 0 14px 8px; gap: 6px; }
+	#V-SettingsMenu nav a { flex-shrink: 0; height: 36px; padding: 0 12px !important; border: 1px solid var(--fm-line); border-radius: 999px !important; background: var(--fm-surface) !important; font-size: 13px !important; }
+	#V-SettingsMenu nav a.selected { border-color: var(--fm-primary); }
+	#V-SettingsMenu nav a::before { width: 15px !important; height: 15px !important; }
+	#V-SettingsPane > div:not(.btn-toolbar) { padding: 0 14px 40px; }
+	#V-SettingsPane .control-group select, #V-SettingsPane .control-group .select { min-width: 0; width: 100%; }
+}
+
+/* ---------- folders: make and arrange them from the column ---------- */
+.quokka-folder-actions { display: flex; gap: 4px; padding: 6px 6px 0; border-top: 1px solid var(--fm-line); margin-top: 8px; }
+.quokka-folder-actions a { display: inline-flex !important; align-items: center; gap: 6px; padding: 6px 10px !important; border-radius: 8px; color: var(--fm-muted) !important; font-size: 13px; text-decoration: none; font-style: normal !important; }
+.quokka-folder-actions a:hover { background: var(--fm-surface-2); color: var(--fm-ink) !important; }
+.quokka-folder-actions svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.quokka-folder-actions a::before { content: none !important; }
+
+/* ---------- search: one field with a magnifier, the advanced search as an icon inside it ---------- */
+.messageList .second-toolbar { display: flex !important; align-items: center; position: relative; }
+.messageList .second-toolbar .search-input-wrp { flex: 1; position: relative; margin: 0 !important; }
+.messageList .second-toolbar .search-input-wrp::before {
+	content: ""; position: absolute; left: 12px; top: 50%; width: 16px; height: 16px; margin-top: -8px; z-index: 1;
+	background-color: var(--fm-muted); pointer-events: none; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%227%22/%3E%3Cpath d=%22m20 20-3.5-3.5%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%227%22/%3E%3Cpath d=%22m20 20-3.5-3.5%22/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.messageList .inputSearch {
+	width: 100% !important; height: 40px !important; box-sizing: border-box;
+	padding: 0 76px 0 38px !important; border-radius: 10px !important; font-size: 14px;
+	background-color: var(--fm-surface-2) !important; border: 1px solid transparent !important;
+}
+.messageList .inputSearch:focus { background-color: var(--fm-surface) !important; border-color: var(--fm-primary) !important; outline: 3px solid var(--fm-primary-soft); }
+.messageList .second-toolbar .closeSearch { position: absolute; right: 44px; top: 50%; transform: translateY(-50%); margin: 0; font-size: 20px; color: var(--fm-muted); opacity: 1 !important; text-decoration: none; }
+.messageList .second-toolbar .buttonMoreSearch {
+	position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
+	width: 34px; height: 34px; padding: 0 !important; border: 0 !important; background: transparent !important;
+	font-size: 0 !important; color: var(--fm-muted); border-radius: 8px !important;
+}
+.messageList .second-toolbar .buttonMoreSearch:hover { color: var(--fm-ink); background: var(--fm-line) !important; }
+.messageList .second-toolbar .buttonMoreSearch::before { content: ""; display: block; width: 16px; height: 16px; margin: 9px auto; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.messageList .listSearchDesc { padding: 8px 16px; font-size: 13px; color: var(--fm-muted); border-bottom: 1px solid var(--fm-line); }
+
+/* ---------- dialogs (advanced search, new folder…): a card, labels above the fields ---------- */
+.modal, dialog { border: 1px solid var(--fm-line) !important; border-radius: 14px !important; background: var(--fm-surface) !important; }
+.modal header, dialog header { padding: 16px 20px !important; border-bottom: 1px solid var(--fm-line) !important; background: transparent !important; }
+.modal header h3, dialog header h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.modal header .close, dialog header .close { font-size: 22px; color: var(--fm-muted); opacity: 1; }
+.modal .modal-body, dialog .modal-body { padding: 18px 20px !important; }
+.modal footer, dialog footer, .modal .modal-footer, dialog .modal-footer { padding: 14px 20px !important; border-top: 1px solid var(--fm-line) !important; background: transparent !important; box-shadow: none !important; }
+#advancedsearchform .control-group { display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 12px !important; }
+#advancedsearchform .control-group > label { float: none !important; width: auto !important; text-align: left !important; padding: 0 !important; font-size: 13px; font-weight: 600; color: var(--fm-ink-2); }
+#advancedsearchform .control-group > input, #advancedsearchform .control-group select { width: 100% !important; height: 40px; margin: 0 !important; box-sizing: border-box; }
+#advancedsearchform .control-group > div { margin: 0 !important; }
+
+/* ---------- settings on the phone: the page as wide as the screen ---------- */
+@media screen and (max-width: 1023px) {
+	#rl-content:has(#V-SettingsMenu:not([hidden])) #rl-right { width: auto !important; flex: 1 1 auto; position: relative; }
+	#rl-content:has(#V-SettingsMenu:not([hidden])) #V-SystemDropDown .btn-toolbar { justify-content: flex-end; padding: 0 14px; }
+	#V-SettingsPane .control-group { padding: 12px 14px; }
+	#V-SettingsPane .control-group > label { flex-basis: 100%; }
+}
+.quokka-folder-actions a { white-space: nowrap; }
+.quokka-folder-actions svg { width: 16px; height: 16px; }
+/* dialogs: labels above the fields, the main button in the family's blue */
+.modal .modal-body.form-horizontal .control-group, dialog .modal-body.form-horizontal .control-group { display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 12px !important; }
+.modal .modal-body.form-horizontal .control-group > label, dialog .modal-body.form-horizontal .control-group > label { float: none !important; width: auto !important; text-align: left !important; padding: 0 !important; font-size: 13px; font-weight: 600; color: var(--fm-ink-2); }
+.modal .modal-body.form-horizontal .control-group > div, dialog .modal-body.form-horizontal .control-group > div { margin: 0 !important; }
+.modal .modal-body.form-horizontal .control-group input[type="text"], .modal .modal-body.form-horizontal .control-group select,
+dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .modal-body.form-horizontal .control-group select { width: 100% !important; height: 40px; box-sizing: border-box; }
+.modal footer .btn:last-child, dialog footer .btn:last-child, .modal .modal-footer .btn:last-child, dialog .modal-footer .btn:last-child {
+	background: var(--fm-primary) !important; border-color: var(--fm-primary) !important; color: var(--fm-primary-ink) !important; font-weight: 600; height: 40px; padding: 0 18px;
+}
+.modal .modal-body.form-horizontal .control-group *, dialog .modal-body.form-horizontal .control-group * { margin-left: 0 !important; }
+.modal .modal-body.form-horizontal .control-group > div, dialog .modal-body.form-horizontal .control-group > div { width: 100%; }
+.quokka-folder-actions { justify-content: space-between; }
+.quokka-folder-actions a + a span { display: none; }
+
+/* ---------- the open email: subject, sender with initial, actions with words ---------- */
+.messageView .b-message > .messageItemHeader { padding: 18px 22px 6px !important; border: 0 !important; }
+.messageView .messageItemHeader .subjectParent { display: flex; align-items: flex-start; gap: 8px; }
+.messageView .messageItemHeader .subjectParent .subject { flex: 1; }
+.messageView .messageItemHeader .subjectParent .close { display: none; }          /* the toolbar has one */
+.messageView .messageItemHeader .infoParent, .messageView .messageItemHeader .flagParent { order: 2; font-size: 16px; opacity: .55; padding-top: 6px; cursor: pointer; }
+.messageView .messageItemHeader .infoParent:hover, .messageView .messageItemHeader .flagParent:hover { opacity: 1; }
+.messageView .messageItemHeader .flagParent.flagOn { color: #b45309; opacity: 1; }
+.messageView .b-message > .messageItemHeader .informationShort { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 14px; }
+.quokka-sender-avatar { width: 40px !important; height: 40px !important; font-size: 16px !important; }
+.messageView .informationShort .from { color: var(--fm-ink); font-weight: 600; }
+.messageView .informationShort .from a { color: var(--fm-muted); font-weight: 400; text-decoration: none; }
+.message-fixed-button-toolbar { top: 14px !important; right: 14px !important; }
+.message-fixed-button-toolbar .buttonReply, .message-fixed-button-toolbar .buttonReplyAll { display: none !important; }   /* the buttons with words below */
+
+.quokka-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 22px 14px; border-bottom: 1px solid var(--fm-line); }
+.quokka-actions .btn { display: inline-flex !important; align-items: center; gap: 8px; height: 38px; padding: 0 14px !important; font-size: 13px; font-weight: 600; color: var(--fm-ink-2); }
+.quokka-actions .btn:first-child { background: var(--fm-primary) !important; border-color: var(--fm-primary) !important; color: var(--fm-primary-ink) !important; }
+.quokka-actions svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.quokka-actions .btn.disabled { display: none !important; }
+
+#messageItem > .messageItemHeader { padding: 12px 22px !important; font-size: 13px; color: var(--fm-muted); }
+#messageItem > .messageItemHeader .date { color: var(--fm-muted); }
+.messageCategory, .messageTags { display: inline-flex !important; vertical-align: middle; }
+.messageTags { align-items: center; gap: 4px; margin-left: 8px; }
+.messageTags > span:first-child { display: none; }            /* "Tag:" */
+.messageTags { font-size: 0; }                                   /* the ":" after it */
+.messageTags > * { font-size: 13px; }
+#messageItem .b-text-part, #messageItem .bodyText { padding: 18px 22px !important; }
+@media screen and (max-width: 1023px) {
+	.quokka-actions { padding: 8px 14px 12px; }
+	.quokka-actions .btn { flex: 1; justify-content: center; padding: 0 8px !important; }
+
+	.messageView .b-message > .messageItemHeader { padding: 14px 14px 4px !important; }
+	#messageItem > .messageItemHeader { padding: 10px 14px !important; }
+}
+.messageView .messageItemHeader .subjectParent .subject { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
+#messageItem .b-text-part .b-text-part, #messageItem .bodyText .b-text-part { padding: 0 !important; }
+
+/* ---------- the bill box (Quokka): what it says, to paTrack and doTrack ---------- */
+.quokka-bill { margin: 14px 22px 4px; padding: 14px 16px; border: 1px solid var(--fm-line); border-radius: 12px; background: var(--fm-surface); display: flex; flex-direction: column; gap: 12px; }
+.quokka-bill-intro { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fm-muted); }
+.quokka-bill-intro svg, .quokka-bill-actions svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.quokka-bill-intro svg { stroke: var(--fm-primary); }
+.quokka-bill-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.quokka-bill-facts > div { padding: 10px 12px; border-radius: 8px; background: var(--fm-surface-2); display: flex; flex-direction: column; min-width: 0; }
+.quokka-bill-facts span { font-size: 12px; color: var(--fm-muted); }
+.quokka-bill-facts b { font-size: 17px; font-weight: 700; color: var(--fm-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quokka-bill-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.quokka-bill-actions .btn { display: inline-flex !important; align-items: center; gap: 8px; height: 40px; padding: 0 16px !important; font-size: 13px; font-weight: 600; border-color: var(--fm-primary) !important; color: var(--fm-primary) !important; }
+.quokka-bill-actions .btn.quokka-primary { background: var(--fm-primary) !important; color: var(--fm-primary-ink) !important; }
+.quokka-bill-actions .btn.disabled { opacity: .5; pointer-events: none; }
+.quokka-bill-no { font-size: 13px; color: var(--fm-muted); text-decoration: none; padding: 0 8px; }
+.quokka-bill-no:hover { color: var(--fm-ink); }
+.quokka-bill-status { font-size: 13px; color: var(--fm-ink-2); }
+@media screen and (max-width: 1023px) {
+	.quokka-bill { margin: 10px 14px 4px; }
+	.quokka-bill-facts { gap: 6px; }
+	.quokka-bill-facts b { font-size: 15px; }
+	.quokka-bill-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
+
+/* ---------- Settings → Family apps ---------- */
+.quokka-apps-settings .quokka-note { color: var(--fm-muted); font-size: 13px; }
+.quokka-apps-settings .quokka-note a { color: var(--fm-danger); white-space: nowrap; }
+.quokka-apps-settings .control-group input[type="password"] { flex: 1 1 260px; height: 38px; }
+.quokka-apps-settings .quokka-save { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+.quokka-apps-settings .quokka-save .btn { height: 40px; padding: 0 20px; }
+.quokka-apps-settings .quokka-error { color: var(--fm-danger); }
+#V-SettingsMenu nav a[data-route="family-apps"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%223%22 width=%227%22 height=%227%22 rx=%221%22/%3E%3Crect x=%2214%22 y=%223%22 width=%227%22 height=%227%22 rx=%221%22/%3E%3Crect x=%223%22 y=%2214%22 width=%227%22 height=%227%22 rx=%221%22/%3E%3Crect x=%2214%22 y=%2214%22 width=%227%22 height=%227%22 rx=%221%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%223%22 width=%227%22 height=%227%22 rx=%221%22/%3E%3Crect x=%2214%22 y=%223%22 width=%227%22 height=%227%22 rx=%221%22/%3E%3Crect x=%223%22 y=%2214%22 width=%227%22 height=%227%22 rx=%221%22/%3E%3Crect x=%2214%22 y=%2214%22 width=%227%22 height=%227%22 rx=%221%22/%3E%3C/svg%3E") center / contain no-repeat; }
+
+/* ---------- the bottom menu on every screen of the phone ---------- */
+.quokka-tabbar a.tab-mail { color: var(--fm-primary); font-weight: 600; }
+#rl-content:has(#V-SettingsMenu:not([hidden])) .quokka-tabbar a.tab-mail { color: var(--fm-muted); font-weight: 400; }
+#rl-content:has(#V-SettingsMenu:not([hidden])) .quokka-tabbar a.tab-settings { color: var(--fm-primary); font-weight: 600; }
+.quokka-tabbar a.tab-categories::before { content: none !important; display: none !important; }
+@media screen and (max-width: 1023px) {
+	#V-SettingsPane > div:not(.btn-toolbar) { padding-bottom: 96px !important; }
+	.messageView, #messageItem { padding-bottom: 80px; }
+}
+
+/* ---------- sign in with Pocket ID (quokka-sso) ---------- */
+.quokka-sso { margin-top: 6px; }
+.quokka-sso-or { display: flex; align-items: center; gap: 10px; color: var(--fm-muted); font-size: 12px; margin: 4px 0 12px; }
+.quokka-sso-or::before, .quokka-sso-or::after { content: ""; flex: 1; height: 1px; background: var(--fm-line); }
+.quokka-sso-button { display: flex !important; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 44px; box-sizing: border-box; border-radius: 10px !important; font-weight: 600; color: var(--fm-primary) !important; border-color: var(--fm-primary) !important; text-decoration: none; }
+.quokka-sso-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#V-SettingsMenu nav a[data-route="sign-in"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22/%3E%3Cpath d=%22m9 12 2 2 4-4%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22/%3E%3Cpath d=%22m9 12 2 2 4-4%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.quokka-sso-button { text-transform: none !important; font-size: 15px; }
+
+/* ---------- phone: the column as a whole screen, one place for the categories ---------- */
+@media screen and (max-width: 1023px) {
+	#rl-left {
+		width: 100vw !important; max-width: none !important; min-width: 0 !important; resize: none !important;
+		bottom: calc(64px + env(safe-area-inset-bottom)) !important; height: auto !important;
+		box-shadow: none !important; border: 0 !important; background: var(--fm-bg) !important; z-index: 95 !important;
+	}
+	#rl-left .b-folders { height: 100%; overflow-y: auto; }
+	#rl-left .b-folders .b-content { flex: 0 0 auto; }
+	#rl-left .quokka-account { margin-top: auto; }
+	#rl-left .b-folders .b-content a { font-size: 16px; padding: 12px 12px !important; }
+	#rl-left .b-folders .b-categories a { font-size: 16px; padding: 12px 12px !important; }
+	/* the column has its own Scrivi */
+	html:not(.rl-left-panel-disabled) #V-MailMessageList .buttonCompose { display: none !important; }
+	/* the bottom menu says where you are */
+	html:not(.rl-left-panel-disabled) .quokka-tabbar a.tab-categories { color: var(--fm-primary); font-weight: 600; }
+	html:not(.rl-left-panel-disabled) .quokka-tabbar a.tab-mail { color: var(--fm-muted); font-weight: 400; }
+	/* the categories live in the column: over the list only the quick filters */
+	.quokka-filters a.phone-only { display: none !important; }
+	.quokka-filters a[href$="attachment=1"] { display: inline-flex !important; }
+	/* settings: the bottom menu leads back to the mail */
+	#V-SettingsMenu .quokka-back { display: none !important; }
+	#V-SettingsMenu nav { padding-top: 12px; }
+}
+@media screen and (max-width: 1023px) {
+	/* settings on the phone: a title, the pages, the cards; the account menu stays on the mail screen */
+	#rl-content:has(#V-SettingsMenu:not([hidden])) #V-SystemDropDown .btn-toolbar { display: none; }
+	#V-SettingsMenu .quokka-settings-title {
+		display: block !important; padding: 16px 16px 6px; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+		text-transform: none; color: var(--fm-ink);
+	}
+	#V-SettingsMenu nav { padding-top: 4px; }
+	#V-SettingsPane .form-horizontal > .legend:first-child { margin-top: 4px !important; }
+}
+@media screen and (max-width: 1023px) {
+	#V-SettingsPane > div:not(.btn-toolbar) { padding-top: 0 !important; }
+	#rl-content:has(#V-SettingsMenu:not([hidden])) #V-SystemDropDown { height: 0; margin: 0; padding: 0; overflow: visible; }   /* the bottom menu lives in it: fixed, still shown */
+}
+@media screen and (max-width: 1023px) {
+	#rl-content:has(#V-SettingsMenu:not([hidden])) #V-SettingsPane { margin-top: 0 !important; padding-top: 4px !important; }
+}
+
+/* ---------- the open email: subject, sender and actions stay; the bill box, the details and the text scroll ---------- */
+#messageItem { flex: 1 1 auto; min-height: 0; }
+
+/* ---------- tablets (landscape): the email's toolbar stays, nothing is cut ---------- */
+@media screen and (min-width: 1024px) and (max-width: 1400px) {
+	html.sm-msgView-side #V-MailMessageView .top-toolbar { visibility: visible !important; }
+}
+@media screen and (min-width: 1024px) and (max-width: 1199px) {
+	#top-system-dropdown-id .accountPlace { display: none; }
+	#top-system-dropdown-id { padding: 0 10px; }
+}
+.quokka-bill-facts { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important; }
+.quokka-bill-facts b { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1.25; }
+
+@media screen and (max-width: 599px) {
+	.quokka-actions .btn:nth-child(2) span { display: none; }
+}
+@media screen and (max-width: 1023px) {
+	/* as many columns as the menu has entries (Archivio only when the mailbox has that folder) */
+	.quokka-tabbar { display: flex !important; }
+	.quokka-tabbar a { flex: 1 1 0; }
+}
+
+/* what SnappyMail hides stays hidden, whatever display the theme gave it (the settings menu stayed under the folders) */
+[hidden] { display: none !important; }
+
+/* ---------- columns side by side: the list and the email aligned, with the same gaps ---------- */
+@media screen and (min-width: 1024px) {
+	#V-MailMessageList > .btn-toolbar, #V-MailMessageView .top-toolbar {
+		height: 52px; box-sizing: border-box; padding: 8px 12px !important; display: flex; align-items: center;
+	}
+	#V-MailMessageList { padding-right: 4px; box-sizing: border-box; }
+	#V-MailMessageView { padding: 0 8px 0 4px !important; box-sizing: border-box; }
+	.messageList, .messageView { height: calc(100% - 52px - 8px) !important; margin: 0 !important; }
+}
+
+/* ---------- columns side by side: the list and the email as one box, a thin line between them ---------- */
+@media screen and (min-width: 1024px) {
+	#V-MailMessageList { padding-right: 0 !important; }
+	#V-MailMessageView { padding-left: 0 !important; }
+	html.sm-msgView-side .messageList { border-radius: 12px 0 0 12px !important; border-right: 0 !important; }
+	html.sm-msgView-side .messageView { border-radius: 0 12px 12px 0 !important; border-left: 1px solid var(--fm-line) !important; }
+}
+/* one box, one edge: no shadow on the list (SnappyMail gives it one, the email has none) */
+.messageList, .messageView { box-shadow: none !important; }
+
+/* ---------- one set of actions, always in the same place: over the list (they act on the email open or the ones
+   selected); over the email only close and previous/next ---------- */
+@media screen and (min-width: 1024px) {
+	#V-MailMessageView .top-toolbar a.btn[data-bind*="archiveCommand"],
+	#V-MailMessageView .top-toolbar a.btn[data-bind*="spamCommand"],
+	#V-MailMessageView .top-toolbar a.btn[data-bind*="deleteCommand"],
+	#V-MailMessageView .top-toolbar a.btn[data-bind*="undeleteCommand"] { display: none !important; }
+}
+
+
+/* ---------- the logo: «qu●kka», the o is the quokka's face (sand, outlined in the text's colour) ---------- */
+.quokka-wordmark {
+	display: inline-flex; align-items: center; gap: 0;
+	font-family: 'Fredoka', 'Inter', system-ui, sans-serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1;
+	color: var(--fm-primary); white-space: nowrap; user-select: none;
+}
+.quokka-wordmark svg { width: 0.93em; height: 1em; margin: 0 0.02em; transform: translateY(0.1em); overflow: visible; }
+.quokka-wordmark .qf-fur { fill: #d9a46c; stroke: currentColor; }
+.quokka-wordmark .qf-ink { fill: var(--fm-ink); }
+:root[data-theme="dark"] .quokka-wordmark .qf-ink, #rl-app[data-color-scheme="dark"] .quokka-wordmark .qf-ink { fill: #0f1a26; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .quokka-wordmark .qf-ink { fill: #0f1a26; } }
+.quokka-wordmark .qf-smile { fill: none; stroke: #1e3a5f; }
+
+/* sign-in: the logo instead of the plain title */
+#V-Login .descWrapper { display: none !important; }
+.quokka-login-logo { display: flex; justify-content: center; margin: 0 0 18px; font-size: 54px; }
+/* the column and the settings menu */
+.quokka-brand.quokka-brand { padding: 16px 16px 4px !important; font-size: 30px !important; }
+
+/* ---------- "Annulla iscrizione" next to the sender (newsletters) ---------- */
+.messageView .informationShort .quokka-unsubscribe {
+	margin-left: 4px; padding: 2px 10px; border-radius: 999px;
+	border: 1px solid var(--fm-line); color: var(--fm-muted);
+	font-size: 12px; font-weight: 500; text-decoration: none !important; white-space: nowrap;
+}
+.messageView .informationShort .quokka-unsubscribe:focus:not(:focus-visible) { outline: none; }
+.messageView .informationShort .quokka-unsubscribe { flex-shrink: 0; }
+@media (max-width: 1023px) {
+	.messageView .b-message > .messageItemHeader .informationShort { flex-wrap: wrap; row-gap: 6px; }
+	.messageView .informationShort .from { flex: 1 1 calc(100% - 60px); min-width: 0; }
+	.messageView .informationShort .quokka-unsubscribe { margin-left: 27px; order: 9; }   /* under the name, past the initial */
+}
+.messageView .informationShort .quokka-unsubscribe:hover { color: var(--fm-primary); border-color: var(--fm-primary); background: var(--fm-primary-soft); }
+.messageView .informationShort .quokka-unsubscribe.busy { opacity: .6; pointer-events: none; }
+.messageView .quokka-unsubscribe-status {
+	margin-top: 8px; padding: 6px 12px; border-radius: 10px;
+	background: var(--fm-primary-soft); color: var(--fm-primary); font-size: 13px;
+}
+
+/* ---------- Settings → Categories ---------- */
+#V-SettingsMenu nav a[data-route="categories"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z%22/%3E%3Ccircle cx=%227.5%22 cy=%227.5%22 r=%221.5%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z%22/%3E%3Ccircle cx=%227.5%22 cy=%227.5%22 r=%221.5%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.quokka-categories-settings .quokka-note { color: var(--fm-muted); font-size: 13px; }
+.quokka-categories-settings .quokka-error { color: var(--fm-danger); }
+.quokka-categories-settings .quokka-save { margin-top: 12px; font-size: 13px; color: var(--fm-muted); min-height: 1.4em; }
+.quokka-categories { list-style: none; margin: 8px 0 0; padding: 0; max-width: 520px; border: 1px solid var(--fm-line); border-radius: 14px; background: var(--fm-surface); overflow: hidden; }
+.quokka-categories li + li { border-top: 1px solid var(--fm-line); }
+.quokka-categories label { display: flex; align-items: center; gap: 12px; margin: 0; padding: 12px 16px; cursor: pointer; font-size: 15px; color: var(--fm-ink); }
+.quokka-categories .dot { width: 12px; height: 12px; border-radius: 4px; background: var(--cat); flex-shrink: 0; }
+.quokka-categories .name { flex: 1; }
+.quokka-categories input { position: absolute; opacity: 0; pointer-events: none; }
+.quokka-categories .switch { position: relative; width: 40px; height: 24px; border-radius: 999px; background: var(--fm-line-strong); transition: background .15s; flex-shrink: 0; }
+.quokka-categories .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
+.quokka-categories input:checked + .switch { background: var(--fm-primary); }
+.quokka-categories input:checked + .switch::after { transform: translateX(16px); }
+.quokka-categories input:focus-visible + .switch { outline: 2px solid var(--fm-primary); outline-offset: 2px; }
+
+/* Confirmations: the action asked for on the right, in colour; "No" plain (also for deleting) */
+#V-PopupsAsk footer { display: flex; justify-content: flex-end; gap: 8px; }
+#V-PopupsAsk footer .buttonNo { order: 0; background: var(--fm-surface) !important; border: 1px solid var(--fm-line-strong) !important; color: var(--fm-ink) !important; font-weight: 500; }
+#V-PopupsAsk footer .buttonYes { order: 1; background: var(--fm-primary) !important; border-color: var(--fm-primary) !important; color: var(--fm-primary-ink) !important; font-weight: 600; }
+#V-PopupsAsk footer .btn { height: 40px; padding: 0 18px; }
+#V-PopupsAsk footer .btn::before { display: none; }
+
+.quokka-categories-settings .quokka-intro { max-width: 520px; margin: 0 0 12px; color: var(--fm-muted); font-size: 13px; line-height: 1.5; }
+
+/* ================= Settings, second pass: aligned controls, lists as cards, the same rows everywhere ================= */
+#V-SettingsPane .control-group { position: relative; }
+/* the "saved" tick: in the margin of the card, so it never pushes the controls */
+#V-SettingsPane .control-group .settings-save-trigger { position: absolute; right: 3px; top: 50%; margin: -7px 0 0 !important; font-size: 11px; }
+#V-SettingsPane .control-group > div:not(:only-child) { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+#V-SettingsPane .control-group > div > .e-component { display: flex; align-items: center; }
+#V-SettingsPane .control-group select, #V-SettingsPane .control-group .select { width: 240px; min-width: 0; box-sizing: border-box; }
+#V-SettingsPane .control-group .select {
+	display: inline-flex; align-items: center; height: 38px; padding: 0 30px 0 10px; line-height: 1 !important;
+	border: 1px solid var(--fm-line-strong); border-radius: 8px; background-color: var(--fm-surface); color: var(--fm-ink); cursor: pointer;
+}
+#V-SettingsPane .control-group input[type="number"] { width: 72px; box-sizing: border-box; margin: 0 !important; }
+#V-SettingsPane .control-group > div > span:not(.settings-save-trigger):not(.select) { color: var(--fm-muted); font-size: 14px; }
+#V-SettingsPane .editMainIdentity { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+/* rows of switches: no extra indent, a little air between them */
+#V-SettingsPane .control-group > div:only-child { display: flex; flex-direction: column; gap: 12px; padding: 2px 0; }
+#V-SettingsPane .e-checkbox.material-design { margin: 0 !important; padding: 0 !important; }
+#V-SettingsPane .quokka-hint { display: block; margin: -6px 52px 0 0; font-style: normal; font-size: 12.5px; line-height: 1.45; color: var(--fm-muted); }
+#V-SettingsPane .quokka-row-note { flex-basis: 100%; display: flex; gap: 12px; margin-top: -6px; font-size: 12.5px; color: var(--fm-muted); }
+#V-SettingsPane .quokka-row-note:empty, #V-SettingsPane .quokka-row-note:not(:has(> :not([style*="none"]))) { display: none; }
+#V-SettingsPane .quokka-inline { display: flex !important; align-items: center; gap: 14px; }
+#V-SettingsPane .control-group a:not(.btn) { color: var(--fm-primary); font-weight: 500; text-decoration: none; font-size: 14px; }
+#V-SettingsPane .quokka-row-action .btn { height: 36px; padding: 0 14px; }
+#V-SettingsPane .btn-primary:disabled, #V-SettingsPane .btn-primary.disabled { opacity: .45; background: var(--fm-primary) !important; color: var(--fm-primary-ink) !important; }
+
+/* notes: plain text under a title, or a muted line inside a card, never indented */
+#V-SettingsPane .quokka-intro { margin: 0 0 12px; color: var(--fm-muted); font-size: 13.5px; line-height: 1.5; }
+#V-SettingsPane .control-group.quokka-note { font-size: 13px; line-height: 1.5; color: var(--fm-muted); }
+#V-SettingsPane .control-group.quokka-note > * { margin: 0 !important; padding: 0 !important; }
+#V-SettingsPane .control-group.quokka-note > span { flex: 1 1 260px; }
+
+/* Accounts, Folders, Security: the title, the switch in a card, the list as a card, the buttons under it */
+#V-Settings-Accounts > div, #V-Settings-Folders, #V-Settings-Security { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; align-content: flex-start; }
+#V-Settings-Accounts > div > *, #V-Settings-Folders > *, #V-Settings-Security > * { flex: 1 1 100%; }
+#V-Settings-Accounts > div > .btn, #V-Settings-Folders > .btn, #V-Settings-Security > .btn { flex: 0 0 auto; order: 5; margin: 10px 0 0 !important; }
+#V-Settings-Accounts > div > .list-table, #V-Settings-Folders > .list-table { order: 4; }
+#V-Settings-Accounts .legend, #V-Settings-Folders .legend { display: flex; align-items: center; gap: 8px; }
+#V-Settings-Accounts .legend > i { margin: 0 !important; }
+#V-Settings-Accounts > div > div:has(> .e-checkbox), #V-Settings-Folders > div:has(> .e-checkbox) {
+	order: 3; box-sizing: border-box; padding: 14px 16px; margin-bottom: 10px;
+	background: var(--fm-surface); border: 1px solid var(--fm-line); border-radius: 12px;
+}
+#V-SettingsPane a.btn > i[class^="icon-"] { display: none; }
+#V-SettingsPane a.btn:has(> i[class^="icon-"]) > span::before { content: "+ "; font-weight: 600; }
+#V-SettingsPane a.btn { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; }
+
+#V-SettingsPane .list-table {
+	width: 100%; max-width: none; margin: 0 !important; border-collapse: separate; border-spacing: 0;
+	background: var(--fm-surface); border: 1px solid var(--fm-line) !important; border-radius: 12px; overflow: hidden;
+}
+#V-SettingsPane .list-table td, #V-SettingsPane .list-table th {
+	padding: 12px 16px !important; border: 0 !important; border-top: 1px solid var(--fm-line) !important;
+	vertical-align: middle; background: transparent !important; font-size: 14px; color: var(--fm-ink); text-align: left;
+}
+#V-SettingsPane .list-table tr:first-child > td, #V-SettingsPane .list-table tr:first-child > th { border-top: 0 !important; }
+#V-SettingsPane .list-table tbody:empty { display: none; }
+#V-SettingsPane .list-table tbody + tbody tr:first-child > td, #V-SettingsPane .list-table tbody + tbody tr:first-child > th { border-top: 1px solid var(--fm-line) !important; }
+#V-SettingsPane .list-table tr:hover > td { background: var(--fm-surface-2) !important; }
+#V-SettingsPane .list-table td:empty { width: 0; padding: 0 !important; }
+#V-SettingsPane .list-table th { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--fm-muted); }
+#V-SettingsPane .list-table .drag-handle { color: var(--fm-muted); cursor: grab; }
+#V-SettingsPane .list-table .identity-default, #V-SettingsPane .list-table .folder-system-name, #V-SettingsPane .list-table .folder-size { color: var(--fm-muted); margin-left: 6px; }
+#V-SettingsPane .list-table .folder-name { font-weight: 500; }
+#V-SettingsPane .list-table .e-action.fontastic, #V-SettingsPane .list-table .delete.fontastic { color: var(--fm-muted); cursor: pointer; }
+#V-SettingsPane .list-table td:has(> .button-confirm-delete:not(.delete-access)):not(:has(.e-action:not([style*="none"]))) { width: 0; padding: 0 !important; }
+
+/* Security: each kind of key a card that opens */
+#V-Settings-Security > .form-horizontal { margin-bottom: 0; }
+#V-Settings-Security details {
+	box-sizing: border-box; margin: 10px 0 0; padding: 0 16px;
+	background: var(--fm-surface); border: 1px solid var(--fm-line); border-radius: 12px;
+}
+#V-Settings-Security details + details { margin-top: 8px; }
+#V-Settings-Security details > summary {
+	display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer;
+	min-height: 50px; margin: 0 !important; padding: 0 !important; border: 0 !important;
+	font-size: 14px !important; font-weight: 600 !important; letter-spacing: 0; color: var(--fm-ink);
+}
+#V-Settings-Security details > summary::-webkit-details-marker { display: none; }
+#V-Settings-Security details > summary::after {
+	content: ""; width: 7px; height: 7px; margin-right: 4px; border: solid var(--fm-muted); border-width: 0 2px 2px 0;
+	transform: rotate(45deg) translateY(-2px); transition: transform .15s;
+}
+#V-Settings-Security details[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
+#V-Settings-Security details[open] { padding-bottom: 14px; }
+#V-Settings-Security details > .list-table { border-radius: 10px; margin: 0 0 10px !important; }
+#V-Settings-Security details > .btn { margin-right: 8px; }
+#V-Settings-Security details > a { color: var(--fm-primary); font-size: 14px; text-decoration: none; }
+#V-Settings-Security > .legend { order: 0; }
+
+@media screen and (max-width: 1023px) {
+	#V-SettingsPane .control-group > div:not(:only-child) { flex: 1 1 100%; justify-content: flex-start; }
+	#V-SettingsPane .control-group > div > .e-component, #V-SettingsPane .control-group > div > .e-component > select { flex: 1; }
+	#V-SettingsPane .control-group select, #V-SettingsPane .control-group .select { width: 100%; }
+	#V-SettingsPane .control-group > select { flex: 1 1 100%; }
+	#V-SettingsPane .editMainIdentity { max-width: 100%; flex-basis: 100%; }
+	#V-SettingsPane .quokka-row-action .btn { flex: 1 1 100%; }
+	#V-SettingsPane .quokka-hint { margin-right: 0; }
+}
+#V-SettingsPane .control-group > span { margin: 0 !important; padding: 0 !important; flex: 1 1 260px; line-height: 1.5; }
+/* a card ends where the rows end, whatever follows (a note, a button, a title) */
+#V-SettingsPane .control-group:not(:has(~ .control-group:not([style*="none"]))),
+#V-SettingsPane .control-group:has(+ :not(.control-group)) { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+#V-SettingsPane :not(.control-group) + .control-group { border-top-width: 1px; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+/* second pass, details */
+#V-SettingsPane .e-checkbox.material-design > span { margin: 0 !important; padding: 0 !important; }
+#V-SettingsPane .control-group textarea { width: 240px; min-height: 64px; box-sizing: border-box; margin: 0 !important; }
+#V-SettingsPane .control-group input[type="password"] { margin: 0 !important; box-sizing: border-box; }
+#V-SettingsPane .btn[data-icon]::before, #V-SettingsPane .btn > i.fontastic { display: none; }
+#V-SettingsPane > div > div:first-child > .legend:first-child, #V-SettingsPane > div > .legend:first-child { margin-top: 12px !important; }
+#V-SettingsPane .list-table td:has(> .drag-handle) { width: 1px; padding-right: 0 !important; }
+/* Security: the buttons stay under their title; the cards close together */
+#V-Settings-Security { row-gap: 8px; }
+#V-Settings-Security > .btn { order: 0; margin: 0 !important; }
+#V-Settings-Security details, #V-Settings-Security details + details { margin: 0; }
+#V-Settings-Security details > summary.legend { font-size: 14px !important; margin: 0 !important; }
+@media screen and (max-width: 1023px) {
+	#V-SettingsPane .control-group textarea, #V-SettingsPane .control-group input[type="password"] { width: 100%; flex: 1 1 100%; }
+	#V-SettingsPane .quokka-intro + .legend { margin-top: 18px !important; }
+}
+#V-Settings-Security { row-gap: 0; }
+#V-Settings-Security > .btn { margin: 0 0 4px !important; }
+#V-Settings-Security details, #V-Settings-Security details + details { margin: 8px 0 0; }
+#V-Settings-Security > :empty:not(.btn) { display: none; }
+
+/* ---------- signs of a scam, over the email ---------- */
+.quokka-warning {
+	margin: 0 0 16px; padding: 14px 16px; border-radius: 14px;
+	background: var(--fm-danger-soft); border: 1px solid color-mix(in srgb, var(--fm-danger) 35%, transparent);
+	color: var(--fm-ink); font-size: 14px; line-height: 1.5;
+}
+.quokka-warning-title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--fm-danger); font-size: 15px; }
+.quokka-warning-title svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.quokka-warning ul { margin: 8px 0 0 22px; padding: 0; }
+.quokka-warning li { margin: 2px 0; }
+.quokka-warning p { margin: 8px 0 0; color: var(--fm-ink-2); font-size: 13px; }
+.quokka-warning-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+.quokka-warning-actions .btn { height: 34px; padding: 0 14px; display: inline-flex; align-items: center; background: var(--fm-danger) !important; border-color: var(--fm-danger) !important; color: #fff !important; font-weight: 600; }
+.quokka-warning-trust { color: var(--fm-muted); font-size: 13px; text-decoration: none; }
+.quokka-warning-trust:hover { color: var(--fm-ink); }
+
+/* ---------- Settings → Security and privacy ---------- */
+#V-SettingsPane .quokka-sub { display: block; font-size: 12.5px; color: var(--fm-muted); margin-top: 2px; }
+#V-SettingsPane .quokka-code-row { display: flex !important; align-items: center; gap: 8px; flex-wrap: wrap; }
+#V-SettingsPane .quokka-code-row input { width: 130px; height: 38px; box-sizing: border-box; margin: 0 !important; font-size: 17px; letter-spacing: .12em; text-align: center; }
+#V-SettingsPane .quokka-totp-setup { align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+#V-SettingsPane .quokka-qr { width: 180px; height: 180px; flex: 0 0 180px; border-radius: 10px; overflow: hidden; border: 1px solid var(--fm-line); background: #fff; }
+#V-SettingsPane .quokka-qr svg { display: block; width: 100%; height: 100%; }
+#V-SettingsPane .quokka-totp-steps { flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5; }
+#V-SettingsPane .quokka-totp-steps p { margin: 0; }
+#V-SettingsPane .quokka-totp-steps code { align-self: flex-start; padding: 4px 8px; border-radius: 6px; background: var(--fm-surface-2); color: var(--fm-ink); font-size: 13px; letter-spacing: .05em; word-break: break-all; border: 0; }
+#V-SettingsPane .quokka-backup { flex-direction: column; align-items: flex-start; gap: 12px; font-size: 14px; line-height: 1.5; }
+#V-SettingsPane .quokka-backup ol { display: grid; grid-template-columns: repeat(2, minmax(0, 140px)); gap: 6px 24px; margin: 0; padding: 0 0 0 22px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; }
+#V-SettingsPane .quokka-sec-message { margin-top: 8px; font-size: 13px; color: var(--fm-muted); }
+#V-SettingsPane .quokka-sec-message:empty { display: none; }
+#V-SettingsPane .quokka-error, #V-SettingsPane .quokka-danger { color: var(--fm-danger) !important; }
+#V-SettingsPane .quokka-logins { background: var(--fm-surface); border: 1px solid var(--fm-line); border-radius: 12px; overflow: hidden; }
+#V-SettingsPane .quokka-login { padding: 11px 16px; }
+#V-SettingsPane .quokka-login + .quokka-login { border-top: 1px solid var(--fm-line); }
+#V-SettingsPane .quokka-login-main { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--fm-ink); }
+#V-SettingsPane .quokka-login .here { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--fm-primary-soft); color: var(--fm-primary); }
+#V-SettingsPane .quokka-login-sub { font-size: 12.5px; color: var(--fm-muted); margin-top: 2px; }
+#V-SettingsPane .quokka-login.wrong .quokka-login-main, #V-SettingsPane .quokka-login.wrong .quokka-login-sub { color: var(--fm-danger); }
+
+/* the code at sign-in */
+#V-Login .quokka-code input { width: 100%; box-sizing: border-box; height: 44px; font-size: 18px; letter-spacing: .15em; text-align: center; }
+#V-Login .quokka-code[hidden] { display: none !important; }
+#V-SettingsPane .quokka-intro + .control-group { border-top-width: 1px; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+#V-SettingsPane .quokka-backup > span { flex: none; }
+#V-SettingsPane .quokka-backup > .btn { margin: 0 !important; }
+#V-SettingsPane .quokka-backup ol { list-style: none; padding: 10px 14px; border-radius: 10px; background: var(--fm-surface-2); align-self: stretch; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); max-width: 420px; box-sizing: border-box; }
+/* sign-in: the message between the logo and the form, never over the logo */
+#V-Login { display: flex; flex-direction: column; }
+#V-Login > .quokka-login-logo { order: 1; }
+#V-Login > .alert { order: 2; position: static; margin: 0 0 14px; padding: 10px 36px 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.45;
+	background: var(--fm-danger-soft); border: 1px solid color-mix(in srgb, var(--fm-danger) 30%, transparent); color: var(--fm-ink); position: relative; }
+#V-Login > .alert .close { position: absolute; top: 8px; right: 12px; color: var(--fm-muted); text-decoration: none; }
+#V-Login > .alert[hidden] { display: none; }
+#V-Login > form { order: 3; }
+#V-Login > :not(.quokka-login-logo):not(.alert):not(form) { order: 4; }
+#V-Login .quokka-code input:placeholder-shown { letter-spacing: normal; font-size: 15px; }
+.messageView #messageItem > .quokka-warning { margin: 16px 22px 4px; }
+#V-SettingsPane .control-group:has(+ .control-group[style*="none"]) { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+#V-SettingsPane .control-group > div:has(> .e-checkbox), #V-SettingsPane .control-group > div:has(> div > .e-checkbox) { flex: 1 1 100%; display: block; }
+@media screen and (max-width: 1023px) {
+	.messageView #messageItem > .quokka-warning { margin: 12px 14px 4px; }
+}
+#V-SettingsPane .control-group > div.quokka-totp-steps { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
+#V-SettingsPane .quokka-totp-steps .quokka-code-row { justify-content: flex-start; }
+#V-SettingsPane .control-group > .btn { margin: 0 !important; }
+
+/* ---------- the system folders window ---------- */
+#V-PopupsFolderSystem .modal-body { padding: 16px 20px 20px !important; }
+#V-PopupsFolderSystem .quokka-sys-intro { margin: 0 0 10px; color: var(--fm-muted); font-size: 13.5px; }
+#V-PopupsFolderSystem .quokka-sysrows { border: 1px solid var(--fm-line); border-radius: 12px; overflow: hidden; background: var(--fm-surface); }
+#V-PopupsFolderSystem .quokka-sysrow { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+#V-PopupsFolderSystem .quokka-sysrow + .quokka-sysrow { border-top: 1px solid var(--fm-line); }
+#V-PopupsFolderSystem .quokka-sysrow > svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: var(--fm-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#V-PopupsFolderSystem .quokka-sysrow label { flex: 1; display: flex; flex-direction: column; margin: 0 !important; padding: 0 !important; float: none !important; width: auto !important; text-align: left !important; }
+#V-PopupsFolderSystem .quokka-sysrow label b { font-size: 14px; font-weight: 600; color: var(--fm-ink); }
+#V-PopupsFolderSystem .quokka-sysrow label small { font-size: 12.5px; color: var(--fm-muted); line-height: 1.35; }
+#V-PopupsFolderSystem .quokka-sysrow select { width: 190px; height: 38px; margin: 0 !important; flex-shrink: 0; }
+@media screen and (max-width: 600px) {
+	#V-PopupsFolderSystem .quokka-sysrow { flex-wrap: wrap; }
+	#V-PopupsFolderSystem .quokka-sysrow label { flex-basis: calc(100% - 40px); }
+	#V-PopupsFolderSystem .quokka-sysrow select { width: 100%; margin-left: 32px !important; }
+}
+/* the options menu (⋮) sits at the top right of the email: the subject line leaves it room, so the star never ends up under it */
+.messageView .messageItemHeader .subjectParent { padding-right: 40px; }
+.messageView .message-fixed-button-toolbar .dropdown-toggle { color: var(--fm-muted) !important; }
+
+/* ---------- selecting with a finger, and swiping ---------- */
+.messageList .b-content { position: relative; }
+@media (pointer: coarse) {
+	.messageListItem { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+}
+/* a selected row: tinted, with a tick in a round badge where the eye starts */
+.messageListItem.checked { background-color: var(--fm-primary-soft) !important; position: relative; }
+.messageListItem.checked::after {
+	content: ""; position: absolute; left: 6px; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%;
+	background: var(--fm-primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center / 14px no-repeat;
+	box-shadow: 0 0 0 2px var(--fm-surface);
+}
+.messageList:has(.messageListItem.checked) .messageListItem { transition: padding-left .12s; }
+.messageList:has(.messageListItem.checked) .messageListItem { padding-left: 38px !important; }
+
+.quokka-selbar {
+	display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 8px;
+	background: var(--fm-primary); color: var(--fm-primary-ink);
+}
+.quokka-selbar[style*="none"] { display: none !important; }
+.quokka-selbar a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.quokka-selbar svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.quokka-sel-close { width: 36px; height: 36px; border-radius: 50%; }
+.quokka-sel-count { font-weight: 600; font-size: 15px; }
+.quokka-sel-all { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .16); }
+.quokka-sel-actions { margin-left: auto; display: flex; gap: 2px; }
+.quokka-sel-actions a { flex-direction: column; gap: 2px; min-width: 52px; height: 44px; border-radius: 10px; font-size: 11px; }
+.quokka-sel-actions a:hover, .quokka-sel-close:hover { background: rgba(255, 255, 255, .14); }
+.quokka-sel-actions a.disabled, .quokka-sel-actions a[disabled] { opacity: .45; pointer-events: none; }
+/* with the bar, the usual heading steps aside */
+.messageList:has(.quokka-selbar:not([style*="none"])) .quokka-head { display: none !important; }
+
+/* the swipe: what will happen shows under the row */
+.messageListItem.quokka-swiping { position: relative; z-index: 2; background-color: var(--fm-surface) !important; will-change: transform; }
+.quokka-swipe-under {
+	position: absolute; left: 0; right: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between;
+	padding: 0 22px; font-weight: 600; font-size: 14px; color: #fff; transition: background-color .12s;
+}
+.quokka-swipe-under span { display: none; align-items: center; gap: 8px; opacity: .75; transition: opacity .12s, transform .12s; }
+.quokka-swipe-under.armed span { opacity: 1; transform: scale(1.06); }
+.quokka-swipe-under.to-archive { background: color-mix(in srgb, var(--fm-primary) 70%, var(--fm-bg)); }
+.quokka-swipe-under.to-archive.armed { background: var(--fm-primary); }
+.quokka-swipe-under.to-delete { background: color-mix(in srgb, var(--fm-danger) 70%, var(--fm-bg)); }
+.quokka-swipe-under.to-delete.armed { background: var(--fm-danger); }
+.quokka-swipe-under.to-archive .quokka-swipe-archive { display: inline-flex; }
+.quokka-swipe-under.to-delete .quokka-swipe-delete { display: inline-flex; margin-left: auto; }
+.quokka-swipe-under span::before { content: ""; width: 20px; height: 20px; background-color: currentColor; }
+.quokka-swipe-archive::before { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='4' rx='1'/%3E%3Cpath d='M5 8v11h14V8M10 12h4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='4' rx='1'/%3E%3Cpath d='M5 8v11h14V8M10 12h4'/%3E%3C/svg%3E") center / contain no-repeat; }
+.quokka-swipe-delete::before { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6'/%3E%3C/svg%3E") center / contain no-repeat; }
+.quokka-selbar { box-sizing: border-box; max-width: 100%; overflow: hidden; }
+.quokka-sel-count { white-space: nowrap; }
+@media screen and (max-width: 520px) {
+	.quokka-sel-actions a { min-width: 40px; height: 40px; }
+	.quokka-sel-actions a span { display: none; }
+	.quokka-selbar { gap: 6px; }
+}
+@media screen and (max-width: 520px) {
+	.quokka-sel-actions { gap: 0; }
+	.quokka-sel-actions a { min-width: 36px; }
+	.quokka-selbar { padding-right: 6px; }
+}

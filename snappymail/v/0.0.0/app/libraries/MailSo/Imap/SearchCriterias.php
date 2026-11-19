@@ -210,10 +210,12 @@ class SearchCriterias
 							break;
 						case 'KEYWORD':
 							$aCriteriasResult[] = $sName;
-							$aCriteriasResult[] = static::escapeSearchString(
-								$oImapClient,
-								\MailSo\Base\Utils::Utf8ToUtf7Modified($sRawValue)
-							);
+							// Quokka: a keyword is an atom in RFC 3501 (flag-keyword = atom); strict servers refuse it
+							// quoted, so plain keywords go as they are and only odd ones are quoted
+							$sKeyword = \MailSo\Base\Utils::Utf8ToUtf7Modified($sRawValue);
+							$aCriteriasResult[] = \preg_match('/^[A-Za-z0-9_$.\-]+$/D', $sKeyword)
+								? $sKeyword
+								: static::escapeSearchString($oImapClient, $sKeyword);
 							break;
 
 						case 'TO':

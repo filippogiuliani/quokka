@@ -118,6 +118,24 @@
 </div>
 
 <div class="messageList g-ui-user-select-none" data-bind="css: {'hideMessageListCheckbox': !useCheckboxesInList() }">
+	<!-- Quokka: the heading of the list -->
+	<!-- Quokka: what is selected, and what to do with it (shown while something is selected) -->
+	<div class="quokka-selbar" data-bind="visible: checkedCount">
+		<a class="quokka-sel-close" href="#" data-bind="click: () => checkAll(false)" data-i18n="[title]QUOKKA/CLEAR_SELECTION"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></a>
+		<span class="quokka-sel-count" data-bind="text: checkedText"></span>
+		<a class="quokka-sel-all" href="#" data-bind="click: () => checkAll(true), visible: isIncompleteChecked" data-i18n="QUOKKA/SELECT_ALL"></a>
+		<span class="quokka-sel-actions">
+			<a href="#" data-i18n="[title]QUOKKA/MARK_READ" data-bind="click: listSetSeen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"></path></svg><span data-i18n="QUOKKA/READ"></span></a>
+			<a href="#" data-i18n="[title]QUOKKA/MOVE" data-bind="command: moveCommand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span data-i18n="QUOKKA/MOVE"></span></a>
+			<a href="#" data-i18n="[title]QUOKKA/ARCHIVE" data-bind="command: archiveCommand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11h14V8M10 12h4"></path></svg><span data-i18n="QUOKKA/ARCHIVE"></span></a>
+			<a href="#" class="danger" data-i18n="[title]QUOKKA/DELETE" data-bind="command: deleteCommand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg><span data-i18n="QUOKKA/DELETE"></span></a>
+		</span>
+	</div>
+	<div class="quokka-head">
+		<a class="quokka-menu toggleLeft" href="#" data-i18n="[title]QUOKKA/FOLDERS_AND_CATEGORIES"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></a>
+		<h1 class="quokka-title" data-bind="text: listTitle"></h1>
+		<span class="quokka-unread" data-bind="text: listUnread"></span>
+	</div>
 	<div class="second-toolbar thm-message-list-top-toolbar">
 		<i class="checkboxCheckAll fontastic" data-bind="text: checkAll() ? (isIncompleteChecked() ? '▣' : '☑') : '☐'"></i>
 		<div class="search-input-wrp">
@@ -126,6 +144,12 @@
 		</div>
 		<a class="btn buttonMoreSearch" data-bind="click: advancedSearchClick">▼</a>
 	</div>
+	<!-- Quokka: quick filters (on the phone also the categories) -->
+	<nav class="quokka-filters" data-bind="foreach: quickFilters">
+		<a data-bind="attr: {href: href, 'data-category': key || null}, css: {selected: selected, 'phone-only': phoneOnly}">
+			<span class="dot"></span><!-- ko text: label --><!-- /ko -->
+		</a>
+	</nav>
 	<div class="b-content">
 		<div class="listThreadUidDesc" data-bind="visible: messageList.threadUid(), click: cancelThreadUid"
 			data-icon="⬅" data-i18n="MESSAGE_LIST/BACK_TO_MESSAGE_LIST"></div>
@@ -154,6 +178,8 @@
 					<div class="flagParent fontastic"></div>
 					<div class="senderParent" data-bind="attr: {title: senderClearEmailsString}, text: senderEmailsString"></div>
 					<div class="subjectParent" data-bind="text: subject"></div>
+					<div class="previewParent" data-bind="text: preview"></div>
+					<div class="categoryParent" data-bind="visible: categoryKey, text: categoryLabel, attr: {'data-category': categoryKey}"></div>
 					<div class="threads-len" data-bind="visible: 1 < threadsLen(), text: threadsLenText(), attr: {'data-unseen': threadUnseenLen() || null}"></div>
 					<div class="attachmentParent">
 						<i data-bind="css: attachmentIconClass"></i>
@@ -174,6 +200,8 @@
 					<div class="flagParent fontastic"></div>
 					<div class="senderParent" data-bind="attr: {title: senderClearEmailsString}, text: senderEmailsString"></div>
 					<div class="subjectParent" data-bind="text: subject"></div>
+					<div class="previewParent" data-bind="text: preview"></div>
+					<div class="categoryParent" data-bind="visible: categoryKey, text: categoryLabel, attr: {'data-category': categoryKey}"></div>
 					<div class="threads-len" data-bind="visible: 1 < threadsLen(), text: threadsLenText(), attr: {'data-unseen': threadUnseenLen() || null}"></div>
 					<div class="attachmentParent">
 						<i data-bind="css: attachmentIconClass"></i>

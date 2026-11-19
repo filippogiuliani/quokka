@@ -1,0 +1,30 @@
+{
+	"QUOKKA_EXTRAS": {
+		"TAB_APPS": "Family apps",
+		"TAB_CATEGORIES": "Categories",
+		"APPS_INTRO": "With a personal token, from your emails you can archive a document in paTrack and add a deadline to doTrack. The tokens stay on the Quokka server and are never shown again.",
+		"PATRACK_TOKEN": "paTrack token",
+		"DOTRACK_TOKEN": "doTrack token",
+		"TOKEN_SAVED": "saved — leave empty to keep it",
+		"PATRACK_HOWTO": "In paTrack: Family → «From iPhone» → «Create the key for the iPhone», and paste it here (the same key is fine).",
+		"DOTRACK_HOWTO": "In doTrack: Family → Integrations → «Create a token» (for example «Quokka»), and paste it here.",
+		"UNLINK": "Unlink",
+		"PATRACK_NOT_SET": "paTrack is not set up on this server (QUOKKA_PATRACK_URL).",
+		"DOTRACK_NOT_SET": "doTrack is not set up on this server (QUOKKA_DOTRACK_URL).",
+		"SAVE": "Save",
+		"SAVED": "Saved",
+		"NOT_SAVED": "Not saved",
+		"CATEGORIES_INTRO": "Incoming emails are sorted into these categories. Choose which to see: the ones turned off disappear from the column, the filters and the rows. The emails stay where they are, and turning a category back on shows them again.",
+		"ERR_PATRACK_NOT_LINKED": "paTrack is not linked: Settings → Family apps",
+		"ERR_DOTRACK_NOT_LINKED": "doTrack is not linked: Settings → Family apps",
+		"ERR_MESSAGE_NOT_FOUND": "Email not found",
+		"ERR_ATTACHMENT_NOT_FOUND": "Attachment not found",
+		"ERR_FILE_TOO_BIG": "File too big",
+		"ERR_NO_DUE_DATE": "The due date is missing",
+		"ERR_UNSUBSCRIBE_NO_WAY": "This email doesn't say how to unsubscribe",
+		"ERR_APP_DOWN": "%APP% doesn't answer",
+		"ERR_APP_TOKEN": "%APP% doesn't accept the token: check it in Settings → Family apps",
+		"ERR_APP_STATUS": "%APP% answers with an error (%STATUS%)",
+		"ERR_TOKEN_PREFIX": "The token must start with %PREFIX%"
+	}
+}

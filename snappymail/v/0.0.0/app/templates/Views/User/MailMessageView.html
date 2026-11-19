@@ -141,6 +141,7 @@
 				<a href="#" class="close" data-bind="click: closeMessage" style="margin-top: -8px;">×</a>
 			</div>
 			<div class="informationShort">
+				<span class="quokka-avatar quokka-sender-avatar" data-bind="text: $root.senderInitial"></span>
 				<span class="from" data-bind="html: viewFromShort, attr:{ title: message().from }"></span>
 				<!-- ko if: localDelivery -->
 				<i class="fontastic">✅</i>
@@ -150,9 +151,45 @@
 				<i class="fontastic" data-bind="text: dmarcIcon, css: dmarcIconClass, attr:{ title: dmarcTitle }"></i>
 				<i class="fontastic" data-bind="text: spfIcon, css: spfIconClass, attr:{ title: spfTitle }"></i>
 				<!-- /ko -->
+				<!-- Quokka: leave a newsletter -->
+				<a class="quokka-unsubscribe" href="#" data-bind="visible: $root.canUnsubscribe, click: $root.unsubscribe, css: {busy: $root.unsubscribeBusy}" data-i18n="QUOKKA/UNSUBSCRIBE"></a>
 			</div>
+			<div class="quokka-unsubscribe-status" data-bind="visible: $root.unsubscribeStatus, text: $root.unsubscribeStatus"></div>
+		</div>
+		<!-- Quokka: the actions people look for, with words -->
+		<div class="quokka-actions" data-bind="visible: canBeRepliedOrForwarded">
+			<a class="btn" href="#" data-bind="command: replyCommand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h11a5 5 0 0 1 5 5v6"></path></svg><span data-i18n="MESSAGE/BUTTON_REPLY"></span></a>
+			<a class="btn" href="#" data-bind="command: replyAllCommand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 17-5-5 5-5"></path><path d="m12 17-5-5 5-5"></path><path d="M22 18v-2a4 4 0 0 0-4-4H7"></path></svg><span data-i18n="MESSAGE/BUTTON_REPLY_ALL"></span></a>
+			<a class="btn" href="#" data-bind="command: forwardCommand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9a5 5 0 0 0-5 5v6"></path></svg><span data-i18n="MESSAGE/BUTTON_FORWARD"></span></a>
 		</div>
 		<div id="messageItem">
+			<!-- Quokka: signs of a scam -->
+			<div class="quokka-warning" data-bind="visible: $root.suspicious().length">
+				<div class="quokka-warning-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4M12 17h.01"></path></svg><span data-i18n="QUOKKA/SCAM_TITLE"></span></div>
+				<ul data-bind="foreach: $root.suspicious"><li data-bind="text: $data"></li></ul>
+				<p data-i18n="QUOKKA/SCAM_ADVICE"></p>
+				<div class="quokka-warning-actions">
+					<a class="btn" href="#" data-bind="visible: $root.canMarkAsSpam, command: $root.spamCommand" data-i18n="QUOKKA/SCAM_TO_SPAM"></a>
+					<a class="quokka-warning-trust" href="#" data-bind="click: $root.trustSender" data-i18n="QUOKKA/SCAM_TRUST"></a>
+				</div>
+			</div>
+			<!-- Quokka: what the bill says, and where it can go (scrolls with the email) -->
+			<!-- ko with: bill -->
+			<div class="quokka-bill" data-bind="i18nUpdate: true">
+				<div class="quokka-bill-intro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"></path></svg><span data-i18n="QUOKKA/BILL_INTRO"></span></div>
+				<div class="quokka-bill-facts">
+					<div><span data-i18n="QUOKKA/BILL_AMOUNT"></span><b data-bind="text: amount || '—'"></b></div>
+					<div><span data-i18n="QUOKKA/BILL_DUE"></span><b data-bind="text: due || '—'"></b></div>
+					<div><span data-i18n="QUOKKA/BILL_PERIOD"></span><b data-bind="text: period || '—'"></b></div>
+				</div>
+				<div class="quokka-bill-actions">
+					<a class="btn quokka-primary" href="#" data-bind="click: $root.billToPatrack, css: {disabled: $root.billBusy}, attr: {title: patrackTitle}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6M9 15l2 2 4-4"></path></svg><span data-i18n="QUOKKA/BILL_TO_PATRACK"></span></a>
+					<a class="btn" href="#" data-bind="click: $root.billToDotrack, css: {disabled: $root.billBusy() || !dueIso}, attr: {title: dotrackTitle}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg><span data-i18n="QUOKKA/BILL_TO_DOTRACK"></span></a>
+					<a class="quokka-bill-no" href="#" data-bind="click: $root.notABill" data-i18n="QUOKKA/BILL_NOT_A_BILL"></a>
+				</div>
+				<div class="quokka-bill-status" data-bind="visible: $root.billStatus, text: $root.billStatus"></div>
+			</div>
+			<!-- /ko -->
 			<div class="messageItemHeader" data-bind="if: message, i18nUpdate: message">
 				<div data-bind="hidden: showFullInfo">
 					<time class="date" data-time-format="FULL" data-bind="visible: 0 < message().dateTimestamp(), time: message().dateTimestamp()"></time>
@@ -213,6 +250,10 @@
 				</div>
 				<div class="hasVirus" data-bind="visible: message().hasVirus" data-i18n="MESSAGE/HAS_VIRUS_WARNING"></div>
 				<!-- ko if: tagsAllowed -->
+				<label class="messageCategory">
+					<span data-i18n="QUOKKA/CATEGORY"></span>
+					<select data-bind="options: categoryChoices, optionsText: 'label', optionsValue: 'key', value: messageCategory"></select>
+				</label>
 				<div class="messageTags">
 					<span data-i18n="MESSAGE/TAGS"></span>:
 					<span class="messageAssignedTags" data-bind="html: tagsToHTML"></span>

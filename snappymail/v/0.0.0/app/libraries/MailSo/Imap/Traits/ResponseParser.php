@@ -276,6 +276,9 @@ trait ResponseParser
 							case ' ' === $sCharDef:
 							case ')' === $sCharDef && '(' === $sOpenBracket:
 							case ']' === $sCharDef && '[' === $sOpenBracket:
+							// Quokka: "BODY[1]<0>{80}" without the space RFC 3501 wants (GreenMail does it): the
+							// literal starts at the "{" all the same, or its text would be read as response lines
+							case '{' === $sCharDef && $iPos > $iCharBlockStartPos && '>' === $this->sResponseBuffer[$iPos - 1]:
 								break 2;
 							default:
 								++$iPos;

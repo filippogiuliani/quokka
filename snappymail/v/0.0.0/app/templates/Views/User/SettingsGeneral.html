@@ -180,7 +180,7 @@
 					value: viewHTML
 				}
 			}"></div>
-			<em style="margin: 0 0 1em 2em;display: block;" data-i18n="SETTINGS_GENERAL/PREFER_HTML_INFO"></em>
+			<em class="quokka-hint" data-i18n="SETTINGS_GENERAL/PREFER_HTML_INFO"></em>
 			<div data-bind="component: {
 				name: 'Checkbox',
 				params: {
@@ -214,22 +214,7 @@
 		</div>
 	</div>
 
-	<div class="control-group">
-		<label data-i18n="SETTINGS_GENERAL/EXTERNAL_IMAGES"></label>
-		<div>
-			<select data-bind="value: viewImages">
-				<option value="ask" data-i18n="SETTINGS_GENERAL/IMAGES_OPTION_ASK"></option>
-				<option value="match" data-i18n="SETTINGS_GENERAL/IMAGES_OPTION_WHITELIST"></option>
-				<option value="always" data-i18n="SETTINGS_GENERAL/IMAGES_OPTION_ALWAYS"></option>
-			</select>
-		</div>
-	</div>
-	<div class="control-group">
-		<label data-i18n="SETTINGS_GENERAL/IMAGES_WHITELIST"></label>
-		<div>
-			<textarea data-bind="textInput: viewImagesWhitelist"></textarea>
-		</div>
-	</div>
+	<!-- Quokka: external images are in Security and privacy -->
 
 	<div class="legend" data-i18n="SHORTCUTS_HELP/TAB_COMPOSE"></div>
 	<div class="control-group">
@@ -296,6 +281,7 @@
 					value: requireTLS
 				}
 			}"></div>
+			<!-- ko if: canCrypto -->
 			<div data-bind="component: {
 				name: 'Checkbox',
 				params: {
@@ -310,6 +296,7 @@
 					value: pgpEncrypt
 				}
 			}"></div>
+			<!-- /ko -->
 			<div data-bind="component: {
 				name: 'Checkbox',
 				params: {
@@ -320,37 +307,43 @@
 		</div>
 	</div>
 
-	<button type="button" data-bind="visible: mailto, click: registerMailto" class="btn" data-i18n="SETTINGS_GENERAL/MAILTO"></button>
+	<!-- Quokka: one row like the others -->
+	<div class="control-group quokka-row-action" data-bind="visible: mailto">
+		<label data-i18n="QUOKKA/MAILTO_LABEL"></label>
+		<button type="button" class="btn" data-bind="click: registerMailto" data-i18n="QUOKKA/MAILTO_BUTTON"></button>
+	</div>
 
 	<div class="legend" data-i18n="SETTINGS_GENERAL/NOTIFICATIONS"></div>
+	<!-- Quokka: each option on its row, the test as a word, the blocked state said plainly -->
 	<div class="control-group">
-		<div>
-			<div>
-				<div style="display: inline-block;" data-bind="component: {
-					name: 'Checkbox',
-					params: {
-						label: 'SETTINGS_GENERAL/CHROME_NOTIFICATION_DESC',
-						value: desktopNotifications,
-						enable: isDesktopNotificationAllowed
-					}
-				}"></div>
-				&nbsp;
-				<span data-bind="visible: !isDesktopNotificationAllowed()" style="color: #999" data-i18n="SETTINGS_GENERAL/CHROME_NOTIFICATION_DESC_DENIED"></span>
-				<span class="fontastic" data-bind="click: testSystemNotification" style="color:green;cursor:pointer">▶️</span>
-			</div>
-			<div>
-				<div style="display: inline-block;" data-bind="component: {
-					name: 'Checkbox',
-					params: {
-						label: 'SETTINGS_GENERAL/SOUND_NOTIFICATION',
-						value: soundNotification
-					}
-				}"></div>
-				&nbsp;
-				<select data-bind="options: notificationSounds, value: notificationSound"></select>
-				&nbsp;
-				<span class="fontastic" data-bind="click: testSoundNotification" style="color:green;cursor:pointer">▶️</span>
-			</div>
+		<div data-bind="component: {
+			name: 'Checkbox',
+			params: {
+				label: 'SETTINGS_GENERAL/CHROME_NOTIFICATION_DESC',
+				value: desktopNotifications,
+				enable: isDesktopNotificationAllowed
+			}
+		}"></div>
+		<div class="quokka-row-note">
+			<span data-bind="visible: !isDesktopNotificationAllowed() && secureContext" data-i18n="QUOKKA/NOTIFY_BLOCKED"></span>
+			<span data-bind="visible: !secureContext" data-i18n="QUOKKA/NOTIFY_HTTPS"></span>
+			<a href="#" data-bind="click: testSystemNotification, visible: isDesktopNotificationAllowed" data-i18n="QUOKKA/TRY"></a>
+		</div>
+	</div>
+	<div class="control-group">
+		<div data-bind="component: {
+			name: 'Checkbox',
+			params: {
+				label: 'SETTINGS_GENERAL/SOUND_NOTIFICATION',
+				value: soundNotification
+			}
+		}"></div>
+	</div>
+	<div class="control-group" data-bind="visible: soundNotification">
+		<label data-i18n="QUOKKA/SOUND"></label>
+		<div class="quokka-inline">
+			<a href="#" data-bind="click: testSoundNotification" data-i18n="QUOKKA/TRY"></a>
+			<select data-bind="options: notificationSounds, optionsText: soundLabel, value: notificationSound"></select>
 		</div>
 	</div>
 </div>

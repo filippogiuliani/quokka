@@ -7,6 +7,7 @@ import { mailBox, settings } from 'Common/Links';
 import { addComputablesTo } from 'External/ko';
 
 import { AppUserStore } from 'Stores/User/App';
+import { AccountUserStore } from 'Stores/User/Account';
 import { SettingsUserStore } from 'Stores/User/Settings';
 import { FolderUserStore } from 'Stores/User/Folder';
 import { MessageUserStore } from 'Stores/User/Message';
@@ -21,6 +22,9 @@ import { ContactsPopupView } from 'View/Popup/Contacts';
 import { ComposePopupView } from 'View/Popup/Compose';
 
 import { setExpandedFolder, foldersFilter } from 'Model/FolderCollection';
+import { CATEGORY_KEYS, CATEGORIES, categorySearch } from 'Common/Categories';
+import { i18n, translateTrigger } from 'Common/Translator';
+import { getFolderHashFromCacheList, getFolderInboxName } from 'Common/Cache';
 import { ThemeStore } from '../../../Stores/Theme';
 
 export class MailFolderList extends AbstractViewLeft {
@@ -41,6 +45,22 @@ export class MailFolderList extends AbstractViewLeft {
 
 		this.filterUnseen = ko.observable(false);
 
+		// Quokka: who is signed in, at the bottom of the column
+		this.accountEmail = AccountUserStore.email;
+		this.accountInitial = ko.computed(() => (AccountUserStore.email() || '?').charAt(0).toUpperCase());
+		this.settingsHref = settings();
+
+		// Quokka: the categories, each a search of the inbox
+		const categories = CATEGORY_KEYS.map(key => ({
+			key,
+			label: ko.computed(() => (translateTrigger(), i18n('MESSAGE_TAGS/' + key))),
+			href: ko.computed(() => (FolderUserStore.folderList(),
+				mailBox(getFolderHashFromCacheList(getFolderInboxName()), 1, categorySearch(key)))),
+			selected: ko.computed(() => MessagelistUserStore.listSearch() === categorySearch(key)
+				&& FolderUserStore.currentFolder()?.isInbox())
+		}));
+		this.categories = ko.computed(() => categories.filter(c => CATEGORIES().some(([key]) => key === c.key)));
+
 		addComputablesTo(this, {
 			foldersFilterVisible: () => 20 < FolderUserStore.folderList().CountRec,
 
@@ -58,6 +78,11 @@ export class MailFolderList extends AbstractViewLeft {
 		this.oContentScrollable = qs('.b-content');
 
 		dom.addEventListener('click', event => {
+			// Quokka: on the phone a category closes the column and shows its emails (the link does the rest)
+			if (ThemeStore.isMobile() && eqs(event, '.b-categories a')) {
+				leftPanelDisabled(true);
+				return;
+			}
 			let el = eqs(event, '.e-collapsed-sign');
 			if (el) {
 				const folder = ko.dataFor(el);

@@ -49,6 +49,22 @@ const
 		Archive: 0
 	},
 
+	// Quokka: when the server doesn't say which folder is which (no SPECIAL-USE), the usual names do
+	ROLE_NAMES = {
+		Sent: ['sent', 'sent items', 'sent messages', 'sent mail', 'inviata', 'inviate', 'posta inviata', 'elementi inviati', 'messaggi inviati'],
+		Drafts: ['drafts', 'draft', 'bozze', 'bozza'],
+		Junk: ['spam', 'junk', 'junk e-mail', 'junk email', 'bulk mail', 'posta indesiderata', 'indesiderata'],
+		Trash: ['trash', 'deleted', 'deleted items', 'deleted messages', 'bin', 'cestino', 'posta eliminata', 'elementi eliminati'],
+		Archive: ['archive', 'archives', 'archivio']
+	},
+	roleByName = folder => {
+		// at the top, or right inside INBOX (servers with an "INBOX." prefix)
+		const parent = folder.fullName.slice(0, Math.max(0, folder.fullName.length - folder.name.length - 1));
+		if (parent && 'inbox' !== parent.toLowerCase()) return '';
+		const name = folder.name.trim().toLowerCase();
+		return Object.keys(ROLE_NAMES).find(role => ROLE_NAMES[role].includes(name)) || '';
+	},
+
 	kolabTypes = {
 		configuration: 'CONFIGURATION',
 		event: 'CALENDAR',
@@ -70,7 +86,7 @@ const
 			case FolderType.Archive:
 				return i18n('FOLDER_LIST/' + getKeyByValue(FolderType, type).toUpperCase() + '_NAME');
 			case FolderType.Junk:
-				return i18n('GLOBAL/SPAM');
+				return i18n('FOLDER_LIST/SPAM_NAME', null, 'Spam');   // Quokka: the folder, not the button's "Segnala come spam"
 			// no default
 		}
 		return def;
@@ -133,6 +149,7 @@ export class FolderCollectionModel extends AbstractCollectionModel
 			value || (SystemFolders[key] = SettingsGet(key+'Folder'))
 		);
 
+		const byName = {};
 		const result = super.reviveFromJson(object, oFolder => {
 			let oCacheFolder = getFolderFromCacheList(oFolder.fullName);
 			if (oCacheFolder) {
@@ -200,6 +217,9 @@ export class FolderCollectionModel extends AbstractCollectionModel
 			if (role) {
 				role = role[0].toUpperCase() + role.slice(1);
 				SystemFolders[role] || (SystemFolders[role] = oFolder.fullName);
+			} else {
+				const guess = roleByName(oFolder);
+				guess && !byName[guess] && (byName[guess] = oFolder.fullName);
 			}
 
 			oCacheFolder.type(FolderType[getKeyByValue(SystemFolders, oFolder.fullName)] || 0);
@@ -209,6 +229,14 @@ export class FolderCollectionModel extends AbstractCollectionModel
 				|| !expandedFolders.includes(oCacheFolder.fullName));
 
 			return oCacheFolder;
+		});
+
+		// Quokka: the roles still free (no server flag, nobody chose) go to the folders with the usual names
+		forEachObjectEntry(byName, (role, fullName) => {
+			if (!SystemFolders[role] && !Object.values(SystemFolders).includes(fullName)) {
+				SystemFolders[role] = fullName;
+				getFolderFromCacheList(fullName)?.type(FolderType[role]);
+			}
 		});
 
 		result.CountRec = result.length;

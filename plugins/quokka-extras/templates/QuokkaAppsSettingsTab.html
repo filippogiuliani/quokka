@@ -1,0 +1,41 @@
+<div class="form-horizontal quokka-apps-settings">
+	<div class="legend" data-i18n="QUOKKA_EXTRAS/TAB_APPS"></div>
+	<p class="quokka-intro" data-i18n="QUOKKA_EXTRAS/APPS_INTRO"></p>
+
+	<div class="legend">paTrack</div>
+	<!-- ko if: patrack -->
+	<div class="control-group" data-bind="i18nUpdate: true">
+		<label for="quokka-patrack-token" data-i18n="QUOKKA_EXTRAS/PATRACK_TOKEN"></label>
+		<input id="quokka-patrack-token" type="password" autocomplete="off" spellcheck="false"
+			data-bind="textInput: patrackToken, attr: {placeholder: patrackSaved() ? savedText : 'pt_…'}">
+	</div>
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true">
+		<span data-i18n="QUOKKA_EXTRAS/PATRACK_HOWTO"></span>
+		<a href="#" data-bind="visible: patrackSaved, click: forgetPatrack" data-i18n="QUOKKA_EXTRAS/UNLINK"></a>
+	</div>
+	<!-- /ko -->
+	<!-- ko ifnot: patrack -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/PATRACK_NOT_SET"></span></div>
+	<!-- /ko -->
+
+	<div class="legend">doTrack</div>
+	<!-- ko if: dotrack -->
+	<div class="control-group" data-bind="i18nUpdate: true">
+		<label for="quokka-dotrack-token" data-i18n="QUOKKA_EXTRAS/DOTRACK_TOKEN"></label>
+		<input id="quokka-dotrack-token" type="password" autocomplete="off" spellcheck="false"
+			data-bind="textInput: dotrackToken, attr: {placeholder: dotrackSaved() ? savedText : 'dt_…'}">
+	</div>
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true">
+		<span data-i18n="QUOKKA_EXTRAS/DOTRACK_HOWTO"></span>
+		<a href="#" data-bind="visible: dotrackSaved, click: forgetDotrack" data-i18n="QUOKKA_EXTRAS/UNLINK"></a>
+	</div>
+	<!-- /ko -->
+	<!-- ko ifnot: dotrack -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/DOTRACK_NOT_SET"></span></div>
+	<!-- /ko -->
+
+	<div class="quokka-save">
+		<button class="btn btn-primary" data-bind="click: saveTokens, enable: !saving() && (patrackToken() || dotrackToken())" data-i18n="QUOKKA_EXTRAS/SAVE"></button>
+		<span data-bind="text: message, css: {'quokka-error': error}"></span>
+	</div>
+</div>

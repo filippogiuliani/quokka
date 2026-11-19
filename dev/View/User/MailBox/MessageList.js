@@ -18,7 +18,7 @@ import { isFullscreen, toggleFullscreen } from 'Common/Fullscreen';
 import { mailBox } from 'Common/Links';
 import { Selector } from 'Common/Selector';
 
-import { i18n } from 'Common/Translator';
+import { i18n, translateTrigger } from 'Common/Translator';
 
 import { dropFilesInFolder } from 'Common/Folders';
 
@@ -31,6 +31,7 @@ import { LanguageStore } from 'Stores/Language';
 import { MessageUserStore } from 'Stores/User/Message';
 import { MessagelistUserStore } from 'Stores/User/Messagelist';
 import { ThemeStore } from 'Stores/Theme';
+import { initTouchList } from 'Common/TouchList';
 
 import Remote from 'Remote/User/Fetch';
 
@@ -42,6 +43,7 @@ import { AdvancedSearchPopupView } from 'View/Popup/AdvancedSearch';
 import { ComposePopupView } from 'View/Popup/Compose';
 
 import { MessageModel } from 'Model/Message';
+import { CATEGORY_KEYS, CATEGORIES, categorySearch, isQuickSearch } from 'Common/Categories';
 
 import { LayoutSideView, ClientSideKeyNameMessageListSize } from 'Common/EnumsUser';
 import { setLayoutResizer } from 'Common/UtilsUser';
@@ -106,13 +108,46 @@ export class MailMessageList extends AbstractViewRight {
 		const attachmentsActions = Settings.app('attachmentsActions');
 		this.attachmentsActions = ko.observableArray(arrayLength(attachmentsActions) ? attachmentsActions : []);
 
+		// Quokka: a heading (the folder, or the category), quick filters, and the links of the phone's bottom menu
+		const inboxHash = () => getFolderHashFromCacheList(FolderUserStore.currentFolder()?.fullName || 'INBOX'),
+			// label: a translation key, shown in the interface's language
+			filter = (labelKey, search, phoneOnly, key) => ({
+				label: ko.computed(() => (translateTrigger(), i18n(labelKey))), key: key || '', phoneOnly: !!phoneOnly,
+				href: ko.computed(() => mailBox(inboxHash(), 1, search)),
+				selected: ko.computed(() => (MessagelistUserStore.listSearch() || '') === search)
+			});
+		const quickFilters = [
+			filter('QUOKKA/FILTER_ALL', ''),
+			filter('QUOKKA/FILTER_UNREAD', 'unseen=1'),
+			filter('QUOKKA/FILTER_ATTACHMENTS', 'attachment=1')
+		].concat(CATEGORY_KEYS.map(key => filter('MESSAGE_TAGS/' + key, categorySearch(key), true, key)));
+		this.quickFilters = ko.computed(() => quickFilters.filter(f => !f.key || CATEGORIES().some(([key]) => key === f.key)));
+
+		addComputablesTo(this, {
+			listTitle: () => {
+				const search = MessagelistUserStore.listSearch() || '',
+					category = CATEGORY_KEYS.find(key => search === categorySearch(key));
+				translateTrigger();
+				return category ? i18n('MESSAGE_TAGS/' + category) : (FolderUserStore.currentFolder()?.localName() || '');
+			},
+			listUnread: () => {
+				const n = FolderUserStore.currentFolder()?.unreadCount() || 0;
+				return n ? i18n('QUOKKA/UNREAD_COUNT', { COUNT: n }) : '';
+			},
+			archiveHref: () => {
+				const archive = FolderUserStore.archiveFolder();
+				return archive && archive !== UNUSED_OPTION_VALUE ? mailBox(getFolderHashFromCacheList(archive)) : '';
+			},
+			inboxHref: () => mailBox(getFolderHashFromCacheList('INBOX'))
+		});
+
 		addComputablesTo(this, {
 
 			sortSupported: () => FolderUserStore.hasCapability('SORT') && !MessagelistUserStore.threadUid(),
 
 			messageListSearchDesc: () => {
 				const value = MessagelistUserStore().search;
-				return value ? i18n('MESSAGE_LIST/SEARCH_RESULT_FOR', { SEARCH: value }) : ''
+				return value && !isQuickSearch(value) ? i18n('MESSAGE_LIST/SEARCH_RESULT_FOR', { SEARCH: value }) : ''
 			},
 
 			messageListPaginator: computedPaginatorHelper(MessagelistUserStore.page, MessagelistUserStore.pageCount),
@@ -126,11 +161,18 @@ export class MailMessageList extends AbstractViewRight {
 			},
 
 			inputSearch: {
-				read: MessagelistUserStore.mainSearch,
+				read: () => (value => isQuickSearch(value) ? '' : value)(MessagelistUserStore.mainSearch()),
 				write: value => sLastSearchValue = value
 			},
 
 			allowDangerousActions: () => SettingsCapa('DangerousActions') || MessagelistUserStore.isTrashFolder(),
+
+			// Quokka: the selection bar (phone, tablet)
+			checkedCount: () => MessagelistUserStore.listChecked().length,
+			checkedText: () => {
+				const n = MessagelistUserStore.listChecked().length;
+				return 1 === n ? i18n('QUOKKA/SELECTED_ONE') : i18n('QUOKKA/SELECTED_MANY', { COUNT: n });
+			},
 
 			isIncompleteChecked: () => {
 				const c = MessagelistUserStore.listChecked().length;
@@ -571,6 +613,7 @@ export class MailMessageList extends AbstractViewRight {
 		}, 1);
 
 		this.selector.init(b_content, ScopeMessageList);
+		initTouchList(b_content);       // Quokka: long press to select, swipe to bin or archive
 
 		addEventsListeners(dom, {
 			click: event => {
