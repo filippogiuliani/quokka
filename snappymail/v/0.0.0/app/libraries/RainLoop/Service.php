@@ -83,6 +83,9 @@ abstract class Service
 		}
 
 		$aPaths = \explode('/', $sQuery);
+		// Quokka: identity providers that rebuild the return address write "?QuokkaSsoCallback&code=…" as
+		// "?QuokkaSsoCallback=&code=…" (Pocket ID does): the name is the same without the empty "="
+		$aPaths[0] = \rtrim($aPaths[0], '=');
 
 		$sAdminPanelHost = \trim($oConfig->Get('admin_panel', 'host', ''));
 		if (empty($sAdminPanelHost)) {
