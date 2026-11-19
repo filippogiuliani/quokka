@@ -84,10 +84,14 @@ done
 [ -z "$first" ] || set_ini login default_domain "\"$first\""
 
 # The family apps from an email (plugins/quokka-extras): installed and turned on at every start, so an update of the
-# image brings its new version; where paTrack and doTrack are reaches PHP through php-fpm (which hides the environment)
+# image brings its new version; where Pelican and Kooka are reaches PHP through php-fpm (which hides the environment)
 secret=${QUOKKA_SECRET:-}
 [ -z "${QUOKKA_OIDC_ISSUER:-}" ] || [ ${#secret} -ge 32 ] || echo "[WARN] Quokka: QUOKKA_SECRET must be at least 32 characters: Pocket ID sign-in is off"
-echo "[INFO] Quokka: plugin quokka-extras (paTrack: ${QUOKKA_PATRACK_URL:-none}, doTrack: ${QUOKKA_DOTRACK_URL:-none})"
+# the names before 2026-11 (paTrack, doTrack) still work
+QUOKKA_PELICAN_URL=${QUOKKA_PELICAN_URL:-${QUOKKA_PATRACK_URL:-}}
+QUOKKA_KOOKA_URL=${QUOKKA_KOOKA_URL:-${QUOKKA_DOTRACK_URL:-}}
+export QUOKKA_PELICAN_URL QUOKKA_KOOKA_URL
+echo "[INFO] Quokka: plugin quokka-extras (Pelican: ${QUOKKA_PELICAN_URL:-none}, Kooka: ${QUOKKA_KOOKA_URL:-none})"
 mkdir -p "$DATA/plugins"
 for plugin in quokka-extras quokka-sso quokka-security; do
     rm -rf "$DATA/plugins/$plugin"
@@ -99,7 +103,7 @@ set_ini plugins enabled_list '"quokka-extras,quokka-sso,quokka-security"'
 FPM=/usr/local/etc/php-fpm.d/php-fpm.conf
 sed -i '/^env\[QUOKKA_/d' "$FPM"
 # (the Pocket ID settings and QUOKKA_SECRET too: they stay in the container, never in the data volume)
-for name in QUOKKA_PATRACK_URL QUOKKA_DOTRACK_URL QUOKKA_OIDC_ISSUER QUOKKA_OIDC_CLIENT_ID QUOKKA_OIDC_CLIENT_SECRET \
+for name in QUOKKA_PELICAN_URL QUOKKA_KOOKA_URL QUOKKA_OIDC_ISSUER QUOKKA_OIDC_CLIENT_ID QUOKKA_OIDC_CLIENT_SECRET \
             QUOKKA_PUBLIC_URL QUOKKA_SECRET; do
     value=$(printenv "$name" | tr -d '"' || true)
     [ -z "$value" ] || printf 'env[%s] = "%s"\n' "$name" "$value" >> "$FPM"

@@ -26,9 +26,9 @@ services:
       QUOKKA_OIDC_ISSUER: ${QUOKKA_OIDC_ISSUER:-}
       QUOKKA_OIDC_CLIENT_ID: ${QUOKKA_OIDC_CLIENT_ID:-}
       QUOKKA_OIDC_CLIENT_SECRET: ${QUOKKA_OIDC_CLIENT_SECRET:-}
-      # the family apps (optional), for "Archivia in paTrack" and "Promemoria in doTrack"
-      QUOKKA_PATRACK_URL: ${QUOKKA_PATRACK_URL:-}
-      QUOKKA_DOTRACK_URL: ${QUOKKA_DOTRACK_URL:-}
+      # the family apps (optional), for "Archivia in Pelican" and "Promemoria in Kooka"
+      QUOKKA_PELICAN_URL: ${QUOKKA_PELICAN_URL:-}
+      QUOKKA_KOOKA_URL: ${QUOKKA_KOOKA_URL:-}
       QUOKKA_TITLE: ${QUOKKA_TITLE:-Quokka}
       QUOKKA_LANGUAGE: ${QUOKKA_LANGUAGE:-it}
       QUOKKA_ENCRYPTION: ${QUOKKA_ENCRYPTION:-Off}

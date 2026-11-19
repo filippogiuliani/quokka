@@ -2,40 +2,40 @@
 	<div class="legend" data-i18n="QUOKKA_EXTRAS/TAB_APPS"></div>
 	<p class="quokka-intro" data-i18n="QUOKKA_EXTRAS/APPS_INTRO"></p>
 
-	<div class="legend">paTrack</div>
-	<!-- ko if: patrack -->
+	<div class="legend">Pelican</div>
+	<!-- ko if: pelican -->
 	<div class="control-group" data-bind="i18nUpdate: true">
-		<label for="quokka-patrack-token" data-i18n="QUOKKA_EXTRAS/PATRACK_TOKEN"></label>
-		<input id="quokka-patrack-token" type="password" autocomplete="off" spellcheck="false"
-			data-bind="textInput: patrackToken, attr: {placeholder: patrackSaved() ? savedText : 'pt_…'}">
+		<label for="quokka-pelican-token" data-i18n="QUOKKA_EXTRAS/PELICAN_TOKEN"></label>
+		<input id="quokka-pelican-token" type="password" autocomplete="off" spellcheck="false"
+			data-bind="textInput: pelicanToken, attr: {placeholder: pelicanSaved() ? savedText : 'pt_…'}">
 	</div>
 	<div class="control-group quokka-note" data-bind="i18nUpdate: true">
-		<span data-i18n="QUOKKA_EXTRAS/PATRACK_HOWTO"></span>
-		<a href="#" data-bind="visible: patrackSaved, click: forgetPatrack" data-i18n="QUOKKA_EXTRAS/UNLINK"></a>
+		<span data-i18n="QUOKKA_EXTRAS/PELICAN_HOWTO"></span>
+		<a href="#" data-bind="visible: pelicanSaved, click: forgetPelican" data-i18n="QUOKKA_EXTRAS/UNLINK"></a>
 	</div>
 	<!-- /ko -->
-	<!-- ko ifnot: patrack -->
-	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/PATRACK_NOT_SET"></span></div>
+	<!-- ko ifnot: pelican -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/PELICAN_NOT_SET"></span></div>
 	<!-- /ko -->
 
-	<div class="legend">doTrack</div>
-	<!-- ko if: dotrack -->
+	<div class="legend">Kooka</div>
+	<!-- ko if: kooka -->
 	<div class="control-group" data-bind="i18nUpdate: true">
-		<label for="quokka-dotrack-token" data-i18n="QUOKKA_EXTRAS/DOTRACK_TOKEN"></label>
-		<input id="quokka-dotrack-token" type="password" autocomplete="off" spellcheck="false"
-			data-bind="textInput: dotrackToken, attr: {placeholder: dotrackSaved() ? savedText : 'dt_…'}">
+		<label for="quokka-kooka-token" data-i18n="QUOKKA_EXTRAS/KOOKA_TOKEN"></label>
+		<input id="quokka-kooka-token" type="password" autocomplete="off" spellcheck="false"
+			data-bind="textInput: kookaToken, attr: {placeholder: kookaSaved() ? savedText : 'dt_…'}">
 	</div>
 	<div class="control-group quokka-note" data-bind="i18nUpdate: true">
-		<span data-i18n="QUOKKA_EXTRAS/DOTRACK_HOWTO"></span>
-		<a href="#" data-bind="visible: dotrackSaved, click: forgetDotrack" data-i18n="QUOKKA_EXTRAS/UNLINK"></a>
+		<span data-i18n="QUOKKA_EXTRAS/KOOKA_HOWTO"></span>
+		<a href="#" data-bind="visible: kookaSaved, click: forgetKooka" data-i18n="QUOKKA_EXTRAS/UNLINK"></a>
 	</div>
 	<!-- /ko -->
-	<!-- ko ifnot: dotrack -->
-	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/DOTRACK_NOT_SET"></span></div>
+	<!-- ko ifnot: kooka -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/KOOKA_NOT_SET"></span></div>
 	<!-- /ko -->
 
 	<div class="quokka-save">
-		<button class="btn btn-primary" data-bind="click: saveTokens, enable: !saving() && (patrackToken() || dotrackToken())" data-i18n="QUOKKA_EXTRAS/SAVE"></button>
+		<button class="btn btn-primary" data-bind="click: saveTokens, enable: !saving() && (pelicanToken() || kookaToken())" data-i18n="QUOKKA_EXTRAS/SAVE"></button>
 		<span data-bind="text: message, css: {'quokka-error': error}"></span>
 	</div>
 </div>

@@ -1,11 +1,11 @@
 <?php
 /**
- * Quokka – the family apps from an email: "Archivia in paTrack" (the PDF attached, or the whole email) and
- * "Promemoria in doTrack" (a deadline). The calls leave from the server with each person's own API token, so the
+ * Quokka – the family apps from an email: "Archivia in Pelican" (the PDF attached, or the whole email) and
+ * "Promemoria in Kooka" (a deadline). The calls leave from the server with each person's own API token, so the
  * tokens never reach the browser.
  *
- * Where the apps are: QUOKKA_PATRACK_URL and QUOKKA_DOTRACK_URL in the environment (e.g. https://patrack.example.it).
- * Each person pastes their tokens once in Settings → Family apps (paTrack: pt_…, doTrack: dt_…).
+ * Where the apps are: QUOKKA_PELICAN_URL and QUOKKA_KOOKA_URL in the environment (e.g. https://pelican.example.it).
+ * Each person pastes their tokens once in Settings → Family apps (Pelican: pt_…, Kooka: dt_…).
  *
  * Also: which categories each person sees (Settings → Categories), and "Unsubscribe" on newsletters, from their List-Unsubscribe header (RFC 2369, one-click RFC 8058).
  */
@@ -19,9 +19,22 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		REQUIRED = '2.36.0',
 		CATEGORY = 'General',
 		LICENSE  = 'AGPL-3.0',
-		DESCRIPTION = 'Categories settings, one-click unsubscribe, an email to paTrack and its deadline to doTrack.';
+		DESCRIPTION = 'Categories settings, one-click unsubscribe, an email to Pelican and its deadline to Kooka.';
 
 	const MAX_FILE = 30 * 1024 * 1024;
+
+	/** The user's settings; the app tokens saved before the rename (paTrack, doTrack until 2026-11) under the new names */
+	private function settings() : array
+	{
+		$aSettings = $this->getUserSettings();
+		foreach (array('patrackToken' => 'pelicanToken', 'dotrackToken' => 'kookaToken') as $sOld => $sNew) {
+			if (!isset($aSettings[$sNew]) && isset($aSettings[$sOld])) {
+				$aSettings[$sNew] = $aSettings[$sOld];
+			}
+			unset($aSettings[$sOld]);
+		}
+		return $aSettings;
+	}
 
 	public function Init() : void
 	{
@@ -33,8 +46,8 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addJsonHook('QuokkaCategoriesSave', 'JsonCategorieSave');
 		$this->addJsonHook('QuokkaExtrasGet', 'JsonGet');
 		$this->addJsonHook('QuokkaExtrasSave', 'JsonSave');
-		$this->addJsonHook('QuokkaExtrasToPatrack', 'JsonToPatrack');
-		$this->addJsonHook('QuokkaExtrasToDotrack', 'JsonToDotrack');
+		$this->addJsonHook('QuokkaExtrasToPelican', 'JsonToPelican');
+		$this->addJsonHook('QuokkaExtrasToKooka', 'JsonToKooka');
 		$this->addJsonHook('QuokkaExtrasUnsubscribe', 'JsonUnsubscribe');
 	}
 
@@ -49,7 +62,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	{
 		if (!$bAdmin && \is_array($aResult) && !empty($aResult['Auth'])) {
 			try {
-				$aResult['QuokkaHiddenCategories'] = \array_values($this->getUserSettings()['hiddenCategories'] ?? array());
+				$aResult['QuokkaHiddenCategories'] = \array_values($this->settings()['hiddenCategories'] ?? array());
 			} catch (\Throwable $oException) {
 			}
 		}
@@ -60,7 +73,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	{
 		$aHidden = \array_values(\array_unique(\array_filter((array) $this->jsonParam('hidden', array()),
 			fn($s) => \is_string($s) && \preg_match('/^[a-z]{1,30}$/D', $s))));
-		$aSettings = $this->getUserSettings();
+		$aSettings = $this->settings();
 		$aSettings['hiddenCategories'] = \array_slice($aHidden, 0, 30);
 		return $this->jsonResponse(__FUNCTION__, $this->saveUserSettings($aSettings));
 	}
@@ -68,20 +81,20 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	/** What the page may know: whether each app is there and whether this person has a token for it. */
 	public function JsonGet()
 	{
-		$aSettings = $this->getUserSettings();
+		$aSettings = $this->settings();
 		return $this->jsonResponse(__FUNCTION__, array(
-			'patrack' => '' !== self::appUrl('QUOKKA_PATRACK_URL'),
-			'dotrack' => '' !== self::appUrl('QUOKKA_DOTRACK_URL'),
-			'patrackToken' => !empty($aSettings['patrackToken']),
-			'dotrackToken' => !empty($aSettings['dotrackToken'])
+			'pelican' => '' !== self::appUrl('QUOKKA_PELICAN_URL'),
+			'kooka' => '' !== self::appUrl('QUOKKA_KOOKA_URL'),
+			'pelicanToken' => !empty($aSettings['pelicanToken']),
+			'kookaToken' => !empty($aSettings['kookaToken'])
 		));
 	}
 
 	/** A token left empty keeps the one saved; "-" removes it. */
 	public function JsonSave()
 	{
-		$aSettings = $this->getUserSettings();
-		foreach (array('patrackToken' => 'pt_', 'dotrackToken' => 'dt_') as $sKey => $sPrefix) {
+		$aSettings = $this->settings();
+		foreach (array('pelicanToken' => 'pt_', 'kookaToken' => 'dt_') as $sKey => $sPrefix) {
 			$sValue = \trim((string) $this->jsonParam($sKey, ''));
 			if ('-' === $sValue) {
 				unset($aSettings[$sKey]);
@@ -95,13 +108,13 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		return $this->jsonResponse(__FUNCTION__, $this->saveUserSettings($aSettings));
 	}
 
-	/** {folder, uid, mimeIndex ('' = the whole email), fileName, title} → paTrack's import queue */
-	public function JsonToPatrack()
+	/** {folder, uid, mimeIndex ('' = the whole email), fileName, title} → Pelican's import queue */
+	public function JsonToPelican()
 	{
-		$sBase = self::appUrl('QUOKKA_PATRACK_URL');
-		$sToken = (string) ($this->getUserSettings()['patrackToken'] ?? '');
+		$sBase = self::appUrl('QUOKKA_PELICAN_URL');
+		$sToken = (string) ($this->settings()['pelicanToken'] ?? '');
 		if (!$sBase || !$sToken) {
-			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_PATRACK_NOT_LINKED'));
+			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_PELICAN_NOT_LINKED'));
 		}
 		$sFolder = (string) $this->jsonParam('folder', '');
 		$iUid = (int) $this->jsonParam('uid', 0);
@@ -135,16 +148,16 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			. "--{$sBoundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{$sSafeName}\"\r\n"
 			. "Content-Type: application/octet-stream\r\n\r\n{$sData}\r\n--{$sBoundary}--\r\n";
 		return $this->jsonResponse(__FUNCTION__, $this->call('POST', $sBase . '/api/imports', $sBody, $sToken,
-			"multipart/form-data; boundary={$sBoundary}", 'paTrack'));
+			"multipart/form-data; boundary={$sBoundary}", 'Pelican'));
 	}
 
-	/** {title, dueDate (YYYY-MM-DD), notes} → a deadline in doTrack, reminded three days before */
-	public function JsonToDotrack()
+	/** {title, dueDate (YYYY-MM-DD), notes} → a deadline in Kooka, reminded three days before */
+	public function JsonToKooka()
 	{
-		$sBase = self::appUrl('QUOKKA_DOTRACK_URL');
-		$sToken = (string) ($this->getUserSettings()['dotrackToken'] ?? '');
+		$sBase = self::appUrl('QUOKKA_KOOKA_URL');
+		$sToken = (string) ($this->settings()['kookaToken'] ?? '');
 		if (!$sBase || !$sToken) {
-			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_DOTRACK_NOT_LINKED'));
+			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_KOOKA_NOT_LINKED'));
 		}
 		$sDue = (string) $this->jsonParam('dueDate', '');
 		if (!\preg_match('/^\d{4}-\d{2}-\d{2}$/D', $sDue)) {
@@ -158,7 +171,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			'remind_days' => 3,
 			'notes' => \mb_substr((string) $this->jsonParam('notes', ''), 0, 2000)
 		));
-		return $this->jsonResponse(__FUNCTION__, $this->call('POST', $sBase . '/api/items', $sBody, $sToken, 'application/json', 'doTrack'));
+		return $this->jsonResponse(__FUNCTION__, $this->call('POST', $sBase . '/api/items', $sBody, $sToken, 'application/json', 'Kooka'));
 	}
 
 	/**

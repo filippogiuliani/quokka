@@ -1,7 +1,7 @@
 # Quokka – the family webmail
 
 Quokka is a fork of [SnappyMail](https://github.com/the-djmaze/snappymail) (AGPL-3.0), made for a family: the look of the
-family apps (weHub, paTrack, doTrack, eaTrack), categories, bills, scam warnings, two-step sign-in, phones first.
+family apps (Wombat, Pelican, Kooka, Wallaby), categories, bills, scam warnings, two-step sign-in, phones first.
 The code and its texts are in English; the interface is translated (Italian included, as the family uses it).
 
 **Licence.** Like SnappyMail, Quokka is under the GNU AGPL v3 (see `LICENSE`). Whoever uses it over the network can ask
@@ -58,13 +58,13 @@ server reads the header again from the mailbox (the page never chooses where to 
 
 `plugins/quokka-extras/` (installed and turned on at every start by `setup.sh`). On an email in «Bills»
 Quokka reads the amount, the due date and the period (`dev/Common/Bill.js`) and offers:
-- **Archive in paTrack**: the PDF attached (or the whole email as .eml) goes to paTrack's import queue, category home;
-- **Reminder in doTrack**: a deadline (category money) on the due date, reminded 3 days before;
+- **Archive in Pelican**: the PDF attached (or the whole email as .eml) goes to Pelican's import queue, category home;
+- **Reminder in Kooka**: a deadline (category money) on the due date, reminded 3 days before;
 - **Not a bill**: takes the category off (the sorter learns from it).
 
-The calls leave from the server with each person's own token (Settings → Family apps: paTrack `pt_…`, doTrack
-`dt_…`), kept in their Quokka settings and never sent back to the browser. Where the apps are: `QUOKKA_PATRACK_URL`,
-`QUOKKA_DOTRACK_URL`.
+The calls leave from the server with each person's own token (Settings → Family apps: Pelican `pt_…`, Kooka
+`dt_…`), kept in their Quokka settings and never sent back to the browser. Where the apps are: `QUOKKA_PELICAN_URL`,
+`QUOKKA_KOOKA_URL`.
 
 ## Sign in with Pocket ID
 
@@ -114,7 +114,7 @@ steps (images, folders, the sorter's mailboxes, NPM, Pocket ID). The settings:
 | `IMAP_HOST` / `IMAP_PORT` | — / `993` | your mail provider's IMAP server (required) |
 | `SMTP_HOST` / `SMTP_PORT` | — / `465` | its SMTP server (required) |
 | `IMAP_SECURITY` / `SMTP_SECURITY` | `ssl` on 993/465 | `ssl`, `starttls` or `none` |
-| `QUOKKA_PATRACK_URL` / `QUOKKA_DOTRACK_URL` | — | where paTrack and doTrack are (e.g. `https://patrack.example.it` or `http://patrack:8000` on the same Docker network) |
+| `QUOKKA_PELICAN_URL` / `QUOKKA_KOOKA_URL` | — | where Pelican and Kooka are (e.g. `https://pelican.example.it` or `http://pelican:8000` on the same Docker network) |
 | `QUOKKA_OIDC_ISSUER` / `QUOKKA_OIDC_CLIENT_ID` / `QUOKKA_OIDC_CLIENT_SECRET` | — | Pocket ID (callback: `<QUOKKA_PUBLIC_URL>/?QuokkaSsoCallback`) |
 | `QUOKKA_PUBLIC_URL` | — | Quokka's address, e.g. `https://mail.example.it` |
 | `QUOKKA_SECRET` | — | at least 32 random characters (`openssl rand -hex 32`); changing it forgets the Pocket ID links |

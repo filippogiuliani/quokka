@@ -1,4 +1,4 @@
-/* Quokka: the look of the family apps (weHub, paTrack, doTrack…): cool grays, one navy accent,
+/* Quokka: the look of the family apps (Wombat, Pelican, Kooka…): cool grays, one navy accent,
    thin borders instead of shadows, Inter. Light and dark follow the device, like the other apps. */
 
 /* Fredoka (SIL Open Font License, fonts/Fredoka-OFL.txt): only for the name in the logo */
@@ -30,7 +30,7 @@
 :root {
 	color-scheme: light dark;
 
-	/* the family palette (weHub's app.css) */
+	/* the family palette (Wombat's app.css) */
 	--fm-bg: light-dark(#f7f8fa, #111317);
 	--fm-surface: light-dark(#ffffff, #1a1d23);
 	--fm-surface-2: light-dark(#f1f3f6, #23272f);
@@ -704,7 +704,7 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 .messageView .messageItemHeader .subjectParent .subject { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
 #messageItem .b-text-part .b-text-part, #messageItem .bodyText .b-text-part { padding: 0 !important; }
 
-/* ---------- the bill box (Quokka): what it says, to paTrack and doTrack ---------- */
+/* ---------- the bill box (Quokka): what it says, to Pelican and Kooka ---------- */
 .quokka-bill { margin: 14px 22px 4px; padding: 14px 16px; border: 1px solid var(--fm-line); border-radius: 12px; background: var(--fm-surface); display: flex; flex-direction: column; gap: 12px; }
 .quokka-bill-intro { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fm-muted); }
 .quokka-bill-intro svg, .quokka-bill-actions svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }

@@ -182,7 +182,7 @@ export class MailMessageView extends AbstractViewRight {
 
 		// Quokka: the email's category, to change in one step (the sorter learns from it)
 		this.categoryChoices = ko.computed(() => [{ key: '', label: i18n('QUOKKA/CATEGORY_NONE') }].concat(CATEGORIES().map(([key, label]) => ({ key, label }))));
-		// Quokka: a bill's amount, due date and period, and the way to paTrack and doTrack
+		// Quokka: a bill's amount, due date and period, and the way to Pelican and Kooka
 		this.billStatus = ko.observable('');
 		this.billBusy = ko.observable(false);
 		this.bill = ko.computed(() => {
@@ -201,21 +201,21 @@ export class MailMessageView extends AbstractViewRight {
 				period: found.period || '',
 				pdf: pdf || null,
 				what: pdf ? pdf.fileName : i18n('QUOKKA/BILL_WHOLE_EMAIL'),
-				patrackTitle: i18n('QUOKKA/BILL_PATRACK_TITLE', { WHAT: pdf ? pdf.fileName : i18n('QUOKKA/BILL_WHOLE_EMAIL') }),
-				dotrackTitle: found.due ? '' : i18n('QUOKKA/BILL_NO_DUE')
+				pelicanTitle: i18n('QUOKKA/BILL_PELICAN_TITLE', { WHAT: pdf ? pdf.fileName : i18n('QUOKKA/BILL_WHOLE_EMAIL') }),
+				kookaTitle: found.due ? '' : i18n('QUOKKA/BILL_NO_DUE')
 			};
 		});
 		this.bill.subscribe(() => this.billStatus(''));
-		this.billToPatrack = () => {
+		this.billToPelican = () => {
 			const message = currentMessage(), bill = this.bill();
 			if (!message || !bill || this.billBusy()) return;
 			this.billBusy(true);
-			this.billStatus(i18n('QUOKKA/BILL_SENDING_PATRACK'));
+			this.billStatus(i18n('QUOKKA/BILL_SENDING_PELICAN'));
 			rl.pluginRemoteRequest((iError, oData) => {
 				this.billBusy(false);
 				const r = oData?.Result;
-				this.billStatus(iError ? i18n('QUOKKA/BILL_PATRACK_DOWN') : r?.error ? appError(r) : i18n('duplicate' === r?.status ? 'QUOKKA/BILL_PATRACK_DUPLICATE' : 'QUOKKA/BILL_PATRACK_DONE'));
-			}, 'QuokkaExtrasToPatrack', {
+				this.billStatus(iError ? i18n('QUOKKA/BILL_PELICAN_DOWN') : r?.error ? appError(r) : i18n('duplicate' === r?.status ? 'QUOKKA/BILL_PELICAN_DUPLICATE' : 'QUOKKA/BILL_PELICAN_DONE'));
+			}, 'QuokkaExtrasToPelican', {
 				folder: message.folder,
 				uid: message.uid,
 				mimeIndex: bill.pdf ? bill.pdf.mimeIndex : '',
@@ -223,16 +223,16 @@ export class MailMessageView extends AbstractViewRight {
 				title: [message.from?.[0]?.name || message.from?.[0]?.email, bill.period || message.subject()].filter(Boolean).join(' – ')
 			}, 60000);
 		};
-		this.billToDotrack = () => {
+		this.billToKooka = () => {
 			const message = currentMessage(), bill = this.bill();
 			if (!message || !bill?.dueIso || this.billBusy()) return;
 			this.billBusy(true);
-			this.billStatus(i18n('QUOKKA/BILL_SENDING_DOTRACK'));
+			this.billStatus(i18n('QUOKKA/BILL_SENDING_KOOKA'));
 			rl.pluginRemoteRequest((iError, oData) => {
 				this.billBusy(false);
 				const r = oData?.Result;
-				this.billStatus(iError ? i18n('QUOKKA/BILL_DOTRACK_DOWN') : r?.error ? appError(r) : i18n('QUOKKA/BILL_DOTRACK_DONE'));
-			}, 'QuokkaExtrasToDotrack', {
+				this.billStatus(iError ? i18n('QUOKKA/BILL_KOOKA_DOWN') : r?.error ? appError(r) : i18n('QUOKKA/BILL_KOOKA_DONE'));
+			}, 'QuokkaExtrasToKooka', {
 				title: i18n('QUOKKA/BILL_PAY', { WHAT: [message.from?.[0]?.name || message.from?.[0]?.email, bill.period].filter(Boolean).join(' – ')
 					+ (bill.amount ? ' (' + bill.amount + ')' : '') }),
 				dueDate: bill.dueIso,
