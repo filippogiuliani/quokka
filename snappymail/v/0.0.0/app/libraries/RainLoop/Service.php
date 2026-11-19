@@ -112,9 +112,10 @@ abstract class Service
 
 		$bIndex = true;
 		if (\count($aPaths) && !empty($aPaths[0]) && 'index' !== \strtolower($aPaths[0])) {
-			// Quokka: the way back from the identity provider (Pocket ID) is a page load another site started; it has its own
-			// checks (the state cookie and PKCE), so it alone is let through. Everything after it starts from Quokka's pages.
-			$bQuokkaSsoReturn = 'quokkassocallback' === \strtolower($aPaths[0])
+			// Quokka: Pocket ID's way in (?QuokkaSso, which only sends people to Pocket ID: a link from its dashboard or from
+			// another app) and way back (?QuokkaSsoCallback, with its own checks: the state cookie and PKCE) are page loads
+			// another site starts; they alone are let through. Everything after them starts from Quokka's pages.
+			$bQuokkaSsoReturn = \in_array(\strtolower($aPaths[0]), array('quokkasso', 'quokkassocallback'), true)
 				&& 'navigate' === ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') && 'document' === ($_SERVER['HTTP_SEC_FETCH_DEST'] ?? '');
 			if ('mailto' !== \strtolower($aPaths[0]) && !$bQuokkaSsoReturn && !\SnappyMail\HTTP\SecFetch::matchAnyRule($oConfig->Get('security', 'secfetch_allow', ''))) {
 				\MailSo\Base\Http::StatusHeader(403);
