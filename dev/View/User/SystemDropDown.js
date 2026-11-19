@@ -117,6 +117,12 @@ export class SystemDropDownUserView extends AbstractViewRight {
 		}
 	}
 
+	/** Quokka: Mail and Archive close the folders and categories panel (opened by Categories), then go */
+	tabClick() {
+		leftPanelDisabled(true);
+		return true;
+	}
+
 	settingsClick() {
 		hasher.setHash(settings());
 	}

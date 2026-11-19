@@ -52,8 +52,8 @@
 </div>
 	<!-- Quokka: the phone's bottom menu, on every screen -->
 	<nav class="quokka-tabbar">
-		<a class="tab-mail" data-bind="attr: {href: inboxHref}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span data-i18n="QUOKKA/TAB_MAIL"></span></a>
+		<a class="tab-mail" data-bind="attr: {href: inboxHref}, click: tabClick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span data-i18n="QUOKKA/TAB_MAIL"></span></a>
 		<a class="tab-categories" href="#" data-bind="click: categoriesClick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg><span data-i18n="QUOKKA/TAB_CATEGORIES"></span></a>
-		<a class="tab-archive" data-bind="attr: {href: archiveHref}, visible: archiveHref"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="5" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"></path></svg><span data-i18n="QUOKKA/TAB_ARCHIVE"></span></a>
+		<a class="tab-archive" data-bind="attr: {href: archiveHref}, visible: archiveHref, click: tabClick"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="5" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"></path></svg><span data-i18n="QUOKKA/TAB_ARCHIVE"></span></a>
 		<a class="tab-settings" href="#/settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg><span data-i18n="QUOKKA/TAB_SETTINGS"></span></a>
 	</nav>
