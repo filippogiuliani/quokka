@@ -660,6 +660,10 @@
 		"UnknownError": "Errore sconosciuto"
 	},
 	"QUOKKA": {
+		"MAIN_ACCOUNT": "Principale",
+		"MAKE_MAIN": "Rendi principale",
+		"MAKE_MAIN_ASK": "Rendere %EMAIL% l'account principale? Pocket ID aprirà questa casella e gli altri account resteranno qui sotto, compreso quello principale di adesso.",
+		"MAKE_MAIN_FAILED": "Non riuscito: l'account principale non è cambiato.",
 		"EDITOR_MORE": "Altro",
 		"CATEGORIES": "Categorie",
 		"NEW_FOLDER": "Nuova cartella",

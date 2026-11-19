@@ -12,6 +12,8 @@ import Remote from 'Remote/User/Fetch';
 import { showScreenPopup } from 'Knoin/Knoin';
 
 import { AccountPopupView } from 'View/Popup/Account';
+import { AskPopupView } from 'View/Popup/Ask';
+import { i18n, getNotification } from 'Common/Translator';
 
 export class UserSettingsAccounts /*extends AbstractViewSettings*/ {
 	constructor() {
@@ -28,6 +30,9 @@ export class UserSettingsAccounts /*extends AbstractViewSettings*/ {
 
 		this.showUnread = SettingsUserStore.showUnreadCount;
 		SettingsUserStore.showUnreadCount.subscribe(value => Remote.saveSetting('ShowUnreadCount', value));
+
+		// called by the sortable list without its object
+		this.accountsAndIdentitiesAfterMove = this.accountsAndIdentitiesAfterMove.bind(this);
 
 //		this.additionalAccounts = koComputable(() => AccountUserStore.filter(account => account.isAdditional()));
 	}
@@ -86,7 +91,30 @@ export class UserSettingsAccounts /*extends AbstractViewSettings*/ {
 		}
 	}
 
+	/** Quokka: the first account is the main one (Pocket ID opens it, the others live inside it) */
+	makeMain(account) {
+		const order = [account.email, ...AccountUserStore.map(item => item.email).filter(email => email !== account.email)];
+		AskPopupView.showModal([
+			i18n('QUOKKA/MAKE_MAIN_ASK', { EMAIL: account.label() }),
+			() => Remote.request('AccountMakeMain', (iError, data) => {
+				if (!iError && data?.Result) {
+					rl.route.root();
+					setTimeout(() => location.reload(), 1);
+				} else {
+					alert(getNotification(iError) || i18n('QUOKKA/MAKE_MAIN_FAILED'));
+					loadAccountsAndIdentities();
+				}
+			}, { email: account.email, order: order }),
+			() => loadAccountsAndIdentities()
+		]);
+	}
+
 	accountsAndIdentitiesAfterMove() {
+		const first = AccountUserStore()[0];
+		if (first?.isAdditional()) {
+			// dragged above the main account: that one becomes the main account
+			return this.makeMain(first);
+		}
 		Remote.request('AccountsAndIdentitiesSortOrder', null, {
 			Accounts: AccountUserStore.filter(item => item.isAdditional()).map(item => item.email),
 			Identities: IdentityUserStore.map(item => (item ? item.id() : ""))

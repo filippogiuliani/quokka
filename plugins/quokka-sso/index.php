@@ -40,6 +40,7 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addPartHook('QuokkaSsoLink', 'Link');
 		$this->addJsonHook('QuokkaSsoStatus', 'JsonStatus');
 		$this->addJsonHook('QuokkaSsoUnlink', 'JsonUnlink');
+		$this->addHook('quokka.main-account', 'MainAccountChanged');
 	}
 
 	// ---------- settings ----------
@@ -93,8 +94,12 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$sCipher = \sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($sPlain, 'quokka-sso|' . $sSub, $sNonce, self::key());
 		\sodium_memzero($sPlain);
 		$sFile = self::file($sSub);
+		// the identity itself, sealed too: to move the link when another account becomes the main one
+		$sSubNonce = \random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
+		$sSubCipher = \sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($sSub, 'quokka-sso-sub', $sSubNonce, self::key());
 		$bOk = false !== \file_put_contents($sFile . '.tmp', \json_encode(array(
 			'v' => 1, 'nonce' => \base64_encode($sNonce), 'data' => \base64_encode($sCipher), 'at' => \time(),
+			'sub' => \base64_encode($sSubNonce . $sSubCipher),
 			// to find (and forget) the links of a mailbox from its settings, without opening any
 			'owner' => self::owner($sEmail)
 		)), LOCK_EX);
@@ -229,6 +234,10 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 
 		$aLinked = self::load($sSub);
 		if ($aLinked) {
+			// links made before the identity was kept in them get it now
+			if (empty((\json_decode((string) \file_get_contents(self::file($sSub)), true) ?: [])['sub'])) {
+				self::save($sSub, $aLinked['email'], $aLinked['password']);
+			}
 			return $this->enter($aLinked['email'], $aLinked['password']);
 		}
 		// Not linked yet: the form, with a one-time ticket that stands for this identity for 10 minutes
@@ -374,6 +383,28 @@ HTML;
 			'email' => $oAccount ? $oAccount->Email() : '',
 			'linked' => $oAccount && self::configured() ? \count(self::linksOf($oAccount->Email())) : 0
 		));
+	}
+
+	/** Another account became the main one (Settings → Accounts): Pocket ID opens that one now */
+	public function MainAccountChanged(string $sOldEmail, \RainLoop\Model\MainAccount $oNewMain, \SnappyMail\SensitiveString $oPassword) : void
+	{
+		if (!self::configured()) {
+			return;
+		}
+		$n = \SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES;
+		foreach (self::linksOf($sOldEmail) as $sFile) {
+			$aStored = \json_decode((string) \file_get_contents($sFile), true);
+			$sRaw = \base64_decode((string) ($aStored['sub'] ?? ''));
+			$sSub = \strlen($sRaw) > $n
+				? \sodium_crypto_aead_xchacha20poly1305_ietf_decrypt(\substr($sRaw, $n), 'quokka-sso-sub', \substr($sRaw, 0, $n), self::key())
+				: false;
+			if (false !== $sSub && self::file($sSub) === $sFile) {
+				self::save($sSub, $oNewMain->Email(), $oPassword->getValue()) || \error_log('Quokka SSO: cannot move a link');
+			} else {
+				// an old link without its identity: forgotten, Pocket ID asks for the mailbox once more
+				\unlink($sFile);
+			}
+		}
 	}
 
 	/** Forget the encrypted copy of this mailbox's password (Pocket ID will ask again) */

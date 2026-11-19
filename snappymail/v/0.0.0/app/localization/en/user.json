@@ -660,6 +660,10 @@
 		"UnknownError": "Unknown error"
 	},
 	"QUOKKA": {
+		"MAIN_ACCOUNT": "Main",
+		"MAKE_MAIN": "Make main",
+		"MAKE_MAIN_ASK": "Make %EMAIL% the main account? Pocket ID will open this mailbox and the other accounts stay listed here, the current main one included.",
+		"MAKE_MAIN_FAILED": "Failed: the main account did not change.",
 		"EDITOR_MORE": "More",
 		"CATEGORIES": "Categories",
 		"NEW_FOLDER": "New folder",

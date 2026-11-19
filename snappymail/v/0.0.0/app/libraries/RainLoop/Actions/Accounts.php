@@ -166,6 +166,80 @@ trait Accounts
 	}
 
 	/**
+	 * Quokka: make an added account the main one (the first in the list). The added accounts' passwords are sealed with
+	 * the main account's key: they are opened with the old one and sealed again with the new one, the old main account
+	 * joins the list, and plugins hear of it (Pocket ID then opens the new main account).
+	 * @throws \MailSo\RuntimeException
+	 */
+	public function DoAccountMakeMain(): array
+	{
+		if (!$this->GetCapa(Capa::ADDITIONAL_ACCOUNTS)) {
+			return $this->FalseResponse();
+		}
+		$oOldMain = $this->getMainAccountFromToken();
+		$aAccounts = $this->GetAccounts($oOldMain);
+		$sEmail = IDN::emailToAscii(\trim($this->GetActionParam('email', '')));
+		if (!isset($aAccounts[$sEmail])) {
+			throw new ClientException(Notifications::AccountDoesNotExist);
+		}
+		// the order wanted: the new main account first, then the others (the old main account among them)
+		$aOrder = \array_values(\array_filter(\array_map(
+			fn($e) => IDN::emailToAscii(\trim((string) $e)),
+			(array) $this->GetActionParam('order', [])
+		)));
+
+		// open every password while the old key is still the one in use
+		$aOpen = [];
+		foreach ($aAccounts as $sKey => $aAccount) {
+			$oAccount = AdditionalAccount::NewInstanceFromTokenArray($this, $aAccount, true);
+			if (!$oAccount || !\strlen($oAccount->ImapPass())) {
+				throw new ClientException(Notifications::AccountSwitchFailed);
+			}
+			$aOpen[$sKey] = [$oAccount, $aAccount['name'] ?? ''];
+		}
+		// names: the old main account's is on its identity, the new one's on its row in the list
+		$fPrimary = fn(Account $o) => \current(\array_filter($this->IdentitiesProvider()->GetIdentities($o, true),
+			fn($i) => $i->IsAccountIdentities())) ?: null;
+		$sOldName = $fPrimary($oOldMain)?->Name() ?? '';
+		$sNewName = $aOpen[$sEmail][1];
+		// the old main account as an added one: same data, its password already checked by this session
+		$oOldAsAdded = AdditionalAccount::NewInstanceFromTokenArray($this, $oOldMain->jsonSerialize(), true);
+		if (!$oOldAsAdded || !\strlen($oOldAsAdded->ImapPass())) {
+			throw new ClientException(Notifications::AccountSwitchFailed);
+		}
+		$bSignMe = !empty($_COOKIE[self::AUTH_SIGN_ME_TOKEN_KEY]);
+
+		// sign in to the new one as the main account (its password checked by the mail server, second step included)
+		$oNewPassword = new \SnappyMail\SensitiveString($aOpen[$sEmail][0]->ImapPass());
+		$oNewMain = $this->LoginProcess($sEmail, $oNewPassword);
+
+		$oIdentity = $fPrimary($oNewMain);
+		if ($oIdentity && '' === $oIdentity->Name() && '' !== $sNewName) {
+			$oIdentity->SetName($sNewName);
+			$this->IdentitiesProvider()->UpdateIdentity($oNewMain, $oIdentity);
+		}
+		$aOpen[$oOldMain->Email()] = [$oOldAsAdded, $sOldName];
+		unset($aOpen[$sEmail]);
+		$aKeys = \array_values(\array_unique(\array_merge(
+			\array_values(\array_intersect($aOrder, \array_keys($aOpen))),
+			[$oOldMain->Email()],
+			\array_keys($aOpen)
+		)));
+		$aNew = [];
+		foreach ($aKeys as $sKey) {
+			[$oAccount, $sName] = $aOpen[$sKey];
+			$aNew[$sKey] = $oAccount->asTokenArray($oNewMain);
+			$aNew[$sKey]['name'] = $sName;
+		}
+		$this->SetAccounts($oNewMain, $aNew);
+		$this->SetAccounts($oOldMain, []);
+		$bSignMe && $this->SetSignMeToken($oNewMain);
+		$this->Plugins()->RunHook('quokka.main-account', array($oOldMain->Email(), $oNewMain, $oNewPassword));
+
+		return $this->TrueResponse(['Reload' => true]);
+	}
+
+	/**
 	 * @throws \MailSo\RuntimeException
 	 */
 	public function DoAccountDelete(): array
