@@ -1,7 +1,7 @@
 """Notifications of new emails on the family's devices, also with Quokka closed (Web Push).
 
 The sorter already looks at every mailbox each minute: the new unread emails of INBOX are kept here and sent as one
-notification per mailbox, at most every N minutes as chosen for that mailbox in Quokka (0 = as soon as they arrive).
+notification per email (like Gmail), sent at most every N minutes as chosen for that mailbox in Quokka (0 = as soon as they arrive).
 Quokka talks to it over the internal network (the stack's "quokka" network), signing each call with QUOKKA_SECRET:
 
   GET  /key                                   the VAPID public key, for PushManager.subscribe
@@ -36,9 +36,9 @@ CREATE TABLE IF NOT EXISTS push_pending (account TEXT NOT NULL, uid INTEGER NOT 
     at REAL NOT NULL, PRIMARY KEY (account, uid));
 '''
 TEXTS = {
-    'it': {'many': '{n} nuove email', 'test': 'Le notifiche funzionano', 'test_body': 'Le nuove email di {account} arriveranno qui.',
+    'it': {'more': 'Altre {n} nuove email', 'test': 'Le notifiche funzionano', 'test_body': 'Le nuove email di {account} arriveranno qui.',
            'no_subject': '(senza oggetto)'},
-    'en': {'many': '{n} new emails', 'test': 'Notifications work', 'test_body': 'New emails of {account} will show up here.',
+    'en': {'more': '{n} more new emails', 'test': 'Notifications work', 'test_body': 'New emails of {account} will show up here.',
            'no_subject': '(no subject)'},
 }
 
@@ -110,17 +110,19 @@ def open_url(url, account, uid=None):
     return f"{base}?quokka-account={quote(account)}#/mailbox/INBOX" + (f'/m{uid}' if uid else '')
 
 
-def payload(rows, lang, url, account):
-    if len(rows) == 1:
-        r = rows[0]
-        return {'title': r['sender'], 'body': r['subject'] or _t(lang, 'no_subject'), 'url': open_url(url, account, r['uid']),
-                'tag': 'mail:' + account}
-    senders = []
-    for r in rows:
-        if r['sender'] not in senders:
-            senders.append(r['sender'])
-    body = ', '.join(senders[:4]) + ('…' if len(senders) > 4 else '')
-    return {'title': _t(lang, 'many', n=len(rows)), 'body': body, 'url': open_url(url, account), 'tag': 'mail:' + account}
+MAX_EACH = 10                   # one notification per email, like Gmail; past this many at once, one for the rest
+
+
+def payloads(rows, lang, url, account):
+    """One notification per email (its own tag: they do not replace each other), opening that email; a long burst
+    ends with one "N more emails" opening the inbox."""
+    out = [{'title': r['sender'], 'body': r['subject'] or _t(lang, 'no_subject'), 'url': open_url(url, account, r['uid']),
+            'tag': f"mail:{account}:{r['uid']}"} for r in rows[:MAX_EACH]]
+    rest = rows[MAX_EACH:]
+    if rest:
+        out.append({'title': _t(lang, 'more', n=len(rest)), 'body': ', '.join(dict.fromkeys(r['sender'] for r in rest[:4])),
+                    'url': open_url(url, account), 'tag': f'mail:{account}:more'})
+    return out
 
 
 def flush(conn, data_dir, now=None, send=None):
@@ -130,7 +132,10 @@ def flush(conn, data_dir, now=None, send=None):
     for account, rows in due(conn, now).items():
         subs = conn.execute('SELECT * FROM push_sub WHERE account = ?', (account,)).fetchall()
         for s in subs:
-            sent += _deliver(conn, data_dir, s, payload(rows, s['lang'], s['url'], account), send)
+            for data in payloads(rows, s['lang'], s['url'], account):
+                if not _deliver(conn, data_dir, s, data, send):
+                    break                                  # device gone or service down: not the rest of them
+                sent += 1
         conn.execute('DELETE FROM push_pending WHERE account = ?', (account,))
         conn.execute('INSERT INTO push_setting (account, every, last_sent) VALUES (?, ?, ?) '
                      'ON CONFLICT (account) DO UPDATE SET last_sent = excluded.last_sent',

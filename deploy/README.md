@@ -72,8 +72,8 @@ signs in with Pocket ID and gives their mailbox's password once; after that Pock
 ## 8. Notifications with Quokka closed
 
 The sorter sends them (sorter/push.py): every person turns them on in **Settings → Notifiche**, mailbox by mailbox and
-device by device, and chooses how often (as soon as an email arrives, or at most every 5, 10, 15, 30, 60 minutes:
-the emails of that time become one notification). Nothing else to set up, as long as:
+device by device, and chooses how often (as soon as an email arrives, or every 5, 10, 15, 30, 60 minutes; always one
+notification per email, like Gmail). Nothing else to set up, as long as:
 
 - the sorter and Quokka are on the same Docker network (`quokka` in this compose: Quokka reaches it at
   `QUOKKA_SORTER_URL`, by default `http://quokka-sorter:8025`; that port is never published) and share `QUOKKA_SECRET`;
