@@ -260,7 +260,8 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$sPassword = (string) ($_POST['password'] ?? '');
 		try {
 			// the same check as the usual sign-in: the mail server says whether they are right
-			\RainLoop\Api::Actions()->LoginProcess($sEmail, new \SnappyMail\SensitiveString($sPassword));
+			$oAccount = \RainLoop\Api::Actions()->LoginProcess($sEmail, new \SnappyMail\SensitiveString($sPassword));
+			\RainLoop\Api::Actions()->SetSignMeToken($oAccount);   // remembered for 30 days, as after every Pocket ID sign-in
 		} catch (\Throwable $oException) {
 			// the log says what really went wrong; the page says it in plain words
 			$oPrevious = $oException->getPrevious();
@@ -293,7 +294,8 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 
 	private function enter(string $sEmail, string $sPassword) : bool
 	{
-		$sHash = \RainLoop\Api::CreateUserSsoHash($sEmail, $sPassword);
+		// signMe: remembered for 30 days, like the other family apps (see ServiceActions::ServiceSso)
+		$sHash = \RainLoop\Api::CreateUserSsoHash($sEmail, $sPassword, array('signMe' => true));
 		// Not a redirect: a redirect would still belong to the page load Pocket ID started, and SnappyMail rightly refuses
 		// ?Sso from other sites. This page moves on by itself, so ?Sso is a load started by Quokka.
 		$sUrl = \htmlspecialchars('./?Sso&hash=' . \rawurlencode((string) $sHash), ENT_QUOTES, 'UTF-8');

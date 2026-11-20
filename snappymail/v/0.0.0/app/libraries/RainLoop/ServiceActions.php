@@ -616,6 +616,11 @@ class ServiceActions
 							\trim($aData['Email']),
 							new \SnappyMail\SensitiveString($aData['Password'])
 						);
+						// Quokka: a sign-in from Pocket ID stays for 30 days, like "Remember me" and like the other family apps
+						// (otherwise it ends when the browser closes, every time on a phone)
+						if (!empty($aAdditionalOptions['signMe'])) {
+							$this->oActions->SetSignMeToken($oAccount);
+						}
 						if ($aAdditionalOptions) {
 							$bSaveSettings = false;
 
