@@ -660,7 +660,6 @@
 		"UnknownError": "Errore sconosciuto"
 	},
 	"QUOKKA": {
-		"CHECK_INTERVAL_NOTE": "Vale solo per %EMAIL%: ogni account ha il suo (passa all'altro account per cambiarlo). È il controllo di Quokka aperto: le notifiche con l'app chiusa si regolano in Notifiche.",
 		"MAIN_ACCOUNT": "Principale",
 		"MAKE_MAIN": "Rendi principale",
 		"MAKE_MAIN_ASK": "Rendere %EMAIL% l'account principale? Pocket ID aprirà questa casella e gli altri account resteranno qui sotto, compreso quello principale di adesso.",

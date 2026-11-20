@@ -290,7 +290,8 @@ trait Accounts
 			'HideDeleted' => true,
 			'ShowUnreadCount' => false,
 			'UnhideKolabFolders' => false,
-			'CheckMailInterval' => \max(15, $minRefreshInterval)
+			// Quokka: every minute for every account (the notifications with the app closed come from the sorter)
+			'CheckMailInterval' => \max(1, $minRefreshInterval)
 		];
 		$oSettingsLocal = $this->SettingsProvider(true)->Load($oAccount);
 		if ($oSettingsLocal instanceof \RainLoop\Settings) {
@@ -307,7 +308,7 @@ trait Accounts
 			$aResult['HideDeleted'] = (bool)$oSettingsLocal->GetConf('HideDeleted', $aResult['HideDeleted']);
 			$aResult['ShowUnreadCount'] = (bool)$oSettingsLocal->GetConf('ShowUnreadCount', $aResult['ShowUnreadCount']);
 			$aResult['UnhideKolabFolders'] = (bool)$oSettingsLocal->GetConf('UnhideKolabFolders', $aResult['UnhideKolabFolders']);
-			$aResult['CheckMailInterval'] = \max((int) $oSettingsLocal->GetConf('CheckMailInterval', $aResult['CheckMailInterval']), $minRefreshInterval);
+			// Quokka: not a choice any more, the saved value is left aside
 /*
 			foreach ($oSettingsLocal->toArray() as $key => $value) {
 				$aResult[\lcfirst($key)] = $value;
