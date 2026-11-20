@@ -281,7 +281,7 @@ def test_a_real_push_message_is_encrypted_for_the_device(tmp_path, monkeypatch):
     import requests
     monkeypatch.setattr(requests, 'post', fake_post)
     status = push._webpush({'endpoint': 'https://push.example/real', 'keys': {'p256dh': b64(pub), 'auth': b64(auth)}},
-                           {'title': 'Mamma', 'body': 'Cena'}, str(tmp_path), 'https://mail.example')
+                           {'title': 'Mamma', 'body': 'Cena'}, str(tmp_path), 'https://mail.example/')   # with the "/" Quokka sends
     assert status == 201 and got['headers']['Urgency'] == 'high' and got['headers']['Authorization'].startswith(('vapid ', 'WebPush '))
     plain = http_ece.decrypt(got['data'], private_key=device, auth_secret=auth, version='aes128gcm')
     assert json.loads(plain) == {'title': 'Mamma', 'body': 'Cena'}

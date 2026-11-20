@@ -153,20 +153,31 @@ def _deliver(conn, data_dir, sub, data, send):
     return 1 if status and status < 300 else 0
 
 
+last_error = ''                 # why the last push failed (shown in Quokka when the test notification does not go out)
+
+
 def _webpush(subscription, data, data_dir, subject):
     """HTTP status of the push service (0 = not reached)."""
+    global last_error
     from pywebpush import WebPushException, webpush
-    sub = subject if subject.startswith(('https://', 'mailto:')) else 'mailto:noreply@example.com'
+    # VAPID "sub": a mailto: or the bare https://host (py_vapid refuses a path, even a trailing "/": every push failed)
+    from urllib.parse import urlsplit
+    parts = urlsplit(subject)
+    sub = subject if subject.startswith('mailto:') else (
+        f'https://{parts.netloc}' if parts.scheme == 'https' and parts.netloc else 'mailto:noreply@example.com')
     try:
         r = webpush(subscription, json.dumps(data), vapid_private_key=vapid(data_dir), vapid_claims={'sub': sub},
                     ttl=86400, timeout=10, headers={'Urgency': 'high'})   # high: a phone asleep gets it at once
         return getattr(r, 'status_code', 201)
     except WebPushException as e:
         status = getattr(e.response, 'status_code', 0)
-        log.warning('push failed (%s): %s', status, e)
+        body = (getattr(e.response, 'text', '') or '')[:200]
+        last_error = f'{status} {body or e}'[:300]
+        log.warning('push failed (%s): %s %s', status, e, body)
         return status
     except Exception as e:
-        log.warning('push failed: %s', e)
+        last_error = f'{type(e).__name__}: {e}'[:300]
+        log.warning('push failed: %s: %s', type(e).__name__, e)
         return 0
 
 
@@ -239,7 +250,8 @@ class Service:
                 test = {'title': _t(lang, 'test'), 'body': _t(lang, 'test_body', account=account), 'url': url, 'tag': 'test'}
                 sub_row = c.execute('SELECT * FROM push_sub WHERE endpoint = ? AND account = ?', (endpoint, account)).fetchone()
                 sent = _deliver(c, self.data_dir, sub_row, test, self.send or _webpush)
-                return 200, {'ok': True, 'every': every_of(c, account), 'test_sent': bool(sent)}
+                return 200, {'ok': True, 'every': every_of(c, account), 'test_sent': bool(sent),
+                             'test_error': '' if sent else last_error}
             if path == '/every':
                 try:
                     every = int(data.get('every'))

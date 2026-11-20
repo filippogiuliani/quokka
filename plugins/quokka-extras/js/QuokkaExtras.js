@@ -210,6 +210,7 @@
 				this.busy(false);
 				pushFlag(true, this.mailbox);
 				this.say(r.test_sent ? 'PUSH_ON' : 'PUSH_ON_NO_TEST', !r.test_sent);
+				r.test_error && this.message(this.message() + ' (' + r.test_error + ')');   // what the push service said
 			});
 		}
 
