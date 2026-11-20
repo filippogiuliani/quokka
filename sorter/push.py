@@ -9,7 +9,7 @@ Quokka talks to it over the internal network (the stack's "quokka" network), sig
   POST /status      {account, endpoint?}      {watched, every, subscribed}
   POST /subscribe   {account, subscription, url, lang}
   POST /unsubscribe {endpoint, account?}     that mailbox on that device (no account: every mailbox)
-  POST /every       {account, every}          minutes: 0, 5, 10, 15, 30, 60
+  POST /every       {account, every}          minutes, 0 (as soon as an email arrives) to 1440
   POST /test        {account, endpoint}       a notification to that device now
 
 Settings: PUSH_PORT (8025). The VAPID key is made once and kept in DATA/vapid_private.pem."""
@@ -25,7 +25,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 log = logging.getLogger('sorter.push')
-EVERY = (0, 5, 10, 15, 30, 60)
+MAX_EVERY = 1440                # minutes: any number from 0 (as soon as one arrives) to a day
 DEFAULT_EVERY = 5
 MAX_SKEW = 300                  # a signed call older than this is refused
 SCHEMA = '''
@@ -238,8 +238,8 @@ class Service:
                     every = int(data.get('every'))
                 except (TypeError, ValueError):
                     every = -1
-                if every not in EVERY:
-                    return 400, {'error': 'every: ' + ', '.join(map(str, EVERY))}
+                if not 0 <= every <= MAX_EVERY:
+                    return 400, {'error': f'every: 0 to {MAX_EVERY} minutes'}
                 c.execute('INSERT INTO push_setting (account, every) VALUES (?, ?) '
                           'ON CONFLICT (account) DO UPDATE SET every = excluded.every', (account, every))
                 return 200, {'ok': True, 'every': every}

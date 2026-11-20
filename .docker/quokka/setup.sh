@@ -38,6 +38,8 @@ set_ini security gnupg "$crypto"
 set_ini webmail app_path "\"${QUOKKA_APP_PATH:-./}\""
 set_ini webmail language "\"$LANGUAGE\""
 set_ini webmail allow_user_background 'Off'
+# the check for new emails (Settings → General, per mailbox): from 1 minute, not upstream's 5
+set_ini webmail min_refresh_interval 1
 set_ini webmail allow_themes 'Off'          # one look for everyone: the family theme (no Themes page)
 set_ini webmail popup_identity 'Off'      # no "set up your identity" window after the first sign-in
 set_ini webmail message_read_delay 0     # an email opened is read at once (upstream waits 5 seconds)

@@ -16,7 +16,11 @@
 	</div>
 	<div class="control-group" data-bind="visible: subscribed, i18nUpdate: true">
 		<label for="quokka-push-every" data-i18n="QUOKKA_EXTRAS/PUSH_EVERY"></label>
-		<select id="quokka-push-every" data-bind="options: everyOptions, optionsText: 'label', optionsValue: 'value', value: every"></select>
+		<div class="quokka-push-every">
+			<span data-i18n="QUOKKA_EXTRAS/PUSH_EVERY_PRE"></span>
+			<input id="quokka-push-every" type="number" min="0" max="1440" step="1" inputmode="numeric" data-bind="textInput: every">
+			<span data-i18n="QUOKKA_EXTRAS/PUSH_EVERY_POST"></span>
+		</div>
 		<div class="quokka-note" data-i18n="QUOKKA_EXTRAS/PUSH_EVERY_NOTE"></div>
 	</div>
 	<div class="quokka-note" data-bind="visible: denied, i18nUpdate: true" data-i18n="QUOKKA_EXTRAS/PUSH_DENIED"></div>

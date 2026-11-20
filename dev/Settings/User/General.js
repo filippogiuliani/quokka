@@ -28,6 +28,8 @@ import { LanguagesPopupView } from 'View/Popup/Languages';
 export class UserSettingsGeneral extends AbstractViewSettings {
 	constructor() {
 		super();
+		// Quokka: the interval is kept per mailbox (each account its own): say which one
+		this.checkIntervalNote = i18n('QUOKKA/CHECK_INTERVAL_NOTE', { EMAIL: SettingsGet('Email') || '' });
 
 		this.mailto = ko.observable(!!navigator.registerProtocolHandler);
 

@@ -239,7 +239,9 @@ def test_the_service_quokka_talks_to(tmp_path):
     assert svc.handle('/subscribe', {'account': 'me@example.it', 'subscription': sub, 'url': 'https://m', 'lang': 'it'})[0] == 200
     assert svc.handle('/status', {'account': 'me@example.it', 'endpoint': 'https://push.example/d1'}) == \
         (200, {'watched': True, 'every': 5, 'subscribed': True})
-    assert svc.handle('/every', {'account': 'me@example.it', 'every': 7})[0] == 400
+    assert svc.handle('/every', {'account': 'me@example.it', 'every': 2000})[0] == 400
+    assert svc.handle('/every', {'account': 'me@example.it', 'every': 'x'})[0] == 400
+    assert svc.handle('/every', {'account': 'me@example.it', 'every': 2}) == (200, {'ok': True, 'every': 2})
     assert svc.handle('/every', {'account': 'me@example.it', 'every': 30}) == (200, {'ok': True, 'every': 30})
     assert svc.handle('/test', {'account': 'me@example.it', 'endpoint': 'https://push.example/d1'}) == (200, {'ok': True})
     assert sent[0]['title'] == 'Le notifiche funzionano' and 'Me@Example.it' in sent[0]['body']

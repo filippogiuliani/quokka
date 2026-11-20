@@ -121,10 +121,14 @@
 			this.message = ko.observable('');
 			this.error = ko.observable(false);
 			this.denied = ko.observable(false);
-			this.everyOptions = [0, 5, 10, 15, 30, 60].map(n => ({ value: n,
-				label: n ? rl.i18n('QUOKKA_EXTRAS/PUSH_EVERY_N', { N: n }) : rl.i18n('QUOKKA_EXTRAS/PUSH_EVERY_NOW') }));
-			this.every.subscribe(n => this.loaded && this.subscribed()
-				&& this.call('QuokkaPushEvery', { every: n }, () => this.say('PUSH_SAVED')));
+			// any number of minutes, 0 = as soon as an email arrives; saved a moment after typing stops
+			let timer;
+			this.every.subscribe(n => {
+				clearTimeout(timer);
+				const minutes = parseInt(n, 10);
+				if (!this.loaded || !this.subscribed() || !(minutes >= 0 && minutes <= 1440)) return;
+				timer = setTimeout(() => this.call('QuokkaPushEvery', { every: minutes }, () => this.say('PUSH_SAVED')), 700);
+			});
 		}
 
 		say(key, error) { this.error(!!error); this.message(key ? rl.i18n('QUOKKA_EXTRAS/' + key) : ''); }
