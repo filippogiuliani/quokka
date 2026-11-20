@@ -27,6 +27,26 @@
 		} catch (e) { /* storage off: at worst two notifications */ }
 	};
 
+	// At every start: does this device get this mailbox's push notifications? Then the page shows none of its own,
+	// or the same email would notify twice (closed: the push one; then again when Quokka opens)
+	(() => {
+		if (!('serviceWorker' in navigator) || !('PushManager' in window) || window.Notification?.permission !== 'granted') return;
+		const wait = setInterval(async () => {
+			if (!rl.settings?.get?.('Auth')) return;
+			clearInterval(wait);
+			try {
+				const reg = await navigator.serviceWorker.getRegistration('./');
+				const sub = reg && await reg.pushManager.getSubscription();
+				if (!sub) return pushFlag(false, rl.settings.get('Email'));
+				rl.pluginRemoteRequest((iError, oData) => {
+					const r = oData?.Result;
+					!iError && r?.available && pushFlag(!!r.subscribed, r.mailbox);
+				}, 'QuokkaPushStatus', { endpoint: sub.endpoint });
+			} catch (e) { /* no service worker yet: nothing to check */ }
+		}, 300);
+		setTimeout(() => clearInterval(wait), 30000);
+	})();
+
 	// Settings → Family apps: each person's tokens for Pelican and Kooka (written once, never shown back)
 	class QuokkaAppsSettings
 	{
