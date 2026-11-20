@@ -43,7 +43,7 @@ services:
       - quokka
 
   # Puts a category on the new emails and learns from the changes made in Quokka. It signs in to each mailbox of
-  # accounts.json, whose passwords are encrypted with QUOKKA_SECRET (README.md: "The sorter's mailboxes").
+  # the mailboxes people sign in to in Quokka (Quokka passes them on), and optionally accounts.json (README.md).
   # It runs as user 1000: on the host, chown 1000:1000 accounts.json and its data folder, chmod 600 the file.
   sorter:
     image: ${QUOKKA_REGISTRY:?the registry with the images, e.g. registry.example.com}/quokka-sorter:${QUOKKA_TAG:-latest}
@@ -57,7 +57,8 @@ services:
       FIRST_DAYS: ${SORTER_FIRST_DAYS:-30}
       TZ: ${TZ:?your time zone, e.g. Europe/Berlin}
     volumes:
-      - ${SORTER_ACCOUNTS:?path of accounts.json on the host}:/config/accounts.json:ro
+      # optional: mailboxes nobody opens in Quokka (the others Quokka passes on by itself)
+      - ${SORTER_ACCOUNTS:-/dev/null}:/config/accounts.json:ro
       - ${SORTER_DATA:?folder for what it learns}:/data
     networks:
       - quokka

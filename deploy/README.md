@@ -22,23 +22,21 @@ Each image gets two tags, the commit (e.g. `3a4568e`) and `latest`. To pin a ver
 
 ## 3. The sorter's mailboxes
 
-`accounts.json` lists the mailboxes to sort, with their passwords **encrypted** with `QUOKKA_SECRET` (plain passwords
-are refused). For each mailbox:
+Nothing to do: every time someone signs in to Quokka, Quokka passes the mailboxes in their **Settings → Accounts**
+(the main one and the added ones) to the sorter, which keeps the passwords encrypted with `QUOKKA_SECRET` in its data
+folder and reads those mailboxes from then on (categories, notifications). A changed password reaches it at the next
+sign-in.
+
+Optionally, for a mailbox nobody opens in Quokka, an `accounts.json` with the passwords **encrypted** (plain ones are
+refused), set as `SORTER_ACCOUNTS`:
 
     docker run --rm -it -e QUOKKA_SECRET=<the same value> <your registry>/quokka-sorter encrypt
 
-It asks for the address and the password and prints one line; put the lines in a list:
-
     [
-      {"user": "mario@example.it", "password": "enc:v1:…"},
-      {"user": "anna@example.it", "password": "enc:v1:…"}
+      {"user": "mario@example.it", "password": "enc:v1:…"}
     ]
 
-    sudo cp accounts.json /srv/quokka/accounts.json
     sudo chown 1000:1000 /srv/quokka/accounts.json && sudo chmod 600 /srv/quokka/accounts.json
-
-A changed mailbox password means a new line (and a restart of the sorter). Without `accounts.json` entries the
-categories simply never appear; Quokka works the same.
 
 ## 4. The stack
 
@@ -79,7 +77,7 @@ the emails of that time become one notification). Nothing else to set up, as lon
 
 - the sorter and Quokka are on the same Docker network (`quokka` in this compose: Quokka reaches it at
   `QUOKKA_SORTER_URL`, by default `http://quokka-sorter:8025`; that port is never published) and share `QUOKKA_SECRET`;
-- the mailbox is in the sorter's `accounts.json` (only those are read);
+- the person signed in to that mailbox in Quokka at least once since this version (that is how the sorter learns it);
 - Quokka is opened over **https** (browsers allow notifications only there);
 - on iPhone and iPad, Quokka is added to the Home Screen (iOS 16.4 or later) and opened from there.
 

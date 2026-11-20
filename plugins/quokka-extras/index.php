@@ -49,6 +49,9 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addJsonHook('QuokkaExtrasToPelican', 'JsonToPelican');
 		$this->addJsonHook('QuokkaExtrasToKooka', 'JsonToKooka');
 		$this->addJsonHook('QuokkaExtrasUnsubscribe', 'JsonUnsubscribe');
+		// the sorter reads every mailbox people sign in to (categories, notifications): Quokka passes them on
+		$this->addHook('login.success', 'RegisterMailboxes');
+		$this->addHook('json.after-AccountSetup', 'RegisterMailboxes');
 		$this->addJsonHook('QuokkaPushStatus', 'JsonPushStatus');
 		$this->addJsonHook('QuokkaPushSubscribe', 'JsonPushSubscribe');
 		$this->addJsonHook('QuokkaPushUnsubscribe', 'JsonPushUnsubscribe');
@@ -270,7 +273,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	// ---------- notifications with Quokka closed: the sorter sends them (sorter/push.py) ----------
 
 	/** A signed call to the sorter's notifications service, on the internal network. [status, data] */
-	private static function sorter(string $sPath, array $aData = array()) : array
+	private static function sorter(string $sPath, array $aData = array(), int $iTimeout = 15) : array
 	{
 		$sSecret = \trim((string) \getenv('QUOKKA_SECRET'));
 		$sBase = \rtrim(\trim((string) \getenv('QUOKKA_SORTER_URL')) ?: 'http://quokka-sorter:8025', '/');
@@ -282,7 +285,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$sSign = \hash_hmac('sha256', "{$sTime}\n{$sPath}\n{$sBody}", \hash('sha256', 'quokka-push|' . $sSecret, true));
 		try {
 			$oRequest = \SnappyMail\HTTP\Request::factory();
-			$oRequest->timeout = 15;
+			$oRequest->timeout = $iTimeout;
 			$oRequest->block_private_ips = false;   // the sorter is on the stack's own network
 			$oResponse = $oRequest->doRequest($aData ? 'POST' : 'GET', $sBase . $sPath, $sBody, array(
 				'Content-Type: application/json', 'X-Quokka-Time: ' . $sTime, 'X-Quokka-Sign: ' . $sSign
@@ -302,6 +305,40 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		return $oAccount ? $oAccount->Email() : '';
 	}
 
+	/**
+	 * The person's mailboxes (the main one and the added ones, with their passwords) to the sorter, which keeps them
+	 * sealed with QUOKKA_SECRET and reads them from then on: categories and notifications with nothing to set up.
+	 * At every sign-in and after an account is added or changed; a sorter that does not answer never stops a sign-in.
+	 */
+	public function RegisterMailboxes() : void
+	{
+		if (32 > \strlen(\trim((string) \getenv('QUOKKA_SECRET')))) {
+			return;
+		}
+		try {
+			$oActions = \RainLoop\Api::Actions();
+			$oMain = $oActions->getMainAccountFromToken(false);
+			if (!$oMain) {
+				return;
+			}
+			$aBoxes = array($oMain->Email() => $oMain->ImapPass());
+			foreach ($oActions->GetAccounts($oMain) as $aAccount) {
+				$oAccount = \RainLoop\Model\AdditionalAccount::NewInstanceFromTokenArray($oActions, $aAccount);
+				if ($oAccount && \strlen($oAccount->ImapPass())) {
+					$aBoxes[$oAccount->Email()] = $oAccount->ImapPass();
+				}
+			}
+			foreach ($aBoxes as $sEmail => $sPassword) {
+				[$iStatus] = self::sorter('/register', array('account' => $sEmail, 'password' => $sPassword), 3);
+				if (0 === $iStatus) {
+					break;   // not there: no point waiting for each mailbox
+				}
+			}
+		} catch (\Throwable $oException) {
+			\error_log('Quokka: mailboxes not passed on to the sorter: ' . $oException->getMessage());
+		}
+	}
+
 	/** {endpoint} → {available, watched, every, subscribed, key, mailbox} */
 	public function JsonPushStatus()
 	{
@@ -309,7 +346,13 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		if (200 !== $iKey || empty($aKey['key'])) {
 			return $this->jsonResponse(__FUNCTION__, array('available' => false));
 		}
-		[, $aStatus] = self::sorter('/status', array('account' => self::mailbox(), 'endpoint' => (string) $this->jsonParam('endpoint', '')));
+		$aParams = array('account' => self::mailbox(), 'endpoint' => (string) $this->jsonParam('endpoint', ''));
+		[, $aStatus] = self::sorter('/status', $aParams);
+		if (empty($aStatus['watched'])) {
+			// signed in before Quokka passed mailboxes on (kept signed in): pass them on now
+			$this->RegisterMailboxes();
+			[, $aStatus] = self::sorter('/status', $aParams);
+		}
 		return $this->jsonResponse(__FUNCTION__, array('available' => true, 'key' => $aKey['key'], 'mailbox' => self::mailbox()) + $aStatus);
 	}
 

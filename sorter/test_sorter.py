@@ -274,3 +274,30 @@ def test_a_real_push_message_is_encrypted_for_the_device(tmp_path, monkeypatch):
     assert status == 201 and got['headers']['Urgency'] == 'high' and got['headers']['Authorization'].startswith(('vapid ', 'WebPush '))
     plain = http_ece.decrypt(got['data'], private_key=device, auth_secret=auth, version='aes128gcm')
     assert json.loads(plain) == {'title': 'Mamma', 'body': 'Cena'}
+
+
+def test_mailboxes_come_from_quokka_with_no_file(tmp_path, monkeypatch):
+    """Quokka passes on every mailbox someone signs in to: no accounts.json needed; a password refused 5 times in a
+    row is left alone until Quokka passes it on again."""
+    monkeypatch.setattr(sorter, 'ACCOUNTS', str(tmp_path / 'none.json'))
+    monkeypatch.setenv('QUOKKA_SECRET', SECRET)
+    db_path = str(tmp_path / 's.db')
+    sorter.db(db_path).close()
+    svc = push.Service(db_path, str(tmp_path), lambda: sorter.accounts(db_path), SECRET)
+    assert svc.handle('/status', {'account': 'pluto@example.it'}) == (200, {'watched': False})
+    assert svc.handle('/register', {'account': 'not an address', 'password': 'x'})[0] == 400
+    assert svc.handle('/register', {'account': 'Pluto@Example.it', 'password': 'segreta'}) == (200, {'ok': True})
+    accs = sorter.accounts(db_path)
+    assert [a['user'] for a in accs] == ['Pluto@Example.it'] and accs[0]['password'].startswith('enc:v1:')
+    assert sorter.password_of(accs[0]) == 'segreta'                     # sealed, and it opens
+    assert svc.handle('/status', {'account': 'pluto@example.it'})[1]['watched'] is True
+    conn = sorter.db(db_path)
+    for _ in range(sorter.FAILURES_OFF):
+        sorter._signed_in(conn, accs[0], False)
+    assert sorter.accounts(db_path) == []                               # refused 5 times: left alone
+    svc.handle('/register', {'account': 'Pluto@Example.it', 'password': 'nuova'})
+    assert sorter.password_of(sorter.accounts(db_path)[0]) == 'nuova'  # signed in again with the new one
+    # a mailbox also in accounts.json: the file wins, listed once
+    (tmp_path / 'a.json').write_text('[{"user": "pluto@example.it", "password": "enc:v1:x"}]')
+    monkeypatch.setattr(sorter, 'ACCOUNTS', str(tmp_path / 'a.json'))
+    assert [a.get('from_quokka', False) for a in sorter.accounts(db_path)] == [False]

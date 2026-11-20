@@ -8,6 +8,8 @@ Every minute, for each mailbox:
     it off), that is a correction: the sender is remembered and the words are learned.
 
 Settings
+  The mailboxes: Quokka passes on every mailbox someone signs in to (main and added accounts), its password sealed with
+  QUOKKA_SECRET: nothing to write by hand. Optionally, for mailboxes nobody opens in Quokka:
   /config/accounts.json   [{"user": "mario@example.it", "password": "enc:v1:…"}, …]  (read-only, one entry per
                           mailbox; "host", "port", "security" per entry override the defaults below). The passwords
                           are encrypted with QUOKKA_SECRET (secret.py): `… encrypt` makes an entry. Plain passwords
@@ -58,7 +60,12 @@ CREATE TABLE IF NOT EXISTS example (account TEXT NOT NULL, category TEXT NOT NUL
     at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS sender (account TEXT NOT NULL, key TEXT NOT NULL, category TEXT NOT NULL,
     at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (account, key));
+-- the mailboxes Quokka passed on when someone signed in (password sealed like in accounts.json); after
+-- FAILURES_OFF refused sign-ins in a row one is left alone until Quokka passes it on again (a new password)
+CREATE TABLE IF NOT EXISTS from_quokka (account TEXT PRIMARY KEY, password TEXT NOT NULL,
+    at TEXT NOT NULL DEFAULT (datetime('now')), failures INTEGER NOT NULL DEFAULT 0);
 '''
+FAILURES_OFF = 5
 
 
 def db(path=None):
@@ -295,10 +302,30 @@ def encrypt_entry():
     print(json.dumps({'user': user, 'password': secret.seal(password, user)}))
 
 
-def accounts():
-    with open(ACCOUNTS, encoding='utf-8') as f:
-        out = json.load(f)
-    return [a for a in out if a.get('user') and a.get('password')]
+def accounts(path=None):
+    """The mailboxes to read: those Quokka passed on (every mailbox someone signed in to, see push.py /register) and
+    those written in accounts.json (optional, for mailboxes nobody opens in Quokka). The file wins for the same one."""
+    out = []
+    if os.path.isfile(ACCOUNTS) and os.path.getsize(ACCOUNTS):        # optional (/dev/null when not given)
+        with open(ACCOUNTS, encoding='utf-8') as f:
+            out = [a for a in json.load(f) if a.get('user') and a.get('password')]
+    seen = {a['user'].lower() for a in out}
+    try:
+        with sqlite3.connect(path or os.path.join(DATA, 'sorter.db'), timeout=15) as conn:
+            conn.executescript(SCHEMA)
+            for user, password in conn.execute('SELECT account, password FROM from_quokka WHERE failures < ?', (FAILURES_OFF,)):
+                if user.lower() not in seen:
+                    out.append({'user': user, 'password': password, 'from_quokka': True})
+    except sqlite3.Error as e:
+        log.warning('mailboxes from Quokka not read: %s', e)
+    return out
+
+
+def _signed_in(conn, acc, ok):
+    """Count the refused sign-ins of a mailbox Quokka passed on (a password changed since)."""
+    if acc.get('from_quokka'):
+        conn.execute('UPDATE from_quokka SET failures = ' + ('0' if ok else 'failures + 1') + ' WHERE account = ?', (acc['user'],))
+        conn.commit()
 
 
 def main():
@@ -315,7 +342,12 @@ def main():
     while True:
         for acc in accounts():
             try:
-                imap = connect(acc)
+                try:
+                    imap = connect(acc)
+                except imaplib.IMAP4.error:
+                    _signed_in(conn, acc, False)
+                    raise
+                _signed_in(conn, acc, True)
                 try:
                     done, fixed = sort_round(conn, acc['user'], Mailbox(imap))
                     if done or fixed:

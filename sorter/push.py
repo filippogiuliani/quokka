@@ -5,6 +5,7 @@ notification per mailbox, at most every N minutes as chosen for that mailbox in 
 Quokka talks to it over the internal network (the stack's "quokka" network), signing each call with QUOKKA_SECRET:
 
   GET  /key                                   the VAPID public key, for PushManager.subscribe
+  POST /register    {account, password}       a mailbox someone signed in to in Quokka: read from now on
   POST /status      {account, endpoint?}      {watched, every, subscribed}
   POST /subscribe   {account, subscription, url, lang}
   POST /unsubscribe {endpoint, account?}     that mailbox on that device (no account: every mailbox)
@@ -177,6 +178,8 @@ class Service:
         c = sqlite3.connect(self.db_path, timeout=15)
         c.row_factory = sqlite3.Row
         init(c)
+        c.execute('CREATE TABLE IF NOT EXISTS from_quokka (account TEXT PRIMARY KEY, password TEXT NOT NULL, '
+                  "at TEXT NOT NULL DEFAULT (datetime('now')), failures INTEGER NOT NULL DEFAULT 0)")
         return c
 
     def watched(self, account):
@@ -188,6 +191,8 @@ class Service:
         if path == '/key':
             return 200, {'key': public_key(self.data_dir)}
         with _lock, self.conn() as c:
+            if path == '/register':
+                return self.register(c, data)
             account = self.watched(data.get('account'))
             if path == '/unsubscribe':
                 endpoint = str(data.get('endpoint') or '')
@@ -235,6 +240,18 @@ class Service:
                 ok = _deliver(c, self.data_dir, s, data, self.send or _webpush)
                 return (200, {'ok': True}) if ok else (502, {'error': 'push_failed'})
         return 404, {'error': 'unknown'}
+
+    def register(self, c, data):
+        import re
+        import secret
+        account = str(data.get('account') or '').strip()
+        password = str(data.get('password') or '')
+        if not re.fullmatch(r'[^@\s]{1,200}@[^@\s]{1,200}', account) or not password or len(password) > 500:
+            return 400, {'error': 'invalid mailbox'}
+        sealed = secret.seal(password, account, self.secret)
+        c.execute('INSERT INTO from_quokka (account, password) VALUES (?, ?) ON CONFLICT (account) '
+                  "DO UPDATE SET password = excluded.password, failures = 0, at = datetime('now')", (account, sealed))
+        return 200, {'ok': True}
 
     def authorised(self, path, body, ts, signature):
         try:

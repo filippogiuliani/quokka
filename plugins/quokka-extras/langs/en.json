@@ -19,7 +19,7 @@
 		"PUSH_TEST_SENT": "Test notification sent: it should arrive in a few seconds.",
 		"PUSH_DENIED": "Notifications are blocked for Quokka: allow them in the browser's or the phone's settings and try again.",
 		"PUSH_FAILED": "That did not work: try again in a moment.",
-		"PUSH_NOT_WATCHED": "This mailbox is not one of those the sorter reads: whoever runs Quokka has to add it to its list (accounts.json).",
+		"PUSH_NOT_WATCHED": "This mailbox cannot be read: if you changed its password, sign out and in again in Quokka.",
 		"PUSH_SERVICE_OFF": "The notifications service does not answer: the sorter is off or not set up.",
 		"PUSH_IOS": "On iPhone and iPad notifications work only from the app on the Home Screen: in Safari tap Share → «Add to Home Screen», open Quokka from there and come back here.",
 		"PUSH_UNSUPPORTED": "This browser does not allow notifications with Quokka closed.",

@@ -19,7 +19,7 @@
 		"PUSH_TEST_SENT": "Notifica di prova inviata: dovrebbe arrivare tra pochi secondi.",
 		"PUSH_DENIED": "Le notifiche sono bloccate per Quokka: sbloccale nelle impostazioni del browser o del telefono e riprova.",
 		"PUSH_FAILED": "Non riuscito: riprova tra poco.",
-		"PUSH_NOT_WATCHED": "Questa casella non è tra quelle che lo smistatore legge: chi gestisce Quokka deve aggiungerla al suo elenco (accounts.json).",
+		"PUSH_NOT_WATCHED": "Non riesco a leggere questa casella: se hai cambiato la password, esci ed entra di nuovo in Quokka.",
 		"PUSH_SERVICE_OFF": "Il servizio delle notifiche non risponde: lo smistatore è spento o non è configurato.",
 		"PUSH_IOS": "Su iPhone e iPad le notifiche funzionano solo dall'app sulla schermata Home: in Safari tocca Condividi → «Aggiungi alla schermata Home», apri Quokka da lì e torna qui.",
 		"PUSH_UNSUPPORTED": "Questo browser non permette le notifiche con Quokka chiuso.",
