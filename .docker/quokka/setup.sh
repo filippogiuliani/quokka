@@ -95,13 +95,19 @@ QUOKKA_KOOKA_URL=${QUOKKA_KOOKA_URL:-${QUOKKA_DOTRACK_URL:-}}
 export QUOKKA_PELICAN_URL QUOKKA_KOOKA_URL
 echo "[INFO] Quokka: plugin quokka-extras (Pelican: ${QUOKKA_PELICAN_URL:-none}, Kooka: ${QUOKKA_KOOKA_URL:-none})"
 mkdir -p "$DATA/plugins"
-for plugin in quokka-extras quokka-sso quokka-security; do
+for plugin in quokka-extras quokka-sso quokka-security avatars; do
     rm -rf "$DATA/plugins/$plugin"
     cp -r "/quokka/plugins/$plugin" "$DATA/plugins/$plugin"
 done
 chown -R www-data:www-data "$DATA/plugins"
 set_ini plugins enable 'On'
-set_ini plugins enabled_list '"quokka-extras,quokka-sso,quokka-security"'
+set_ini plugins enabled_list '"quokka-extras,quokka-sso,quokka-security,avatars"'
+# the senders' pictures (list, email, notifications): the contact's photo, the brand's logo (BIMI) and the site's
+# icon, only for emails whose domain signed them (DKIM); not Gravatar (it would tell a third party who writes to us)
+cat > "$DATA/configs/plugin-avatars.json" <<'JSON'
+{"plugin": {"delay": true, "contacts": true, "bimi": true, "favicon": true, "gravatar": false, "identicon": "", "service": true}}
+JSON
+chown www-data:www-data "$DATA/configs/plugin-avatars.json"
 FPM=/usr/local/etc/php-fpm.d/php-fpm.conf
 sed -i '/^env\[QUOKKA_/d' "$FPM"
 # (the Pocket ID settings and QUOKKA_SECRET too: they stay in the container, never in the data volume)

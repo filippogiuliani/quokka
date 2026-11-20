@@ -247,7 +247,9 @@ def sort_round(conn, account, box, first_days=FIRST_DAYS):
         mail = parse(raw)
         if row and '\\seen' not in flags:                 # new and unread (not at the first start): a notification
             name, addr = email.utils.parseaddr(mail.sender)
-            push.queue(conn, account, uid, name or addr or mail.sender, mail.subject)
+            head = raw.split(b'\r\n\r\n', 1)[0].lower()
+            signed = b'dkim=pass' in head                 # the receiving server checked the sender's domain signature
+            push.queue(conn, account, uid, name or addr or mail.sender, mail.subject, addr, signed)
         if not keywords_ok:
             cat, why = classify.NONE, 'no keywords'
         elif _categories(flags):                             # someone already chose: learn nothing, touch nothing

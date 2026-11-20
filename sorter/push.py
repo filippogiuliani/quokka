@@ -48,6 +48,10 @@ _lock = threading.Lock()
 
 def init(conn):
     conn.executescript(SCHEMA)
+    cols = {r[1] for r in conn.execute('PRAGMA table_info(push_pending)')}
+    if 'address' not in cols:
+        conn.execute("ALTER TABLE push_pending ADD COLUMN address TEXT NOT NULL DEFAULT ''")
+        conn.execute('ALTER TABLE push_pending ADD COLUMN signed INTEGER NOT NULL DEFAULT 0')
 
 
 def _t(lang, key, **kw):
@@ -84,11 +88,21 @@ def every_of(conn, account):
     return r['every'] if r else DEFAULT_EVERY
 
 
-def queue(conn, account, uid, sender, subject):
-    """A new unread email of INBOX: kept for the next notification, only if some device of that mailbox wants them."""
+def queue(conn, account, uid, sender, subject, address='', signed=False):
+    """A new unread email of INBOX: kept for the next notification, only if some device of that mailbox wants them.
+    address and signed (its domain's DKIM passed): for the sender's picture, as Quokka shows it."""
     if conn.execute('SELECT 1 FROM push_sub WHERE account = ? LIMIT 1', (account,)).fetchone():
-        conn.execute('INSERT OR IGNORE INTO push_pending (account, uid, sender, subject, at) VALUES (?,?,?,?,?)',
-                     (account, uid, sender[:200], subject[:300], time.time()))
+        conn.execute('INSERT OR IGNORE INTO push_pending (account, uid, sender, subject, at, address, signed) VALUES (?,?,?,?,?,?,?)',
+                     (account, uid, sender[:200], subject[:300], time.time(), address[:200], int(bool(signed))))
+
+
+def picture_url(url, address, signed):
+    """The sender's picture from Quokka's avatars (contact photo, brand logo, site icon), the quokka when none."""
+    base = url.split('#')[0].split('?')[0]
+    if '@' not in (address or ''):
+        return base + 'quokka-icon.png'
+    encoded = base64.urlsafe_b64encode(address.lower().encode()).decode().rstrip('=')
+    return f"{base}?Avatar/{1 if signed else 0}/{encoded}/q"
 
 
 def due(conn, now=None):
@@ -117,7 +131,7 @@ def payloads(rows, lang, url, account):
     """One notification per email (its own tag: they do not replace each other), opening that email; a long burst
     ends with one "N more emails" opening the inbox."""
     out = [{'title': r['sender'], 'body': r['subject'] or _t(lang, 'no_subject'), 'url': open_url(url, account, r['uid']),
-            'tag': f"mail:{account}:{r['uid']}"} for r in rows[:MAX_EACH]]
+            'tag': f"mail:{account}:{r['uid']}", 'icon': picture_url(url, r['address'], r['signed'])} for r in rows[:MAX_EACH]]
     rest = rows[MAX_EACH:]
     if rest:
         out.append({'title': _t(lang, 'more', n=len(rest)), 'body': ', '.join(dict.fromkeys(r['sender'] for r in rest[:4])),

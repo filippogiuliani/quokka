@@ -14,8 +14,8 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     tag: data.tag || undefined,
     renotify: !!data.tag,
-    // the quokka on the right (without one Android draws the first letter of the address); the face in white in the bar
-    icon: new URL('quokka-icon.png', self.registration.scope).href,
+    // the sender's picture on the right, like Gmail (the quokka when there is none; without any Android draws a letter)
+    icon: data.icon || new URL('quokka-icon.png', self.registration.scope).href,
     badge: new URL('quokka-badge.png', self.registration.scope).href,
     data: { url: data.url || self.registration.scope, push: true },
   }));

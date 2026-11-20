@@ -1,5 +1,21 @@
 (rl => { if (rl) {
 
+	// The sender's picture in an open email (avatars plugin): inside Quokka's round badge in place of the initial when
+	// there is one; when there is none (a 404) the badge keeps the initial and no broken image shows
+	const senderPic = (img, ok) => {
+		const badge = img.closest('#V-MailMessageView')?.querySelector('.quokka-sender-avatar');
+		if (!badge) return;
+		if (ok && img.naturalWidth) {
+			badge.style.backgroundImage = `url("${img.currentSrc || img.src}")`;
+			badge.classList.add('has-picture');
+		} else {
+			badge.style.backgroundImage = '';
+			badge.classList.remove('has-picture');
+		}
+	};
+	document.addEventListener('load', e => e.target.matches?.('#V-MailMessageView img.fromPic') && senderPic(e.target, true), true);
+	document.addEventListener('error', e => e.target.matches?.('#V-MailMessageView img.fromPic') && senderPic(e.target, false), true);
+
 	// A tap on a notification of new email: ?quokka-account=<mailbox>#/mailbox/INBOX/m<uid> (sorter/push.py).
 	// In another of the person's mailboxes: switch to it, then the same address without the parameter opens the email.
 	const openAccount = new URLSearchParams(location.search).get('quokka-account');

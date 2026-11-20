@@ -185,7 +185,10 @@ def test_new_unread_emails_become_one_notification_per_mailbox(tmp_path):
     send = lambda sub, data, d, subject: sent.append((sub['endpoint'], data)) or 201     # noqa: E731
     assert push.flush(conn, str(tmp_path), now=time.time(), send=send) == 1
     assert sent == [('https://push.example/1', {'title': 'Mamma', 'body': 'Cena di domenica',
-                                                'url': 'https://mail.example?quokka-account=me#/mailbox/INBOX/m2', 'tag': 'mail:me:2'})]
+                                                'url': 'https://mail.example?quokka-account=me#/mailbox/INBOX/m2', 'tag': 'mail:me:2',
+                                                'icon': 'https://mail.example?Avatar/0/bWFtbWFAZXhhbXBsZS5pdA/q'})]
+    assert push.picture_url('https://mail.example/', 'X@b.it', True) == 'https://mail.example/?Avatar/1/eEBiLml0/q'
+    assert push.picture_url('https://mail.example/', '', False) == 'https://mail.example/quokka-icon.png'
     assert push.flush(conn, str(tmp_path), now=time.time(), send=send) == 1 - 1     # nothing left
 
 

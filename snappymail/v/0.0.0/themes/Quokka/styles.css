@@ -1291,3 +1291,7 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 .quokka-push-settings .quokka-push-on { color: var(--fm-primary); font-weight: 600; }
 .quokka-push-settings .quokka-push-every { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .quokka-push-settings .quokka-push-every input { width: 5em; }
+
+/* the sender's picture (avatars plugin): in the open email it goes inside the round badge (QuokkaExtras.js) */
+#V-MailMessageView img.fromPic { position: absolute !important; width: 1px !important; height: 1px !important; opacity: 0; pointer-events: none; }
+#V-MailMessageView .quokka-sender-avatar.has-picture { background: var(--fm-surface) center / cover no-repeat; color: transparent; }

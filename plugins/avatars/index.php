@@ -115,18 +115,34 @@ class AvatarsPlugin extends \RainLoop\Plugins\AbstractPlugin
 	 * Nextcloud Mail uses insecure unencoded 'index.php/apps/mail/api/avatars/url/local%40example.com'
 	 */
 //	public function ServiceAvatar(...$aParts)
-	public function ServiceAvatar(string $sServiceName, string $sBimi, string $sEncodedEmail)
+	public function ServiceAvatar(string $sServiceName, string $sBimi, string $sEncodedEmail, string $sFallback = '')
 	{
 		$maxAge = 86400;
 		$sEmail = \MailSo\Base\Utils::UrlSafeBase64Decode($sEncodedEmail);
 		$aBimi = \explode('-', $sBimi, 2);
 		$sBimiSelector = isset($aBimi[1]) ? $aBimi[1] : 'default';
 //		$sEmail && \MailSo\Base\Http::setETag("{$sBimiSelector}-{$sEncodedEmail}");
-		if ($sEmail && ($aResult = $this->getAvatar($sEmail, !empty($aBimi[0]), $sBimiSelector))) {
+		$aResult = $sEmail ? $this->getAvatar($sEmail, !empty($aBimi[0]), $sBimiSelector) : null;
+		if ($aResult && 'q' === $sFallback && \str_contains((string) $aResult[0], 'svg')) {
+			// Quokka: a notification cannot show an SVG (brand logos are): the domain's PNG icon instead, or the quokka
+			$sDomain = \substr(\strrchr($sEmail, '@') ?: '', 1);
+			$sPng = (!empty($aBimi[0]) && $sDomain) ? static::getServicePng($sDomain) : null;
+			$aResult = $sPng ? ['image/png', \file_get_contents($sPng)]
+				: ((!empty($aBimi[0]) && $sDomain && $this->Config()->Get('plugin', 'favicon', false)) ? static::getFavicon($sDomain) : null);
+			if ($aResult && \str_contains((string) $aResult[0], 'svg')) {
+				$aResult = null;
+			}
+		}
+		if ($aResult) {
 			\header("Cache-Control: max-age={$maxAge}, private");
 			\header('Expires: '.\gmdate('D, j M Y H:i:s', $maxAge + \time()).' UTC');
 			\header('Content-Type: '.$aResult[0]);
 			echo $aResult[1];
+		} else if ('q' === $sFallback && \is_file(APP_INDEX_ROOT_PATH . 'quokka-icon.png')) {
+			// Quokka: for a notification, no picture means the quokka (a 404 would leave Android's letter)
+			\header('Cache-Control: max-age=3600, private');
+			\header('Content-Type: image/png');
+			\readfile(APP_INDEX_ROOT_PATH . 'quokka-icon.png');
 		} else {
 			\MailSo\Base\Http::StatusHeader(404);
 		}

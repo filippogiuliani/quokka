@@ -51,6 +51,7 @@ COPY --chown=root:root .docker/quokka /quokka
 COPY --chown=root:root plugins/quokka-extras /quokka/plugins/quokka-extras
 COPY --chown=root:root plugins/quokka-sso /quokka/plugins/quokka-sso
 COPY --chown=root:root plugins/quokka-security /quokka/plugins/quokka-security
+COPY --chown=root:root plugins/avatars /quokka/plugins/avatars
 RUN set -eux; \
     chown www-data:www-data /snappymail/include.php; \
     chmod 440 /snappymail/include.php; \
