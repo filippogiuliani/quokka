@@ -1,5 +1,32 @@
 (rl => { if (rl) {
 
+	// A tap on a notification of new email: ?quokka-account=<mailbox>#/mailbox/INBOX/m<uid> (sorter/push.py).
+	// In another of the person's mailboxes: switch to it, then the same address without the parameter opens the email.
+	const openAccount = new URLSearchParams(location.search).get('quokka-account');
+	if (openAccount) {
+		const clean = location.pathname + location.hash;
+		const wait = setInterval(() => {
+			if (!rl.settings?.get?.('Auth')) return;          // not signed in yet
+			clearInterval(wait);
+			rl.pluginRemoteRequest((iError, oData) => {
+				if (!iError && oData?.Result?.switched) {
+					location.replace(clean);
+				} else {
+					history.replaceState(null, '', clean);
+				}
+			}, 'QuokkaOpenAccount', { email: openAccount });
+		}, 200);
+		setTimeout(() => clearInterval(wait), 30000);
+	}
+
+	// This device gets the push notifications of a mailbox: remembered, so the page does not show a second one
+	const pushFlag = (on, mailbox) => {
+		try {
+			const key = 'quokka.push.' + String(mailbox || '').toLowerCase();
+			on ? localStorage.setItem(key, '1') : localStorage.removeItem(key);
+		} catch (e) { /* storage off: at worst two notifications */ }
+	};
+
 	// Settings → Family apps: each person's tokens for Pelican and Kooka (written once, never shown back)
 	class QuokkaAppsSettings
 	{
@@ -122,6 +149,7 @@
 				this.key = r.key;
 				this.state(!r.available ? 'off' : r.watched ? 'ready' : 'not_watched');
 				this.subscribed(!!r.subscribed);
+				r.available && pushFlag(!!r.subscribed, r.mailbox);
 				this.every(r.every ?? 5);
 				this.loaded = true;
 			});
@@ -155,6 +183,7 @@
 			this.call('QuokkaPushSubscribe', { subscription: this.sub.toJSON(), lang: document.documentElement.lang || 'it' }, r => {
 				this.busy(false);
 				this.subscribed(true);
+				pushFlag(true, this.mailbox());
 				this.every(r.every ?? this.every());
 				this.say('PUSH_ON');
 			});
@@ -167,6 +196,7 @@
 			this.call('QuokkaPushUnsubscribe', { endpoint: this.sub?.endpoint || '' }, () => {
 				this.busy(false);
 				this.subscribed(false);
+				pushFlag(false, this.mailbox());
 				this.say('PUSH_OFF');
 			});
 		}

@@ -103,16 +103,24 @@ def due(conn, now=None):
     return out
 
 
+def open_url(url, account, uid=None):
+    """Where a tap goes: that mailbox (Quokka switches to it if needed), and that email when there is one."""
+    from urllib.parse import quote
+    base = url.split('#')[0].split('?')[0]
+    return f"{base}?quokka-account={quote(account)}#/mailbox/INBOX" + (f'/m{uid}' if uid else '')
+
+
 def payload(rows, lang, url, account):
     if len(rows) == 1:
         r = rows[0]
-        return {'title': r['sender'], 'body': r['subject'] or _t(lang, 'no_subject'), 'url': url, 'tag': 'mail:' + account}
+        return {'title': r['sender'], 'body': r['subject'] or _t(lang, 'no_subject'), 'url': open_url(url, account, r['uid']),
+                'tag': 'mail:' + account}
     senders = []
     for r in rows:
         if r['sender'] not in senders:
             senders.append(r['sender'])
     body = ', '.join(senders[:4]) + ('…' if len(senders) > 4 else '')
-    return {'title': _t(lang, 'many', n=len(rows)), 'body': body, 'url': url, 'tag': 'mail:' + account}
+    return {'title': _t(lang, 'many', n=len(rows)), 'body': body, 'url': open_url(url, account), 'tag': 'mail:' + account}
 
 
 def flush(conn, data_dir, now=None, send=None):

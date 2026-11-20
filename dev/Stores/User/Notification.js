@@ -1,4 +1,3 @@
-import { staticLink } from 'Common/Links';
 import { addObservablesTo } from 'External/ko';
 
 /**
@@ -53,12 +52,18 @@ export const NotificationUserStore = new class {
 	 * Used with DesktopNotifications setting
 	 */
 	display(title, text, messageData, imageSrc) {
+		// Quokka: this device already gets this mailbox's notifications from the sorter (push): not a second one
+		try {
+			if (localStorage.getItem('quokka.push.' + String(rl.settings.get('Email') || '').toLowerCase())) return;
+		} catch (e) { /* storage off */ }
 		if (DesktopNotifications && NotificationsGranted()) {
+			// Quokka: no large icon (Android already shows the app's own); the face in white in the bar
 			const options = {
 				body: text,
-				icon: imageSrc || staticLink('images/icon-message-notification.png'),
+				badge: './quokka-badge.png',
 				data: messageData
 			};
+			imageSrc && (options.icon = imageSrc);
 			if (messageData?.uid) {
 				options.tag = messageData.uid;
 			}

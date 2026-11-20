@@ -57,6 +57,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addJsonHook('QuokkaPushUnsubscribe', 'JsonPushUnsubscribe');
 		$this->addJsonHook('QuokkaPushEvery', 'JsonPushEvery');
 		$this->addJsonHook('QuokkaPushTest', 'JsonPushTest');
+		$this->addJsonHook('QuokkaOpenAccount', 'JsonOpenAccount');
 		$this->addTemplate('templates/QuokkaPushSettingsTab.html');
 	}
 
@@ -381,6 +382,22 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	{
 		[$iStatus, $aOut] = self::sorter('/every', array('account' => self::mailbox(), 'every' => (int) $this->jsonParam('every', 5)));
 		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus ? $aOut : array('error' => $aOut['error'] ?? 'unavailable'));
+	}
+
+	/** {email}: a tap on a notification of another of the person's mailboxes: switch to it ({switched}) */
+	public function JsonOpenAccount()
+	{
+		$sEmail = \SnappyMail\IDN::emailToAscii(\trim((string) $this->jsonParam('email', '')));
+		$oCurrent = \RainLoop\Api::Actions()->getAccountFromToken(false);
+		if (!$sEmail || !$oCurrent || \strtolower($oCurrent->Email()) === \strtolower($sEmail)) {
+			return $this->jsonResponse(__FUNCTION__, array('switched' => false));
+		}
+		try {
+			$bOk = \RainLoop\Api::Actions()->switchAccount(new \MailSo\Mime\Email($sEmail));
+		} catch (\Throwable $oException) {
+			$bOk = false;   // not one of this person's mailboxes, or it does not open: stay where we are
+		}
+		return $this->jsonResponse(__FUNCTION__, array('switched' => $bOk));
 	}
 
 	public function JsonPushTest()

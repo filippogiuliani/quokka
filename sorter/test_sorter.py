@@ -185,7 +185,7 @@ def test_new_unread_emails_become_one_notification_per_mailbox(tmp_path):
     send = lambda sub, data, d, subject: sent.append((sub['endpoint'], data)) or 201     # noqa: E731
     assert push.flush(conn, str(tmp_path), now=time.time(), send=send) == 1
     assert sent == [('https://push.example/1', {'title': 'Mamma', 'body': 'Cena di domenica',
-                                                'url': 'https://mail.example', 'tag': 'mail:me'})]
+                                                'url': 'https://mail.example?quokka-account=me#/mailbox/INBOX/m2', 'tag': 'mail:me'})]
     assert push.flush(conn, str(tmp_path), now=time.time(), send=send) == 1 - 1     # nothing left
 
 
@@ -200,6 +200,7 @@ def test_every_n_minutes_groups_them(tmp_path):
     assert push.flush(conn, str(tmp_path), now=time.time() + 5 * 60, send=send) == 0         # not yet: 10 minutes
     assert push.flush(conn, str(tmp_path), now=time.time() + 10 * 60, send=send) == 1
     assert sent[0]['title'] == '3 nuove email' and sent[0]['body'] == 'Anna, Luca'
+    assert sent[0]['url'] == 'https://mail.example?quokka-account=me#/mailbox/INBOX'          # several: the inbox
 
 
 def test_nobody_subscribed_nothing_kept_and_gone_devices_are_dropped(tmp_path):

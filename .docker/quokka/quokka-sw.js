@@ -14,8 +14,8 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     tag: data.tag || undefined,
     renotify: !!data.tag,
-    icon: new URL('quokka-icon.png', self.registration.scope).href,
-    badge: new URL('quokka-badge.png', self.registration.scope).href,   // Android: the face in white in the bar
+    // no large icon: Android already shows the app's own next to the notification; the face in white in the bar
+    badge: new URL('quokka-badge.png', self.registration.scope).href,
     data: { url: data.url || self.registration.scope, push: true },
   }));
 });
