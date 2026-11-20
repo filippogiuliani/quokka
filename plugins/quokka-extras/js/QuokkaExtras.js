@@ -61,6 +61,123 @@
 		forgetKooka() { this.save('', '-'); }
 	}
 
+	// Settings → Notifications: new emails of this mailbox on this device, also with Quokka closed (the sorter sends them)
+	class QuokkaPushSettings
+	{
+		constructor()
+		{
+			this.state = ko.observable('loading');     // loading | unsupported | ios | off | not_watched | ready
+			this.mailbox = ko.observable('');
+			this.subscribed = ko.observable(false);
+			this.every = ko.observable(5);
+			this.busy = ko.observable(false);
+			this.message = ko.observable('');
+			this.error = ko.observable(false);
+			this.denied = ko.observable(false);
+			this.everyOptions = [0, 5, 10, 15, 30, 60].map(n => ({ value: n,
+				label: n ? rl.i18n('QUOKKA_EXTRAS/PUSH_EVERY_N', { N: n }) : rl.i18n('QUOKKA_EXTRAS/PUSH_EVERY_NOW') }));
+			this.every.subscribe(n => this.loaded && this.subscribed()
+				&& this.call('QuokkaPushEvery', { every: n }, () => this.say('PUSH_SAVED')));
+		}
+
+		say(key, error) { this.error(!!error); this.message(key ? rl.i18n('QUOKKA_EXTRAS/' + key) : ''); }
+
+		call(action, params, done)
+		{
+			rl.pluginRemoteRequest((iError, oData) => {
+				const r = oData?.Result;
+				if (iError || !r || r.error) {
+					this.busy(false);
+					this.say(r?.error === 'not_watched' ? 'PUSH_NOT_WATCHED' : 'PUSH_FAILED', true);
+				} else {
+					done(r);
+				}
+			}, action, params);
+		}
+
+		async onShow()
+		{
+			this.loaded = false;
+			this.say('');
+			const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+			if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+				// on iPhone the notifications work only from the app on the home screen
+				this.state(ios && !navigator.standalone ? 'ios' : 'unsupported');
+				return;
+			}
+			this.denied(Notification.permission === 'denied');
+			let endpoint = '';
+			try {
+				this.reg = await navigator.serviceWorker.register('./quokka-sw.js', { scope: './' });
+				await navigator.serviceWorker.ready;
+				this.sub = await this.reg.pushManager.getSubscription();
+				endpoint = this.sub?.endpoint || '';
+			} catch (e) {
+				console.log('Quokka notifications:', e);
+				this.state('unsupported');
+				return;
+			}
+			this.call('QuokkaPushStatus', { endpoint }, r => {
+				this.mailbox(r.mailbox || '');
+				this.key = r.key;
+				this.state(!r.available ? 'off' : r.watched ? 'ready' : 'not_watched');
+				this.subscribed(!!r.subscribed);
+				this.every(r.every ?? 5);
+				this.loaded = true;
+			});
+		}
+
+		static urlKey(b64)
+		{
+			const s = atob((b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
+			return Uint8Array.from(s, c => c.charCodeAt(0));
+		}
+
+		async enable()
+		{
+			this.busy(true);
+			this.say('');
+			try {
+				if (await Notification.requestPermission() !== 'granted') {
+					this.denied(true);
+					this.busy(false);
+					this.say('PUSH_DENIED', true);
+					return;
+				}
+				this.sub = await this.reg.pushManager.getSubscription()
+					|| await this.reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: QuokkaPushSettings.urlKey(this.key) });
+			} catch (e) {
+				console.log('Quokka notifications:', e);
+				this.busy(false);
+				this.say('PUSH_FAILED', true);
+				return;
+			}
+			this.call('QuokkaPushSubscribe', { subscription: this.sub.toJSON(), lang: document.documentElement.lang || 'it' }, r => {
+				this.busy(false);
+				this.subscribed(true);
+				this.every(r.every ?? this.every());
+				this.say('PUSH_ON');
+			});
+		}
+
+		disable()
+		{
+			this.busy(true);
+			// the browser's subscription stays: it may serve the other mailboxes of this device
+			this.call('QuokkaPushUnsubscribe', { endpoint: this.sub?.endpoint || '' }, () => {
+				this.busy(false);
+				this.subscribed(false);
+				this.say('PUSH_OFF');
+			});
+		}
+
+		test()
+		{
+			this.busy(true);
+			this.call('QuokkaPushTest', { endpoint: this.sub?.endpoint || '' }, () => { this.busy(false); this.say('PUSH_TEST_SENT'); });
+		}
+	}
+
 	// Settings → Categories: which of the sorter's categories this person sees
 	class QuokkaCategoriesSettings
 	{
@@ -100,6 +217,7 @@
 	}
 
 	rl.addSettingsViewModel(QuokkaCategoriesSettings, 'QuokkaCategoriesSettingsTab', 'QUOKKA_EXTRAS/TAB_CATEGORIES', 'categories');
+	rl.addSettingsViewModel(QuokkaPushSettings, 'QuokkaPushSettingsTab', 'QUOKKA_EXTRAS/TAB_PUSH', 'notifications');
 	rl.addSettingsViewModel(QuokkaAppsSettings, 'QuokkaAppsSettingsTab', 'QUOKKA_EXTRAS/TAB_APPS', 'family-apps');
 
 }})(window.rl);

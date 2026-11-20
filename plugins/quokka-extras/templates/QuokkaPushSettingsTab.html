@@ -1,0 +1,38 @@
+<div class="form-horizontal quokka-push-settings">
+	<div class="legend" data-i18n="QUOKKA_EXTRAS/TAB_PUSH"></div>
+	<p class="quokka-intro" data-i18n="QUOKKA_EXTRAS/PUSH_INTRO"></p>
+
+	<!-- ko if: state() === 'ready' -->
+	<div class="control-group" data-bind="i18nUpdate: true">
+		<p><span data-i18n="QUOKKA_EXTRAS/PUSH_MAILBOX"></span> <b data-bind="text: mailbox"></b></p>
+		<!-- ko ifnot: subscribed -->
+		<button class="btn btn-primary" data-bind="click: enable, enable: !busy()" data-i18n="QUOKKA_EXTRAS/PUSH_ENABLE"></button>
+		<!-- /ko -->
+		<!-- ko if: subscribed -->
+		<p class="quokka-push-on" data-i18n="QUOKKA_EXTRAS/PUSH_IS_ON"></p>
+		<button class="btn" data-bind="click: test, enable: !busy()" data-i18n="QUOKKA_EXTRAS/PUSH_TEST"></button>
+		<button class="btn" data-bind="click: disable, enable: !busy()" data-i18n="QUOKKA_EXTRAS/PUSH_DISABLE"></button>
+		<!-- /ko -->
+	</div>
+	<div class="control-group" data-bind="visible: subscribed, i18nUpdate: true">
+		<label for="quokka-push-every" data-i18n="QUOKKA_EXTRAS/PUSH_EVERY"></label>
+		<select id="quokka-push-every" data-bind="options: everyOptions, optionsText: 'label', optionsValue: 'value', value: every"></select>
+		<div class="quokka-note" data-i18n="QUOKKA_EXTRAS/PUSH_EVERY_NOTE"></div>
+	</div>
+	<div class="quokka-note" data-bind="visible: denied, i18nUpdate: true" data-i18n="QUOKKA_EXTRAS/PUSH_DENIED"></div>
+	<!-- /ko -->
+	<!-- ko if: state() === 'not_watched' -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/PUSH_NOT_WATCHED"></span></div>
+	<!-- /ko -->
+	<!-- ko if: state() === 'off' -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/PUSH_SERVICE_OFF"></span></div>
+	<!-- /ko -->
+	<!-- ko if: state() === 'ios' -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/PUSH_IOS"></span></div>
+	<!-- /ko -->
+	<!-- ko if: state() === 'unsupported' -->
+	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/PUSH_UNSUPPORTED"></span></div>
+	<!-- /ko -->
+
+	<div class="quokka-save"><span data-bind="text: message, css: {'quokka-error': error}"></span></div>
+</div>

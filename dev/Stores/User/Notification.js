@@ -63,8 +63,8 @@ export const NotificationUserStore = new class {
 				options.tag = messageData.uid;
 			}
 			if (WorkerNotifications) {
-				// Service-Worker-Allowed HTTP header to allow the scope.
-				WorkerNotifications.register(staticLink('js/serviceworker.js'), {scope:'/'})
+				// Quokka: the one service worker, at the root of the site (also the push notifications)
+				WorkerNotifications.register('./quokka-sw.js', {scope:'./'})
 				.then(() =>
 					WorkerNotifications.ready.then(registration =>
 						/* Show the notification */

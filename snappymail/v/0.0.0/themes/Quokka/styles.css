@@ -1282,3 +1282,9 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 .accounts-list .quokka-make-main-cell { width: 1%; white-space: nowrap; }
 .accounts-list .quokka-make-main { margin-left: 10px; font-size: 12px; color: var(--fm-muted); }
 .accounts-list .quokka-make-main:hover { color: var(--fm-primary); }
+
+/* Settings → Notifications (push, quokka-extras) */
+#V-SettingsMenu nav a[data-route="notifications"]::before { content: ""; width: 18px; height: 18px; flex-shrink: 0; background-color: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9%22/%3E%3Cpath d=%22M10.3 21a1.94 1.94 0 0 0 3.4 0%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9%22/%3E%3Cpath d=%22M10.3 21a1.94 1.94 0 0 0 3.4 0%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.quokka-push-settings .btn + .btn { margin-left: 8px; }
+.quokka-push-settings .quokka-push-on { color: var(--fm-primary); font-weight: 600; }
+.quokka-push-settings select { width: auto; min-width: 16em; }

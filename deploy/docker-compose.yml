@@ -29,6 +29,8 @@ services:
       # the family apps (optional), for "Archivia in Pelican" and "Promemoria in Kooka"
       QUOKKA_PELICAN_URL: ${QUOKKA_PELICAN_URL:-}
       QUOKKA_KOOKA_URL: ${QUOKKA_KOOKA_URL:-}
+      # notifications with Quokka closed: the sorter sends them (its service on the "quokka" network)
+      QUOKKA_SORTER_URL: ${QUOKKA_SORTER_URL:-http://quokka-sorter:8025}
       QUOKKA_TITLE: ${QUOKKA_TITLE:-Quokka}
       QUOKKA_LANGUAGE: ${QUOKKA_LANGUAGE:-it}
       QUOKKA_ENCRYPTION: ${QUOKKA_ENCRYPTION:-Off}

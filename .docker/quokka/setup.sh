@@ -103,7 +103,7 @@ set_ini plugins enabled_list '"quokka-extras,quokka-sso,quokka-security"'
 FPM=/usr/local/etc/php-fpm.d/php-fpm.conf
 sed -i '/^env\[QUOKKA_/d' "$FPM"
 # (the Pocket ID settings and QUOKKA_SECRET too: they stay in the container, never in the data volume)
-for name in QUOKKA_PELICAN_URL QUOKKA_KOOKA_URL QUOKKA_OIDC_ISSUER QUOKKA_OIDC_CLIENT_ID QUOKKA_OIDC_CLIENT_SECRET \
+for name in QUOKKA_PELICAN_URL QUOKKA_KOOKA_URL QUOKKA_SORTER_URL QUOKKA_OIDC_ISSUER QUOKKA_OIDC_CLIENT_ID QUOKKA_OIDC_CLIENT_SECRET \
             QUOKKA_PUBLIC_URL QUOKKA_SECRET; do
     value=$(printenv "$name" | tr -d '"' || true)
     [ -z "$value" ] || printf 'env[%s] = "%s"\n' "$name" "$value" >> "$FPM"

@@ -16,10 +16,14 @@ Settings
   IMAP_HOST / IMAP_PORT / IMAP_SECURITY   the mail provider's IMAP server (required) / 993 / ssl  (ssl | starttls | none)
   FIRST_DAYS              at the first start, sort the emails of the last N days too (default 30)
   INTERVAL                seconds between rounds (default 60)
-  DATA                    where its memory lives (default /data)"""
+  DATA                    where its memory lives (default /data)
+  PUSH_PORT               the notifications service for Quokka (default 8025, see push.py)
+
+It also sends the notifications of new emails to the devices that asked for them in Quokka (push.py)."""
 import datetime
 import email
 import email.policy
+import email.utils
 import html
 import imaplib
 import json
@@ -31,6 +35,7 @@ import ssl
 import time
 
 import classify
+import push
 import secret
 
 log = logging.getLogger('sorter')
@@ -60,6 +65,7 @@ def db(path=None):
     conn = sqlite3.connect(path or os.path.join(DATA, 'sorter.db'))
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    push.init(conn)
     return conn
 
 
@@ -191,8 +197,8 @@ def sort_round(conn, account, box, first_days=FIRST_DAYS):
     brain = Brain(conn, account)
     uidvalidity, keywords_ok = box.select()
     if not keywords_ok:
+        # no categories then, but the new emails are still seen (for the notifications)
         log.warning('%s: the server does not keep custom keywords (no \\* in PERMANENTFLAGS): nothing can be tagged', account)
-        return 0, 0
     row = conn.execute('SELECT uidvalidity, last_uid FROM mailbox WHERE account = ?', (account,)).fetchone()
     if row and row['uidvalidity'] != uidvalidity:      # the mailbox was rebuilt: its uids mean other emails now
         conn.execute('DELETE FROM handled WHERE account = ?', (account,))
@@ -202,6 +208,7 @@ def sort_round(conn, account, box, first_days=FIRST_DAYS):
     corrections = 0
     watched = conn.execute(f"""SELECT uid, sender, category, features FROM handled WHERE account = ? AND uidvalidity = ?
                                AND settled = 0 AND at >= datetime('now', '-{WATCH_DAYS} days')""", (account, uidvalidity)).fetchall()
+    watched = watched if keywords_ok else []
     if watched:
         now = box.flags([r['uid'] for r in watched])
         for r in watched:
@@ -230,7 +237,12 @@ def sort_round(conn, account, box, first_days=FIRST_DAYS):
         if raw is None:
             continue
         mail = parse(raw)
-        if _categories(flags):                             # someone already chose: learn nothing, touch nothing
+        if row and '\\seen' not in flags:                 # new and unread (not at the first start): a notification
+            name, addr = email.utils.parseaddr(mail.sender)
+            push.queue(conn, account, uid, name or addr or mail.sender, mail.subject)
+        if not keywords_ok:
+            cat, why = classify.NONE, 'no keywords'
+        elif _categories(flags):                             # someone already chose: learn nothing, touch nothing
             cat, why = sorted(_categories(flags))[0], 'already'
         else:
             cat, why = classify.classify(mail, brain.senders, brain.learned)
@@ -294,6 +306,12 @@ def main():
     os.makedirs(DATA, exist_ok=True)
     conn = db()
     log.info('sorter: categories %s, every %ss', ', '.join(classify.CATEGORIES), INTERVAL)
+    secret_key = os.environ.get('QUOKKA_SECRET', '')
+    if len(secret_key) >= 32:
+        push.serve(push.Service(os.path.join(DATA, 'sorter.db'), DATA, accounts, secret_key),
+                   int(os.environ.get('PUSH_PORT', '8025')))
+    else:
+        log.warning('notifications off: QUOKKA_SECRET is missing or shorter than 32 characters')
     while True:
         for acc in accounts():
             try:
@@ -310,6 +328,13 @@ def main():
             except Exception as e:                         # one mailbox down never stops the others
                 conn.rollback()
                 log.warning('%s: %s: %s', acc['user'], type(e).__name__, e)
+        try:
+            n = push.flush(conn, DATA)
+            if n:
+                log.info('notifications sent: %d', n)
+        except Exception as e:
+            conn.rollback()
+            log.warning('notifications: %s: %s', type(e).__name__, e)
         time.sleep(INTERVAL)
 
 

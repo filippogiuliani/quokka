@@ -49,6 +49,12 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addJsonHook('QuokkaExtrasToPelican', 'JsonToPelican');
 		$this->addJsonHook('QuokkaExtrasToKooka', 'JsonToKooka');
 		$this->addJsonHook('QuokkaExtrasUnsubscribe', 'JsonUnsubscribe');
+		$this->addJsonHook('QuokkaPushStatus', 'JsonPushStatus');
+		$this->addJsonHook('QuokkaPushSubscribe', 'JsonPushSubscribe');
+		$this->addJsonHook('QuokkaPushUnsubscribe', 'JsonPushUnsubscribe');
+		$this->addJsonHook('QuokkaPushEvery', 'JsonPushEvery');
+		$this->addJsonHook('QuokkaPushTest', 'JsonPushTest');
+		$this->addTemplate('templates/QuokkaPushSettingsTab.html');
 	}
 
 	private static function appUrl(string $sName) : string
@@ -259,5 +265,84 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			0 === $iStatus => 'ERR_APP_DOWN',
 			default => 'ERR_APP_STATUS'
 		});
+	}
+
+	// ---------- notifications with Quokka closed: the sorter sends them (sorter/push.py) ----------
+
+	/** A signed call to the sorter's notifications service, on the internal network. [status, data] */
+	private static function sorter(string $sPath, array $aData = array()) : array
+	{
+		$sSecret = \trim((string) \getenv('QUOKKA_SECRET'));
+		$sBase = \rtrim(\trim((string) \getenv('QUOKKA_SORTER_URL')) ?: 'http://quokka-sorter:8025', '/');
+		if (32 > \strlen($sSecret)) {
+			return array(0, array());
+		}
+		$sBody = $aData ? \json_encode($aData) : '';
+		$sTime = (string) \time();
+		$sSign = \hash_hmac('sha256', "{$sTime}\n{$sPath}\n{$sBody}", \hash('sha256', 'quokka-push|' . $sSecret, true));
+		try {
+			$oRequest = \SnappyMail\HTTP\Request::factory();
+			$oRequest->timeout = 15;
+			$oRequest->block_private_ips = false;   // the sorter is on the stack's own network
+			$oResponse = $oRequest->doRequest($aData ? 'POST' : 'GET', $sBase . $sPath, $sBody, array(
+				'Content-Type: application/json', 'X-Quokka-Time: ' . $sTime, 'X-Quokka-Sign: ' . $sSign
+			));
+		} catch (\Throwable $oException) {
+			\error_log('Quokka notifications: the sorter does not answer: ' . $oException->getMessage());
+			return array(0, array());
+		}
+		$aOut = \json_decode((string) ($oResponse->body ?? ''), true);
+		return array($oResponse ? (int) $oResponse->status : 0, \is_array($aOut) ? $aOut : array());
+	}
+
+	/** The mailbox the person is in now: notifications are set per mailbox */
+	private static function mailbox() : string
+	{
+		$oAccount = \RainLoop\Api::Actions()->getAccountFromToken(false);
+		return $oAccount ? $oAccount->Email() : '';
+	}
+
+	/** {endpoint} → {available, watched, every, subscribed, key, mailbox} */
+	public function JsonPushStatus()
+	{
+		[$iKey, $aKey] = self::sorter('/key');
+		if (200 !== $iKey || empty($aKey['key'])) {
+			return $this->jsonResponse(__FUNCTION__, array('available' => false));
+		}
+		[, $aStatus] = self::sorter('/status', array('account' => self::mailbox(), 'endpoint' => (string) $this->jsonParam('endpoint', '')));
+		return $this->jsonResponse(__FUNCTION__, array('available' => true, 'key' => $aKey['key'], 'mailbox' => self::mailbox()) + $aStatus);
+	}
+
+	/** {subscription, lang}: this device gets the notifications of this mailbox */
+	public function JsonPushSubscribe()
+	{
+		$aSub = $this->jsonParam('subscription', array());
+		$sUrl = \rtrim(\trim((string) \getenv('QUOKKA_PUBLIC_URL')), '/');
+		if (!$sUrl) {
+			$sUrl = (($_SERVER['HTTPS'] ?? '') === 'on' || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https' ? 'https' : 'http')
+				. '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+		}
+		[$iStatus, $aOut] = self::sorter('/subscribe', array('account' => self::mailbox(), 'subscription' => \is_array($aSub) ? $aSub : array(),
+			'url' => $sUrl . '/', 'lang' => (string) $this->jsonParam('lang', 'it')));
+		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus ? $aOut : array('error' => $aOut['error'] ?? 'unavailable'));
+	}
+
+	public function JsonPushUnsubscribe()
+	{
+		[$iStatus] = self::sorter('/unsubscribe', array('endpoint' => (string) $this->jsonParam('endpoint', ''), 'account' => self::mailbox()));
+		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus);
+	}
+
+	/** {every}: minutes between two notifications of this mailbox (0 = as soon as an email arrives) */
+	public function JsonPushEvery()
+	{
+		[$iStatus, $aOut] = self::sorter('/every', array('account' => self::mailbox(), 'every' => (int) $this->jsonParam('every', 5)));
+		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus ? $aOut : array('error' => $aOut['error'] ?? 'unavailable'));
+	}
+
+	public function JsonPushTest()
+	{
+		[$iStatus, $aOut] = self::sorter('/test', array('account' => self::mailbox(), 'endpoint' => (string) $this->jsonParam('endpoint', '')));
+		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus ? $aOut : array('error' => $aOut['error'] ?? 'unavailable'));
 	}
 }

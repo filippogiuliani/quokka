@@ -1,0 +1,281 @@
+"""Notifications of new emails on the family's devices, also with Quokka closed (Web Push).
+
+The sorter already looks at every mailbox each minute: the new unread emails of INBOX are kept here and sent as one
+notification per mailbox, at most every N minutes as chosen for that mailbox in Quokka (0 = as soon as they arrive).
+Quokka talks to it over the internal network (the stack's "quokka" network), signing each call with QUOKKA_SECRET:
+
+  GET  /key                                   the VAPID public key, for PushManager.subscribe
+  POST /status      {account, endpoint?}      {watched, every, subscribed}
+  POST /subscribe   {account, subscription, url, lang}
+  POST /unsubscribe {endpoint, account?}     that mailbox on that device (no account: every mailbox)
+  POST /every       {account, every}          minutes: 0, 5, 10, 15, 30, 60
+  POST /test        {account, endpoint}       a notification to that device now
+
+Settings: PUSH_PORT (8025). The VAPID key is made once and kept in DATA/vapid_private.pem."""
+import base64
+import hashlib
+import hmac
+import json
+import logging
+import os
+import sqlite3
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+log = logging.getLogger('sorter.push')
+EVERY = (0, 5, 10, 15, 30, 60)
+DEFAULT_EVERY = 5
+MAX_SKEW = 300                  # a signed call older than this is refused
+SCHEMA = '''
+CREATE TABLE IF NOT EXISTS push_sub (endpoint TEXT NOT NULL, account TEXT NOT NULL, keys TEXT NOT NULL, url TEXT NOT NULL,
+    lang TEXT NOT NULL DEFAULT 'it', at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (endpoint, account));
+CREATE TABLE IF NOT EXISTS push_setting (account TEXT PRIMARY KEY, every INTEGER NOT NULL DEFAULT 5, last_sent REAL NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS push_pending (account TEXT NOT NULL, uid INTEGER NOT NULL, sender TEXT NOT NULL, subject TEXT NOT NULL,
+    at REAL NOT NULL, PRIMARY KEY (account, uid));
+'''
+TEXTS = {
+    'it': {'many': '{n} nuove email', 'test': 'Le notifiche funzionano', 'test_body': 'Le nuove email di {account} arriveranno qui.',
+           'no_subject': '(senza oggetto)'},
+    'en': {'many': '{n} new emails', 'test': 'Notifications work', 'test_body': 'New emails of {account} will show up here.',
+           'no_subject': '(no subject)'},
+}
+
+_vapid = None
+_lock = threading.Lock()
+
+
+def init(conn):
+    conn.executescript(SCHEMA)
+
+
+def _t(lang, key, **kw):
+    return TEXTS.get(lang, TEXTS['it'])[key].format(**kw)
+
+
+# ---------- keys ----------
+
+def vapid(data_dir):
+    """The VAPID key pair, made once and kept in the data folder."""
+    global _vapid
+    if _vapid is None:
+        from py_vapid import Vapid01
+        path = os.path.join(data_dir, 'vapid_private.pem')
+        if not os.path.exists(path):
+            v = Vapid01()
+            v.generate_keys()
+            v.save_key(path)
+            os.chmod(path, 0o600)
+        _vapid = Vapid01.from_file(path)
+    return _vapid
+
+
+def public_key(data_dir):
+    from cryptography.hazmat.primitives import serialization
+    raw = vapid(data_dir).public_key.public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)
+    return base64.urlsafe_b64encode(raw).decode().rstrip('=')
+
+
+# ---------- what to send ----------
+
+def every_of(conn, account):
+    r = conn.execute('SELECT every FROM push_setting WHERE account = ?', (account,)).fetchone()
+    return r['every'] if r else DEFAULT_EVERY
+
+
+def queue(conn, account, uid, sender, subject):
+    """A new unread email of INBOX: kept for the next notification, only if some device of that mailbox wants them."""
+    if conn.execute('SELECT 1 FROM push_sub WHERE account = ? LIMIT 1', (account,)).fetchone():
+        conn.execute('INSERT OR IGNORE INTO push_pending (account, uid, sender, subject, at) VALUES (?,?,?,?,?)',
+                     (account, uid, sender[:200], subject[:300], time.time()))
+
+
+def due(conn, now=None):
+    """{account: [pending rows]} whose time has come (every minutes since the last notification)."""
+    now = now or time.time()
+    out = {}
+    for account in [r[0] for r in conn.execute('SELECT DISTINCT account FROM push_pending')]:
+        s = conn.execute('SELECT every, last_sent FROM push_setting WHERE account = ?', (account,)).fetchone()
+        every, last = (s['every'], s['last_sent']) if s else (DEFAULT_EVERY, 0)
+        if now - last >= every * 60 - 20:           # a round lasts about a minute: do not wait one more for 20 s
+            out[account] = conn.execute('SELECT * FROM push_pending WHERE account = ? ORDER BY uid', (account,)).fetchall()
+    return out
+
+
+def payload(rows, lang, url, account):
+    if len(rows) == 1:
+        r = rows[0]
+        return {'title': r['sender'], 'body': r['subject'] or _t(lang, 'no_subject'), 'url': url, 'tag': 'mail:' + account}
+    senders = []
+    for r in rows:
+        if r['sender'] not in senders:
+            senders.append(r['sender'])
+    body = ', '.join(senders[:4]) + ('…' if len(senders) > 4 else '')
+    return {'title': _t(lang, 'many', n=len(rows)), 'body': body, 'url': url, 'tag': 'mail:' + account}
+
+
+def flush(conn, data_dir, now=None, send=None):
+    """Send what is due. Returns how many notifications went out."""
+    send = send or _webpush
+    sent = 0
+    for account, rows in due(conn, now).items():
+        subs = conn.execute('SELECT * FROM push_sub WHERE account = ?', (account,)).fetchall()
+        for s in subs:
+            sent += _deliver(conn, data_dir, s, payload(rows, s['lang'], s['url'], account), send)
+        conn.execute('DELETE FROM push_pending WHERE account = ?', (account,))
+        conn.execute('INSERT INTO push_setting (account, every, last_sent) VALUES (?, ?, ?) '
+                     'ON CONFLICT (account) DO UPDATE SET last_sent = excluded.last_sent',
+                     (account, DEFAULT_EVERY, now or time.time()))
+    conn.commit()
+    return sent
+
+
+def _deliver(conn, data_dir, sub, data, send):
+    status = send({'endpoint': sub['endpoint'], 'keys': json.loads(sub['keys'])}, data, data_dir, sub['url'])
+    if status in (404, 410):                       # the browser dropped the subscription
+        conn.execute('DELETE FROM push_sub WHERE endpoint = ?', (sub['endpoint'],))
+        log.info('%s: a device unsubscribed', sub['account'])
+        return 0
+    return 1 if status and status < 300 else 0
+
+
+def _webpush(subscription, data, data_dir, subject):
+    """HTTP status of the push service (0 = not reached)."""
+    from pywebpush import WebPushException, webpush
+    sub = subject if subject.startswith(('https://', 'mailto:')) else 'mailto:noreply@example.com'
+    try:
+        r = webpush(subscription, json.dumps(data), vapid_private_key=vapid(data_dir), vapid_claims={'sub': sub},
+                    ttl=86400, timeout=10, headers={'Urgency': 'high'})   # high: a phone asleep gets it at once
+        return getattr(r, 'status_code', 201)
+    except WebPushException as e:
+        status = getattr(e.response, 'status_code', 0)
+        log.warning('push failed (%s): %s', status, e)
+        return status
+    except Exception as e:
+        log.warning('push failed: %s', e)
+        return 0
+
+
+# ---------- the service Quokka talks to ----------
+
+def _key(secret):
+    return hashlib.sha256(b'quokka-push|' + secret.encode()).digest()
+
+
+def sign(secret, ts, path, body):
+    """The signature Quokka puts on a call: HMAC-SHA256 of time, path and body."""
+    return hmac.new(_key(secret), f'{ts}\n{path}\n'.encode() + body, hashlib.sha256).hexdigest()
+
+
+class Service:
+    """The handlers, apart from HTTP so tests can call them."""
+
+    def __init__(self, db_path, data_dir, accounts, secret, send=None):
+        self.db_path, self.data_dir, self.accounts, self.secret, self.send = db_path, data_dir, accounts, secret, send
+
+    def conn(self):
+        c = sqlite3.connect(self.db_path, timeout=15)
+        c.row_factory = sqlite3.Row
+        init(c)
+        return c
+
+    def watched(self, account):
+        """The mailbox as written in accounts.json (only those are read), or None."""
+        a = str(account or '').strip().lower()
+        return next((x['user'] for x in self.accounts() if x['user'].lower() == a), None)
+
+    def handle(self, path, data):
+        if path == '/key':
+            return 200, {'key': public_key(self.data_dir)}
+        with _lock, self.conn() as c:
+            account = self.watched(data.get('account'))
+            if path == '/unsubscribe':
+                endpoint = str(data.get('endpoint') or '')
+                if data.get('account'):
+                    c.execute('DELETE FROM push_sub WHERE endpoint = ? AND account = ?', (endpoint, account or ''))
+                else:
+                    c.execute('DELETE FROM push_sub WHERE endpoint = ?', (endpoint,))
+                return 200, {'ok': True}
+            if path == '/status':
+                if not account:
+                    return 200, {'watched': False}
+                sub = c.execute('SELECT 1 FROM push_sub WHERE endpoint = ? AND account = ?',
+                                (str(data.get('endpoint') or ''), account)).fetchone()
+                return 200, {'watched': True, 'every': every_of(c, account), 'subscribed': bool(sub)}
+            if not account:
+                return 404, {'error': 'not_watched'}
+            if path == '/subscribe':
+                sub = data.get('subscription') or {}
+                endpoint, keys = str(sub.get('endpoint') or ''), sub.get('keys') or {}
+                url = str(data.get('url') or '')
+                if not endpoint.startswith('https://') or not keys.get('p256dh') or not keys.get('auth') or not url.startswith('http'):
+                    return 400, {'error': 'invalid subscription'}
+                lang = 'en' if str(data.get('lang') or '').startswith('en') else 'it'
+                c.execute('INSERT INTO push_sub (endpoint, account, keys, url, lang) VALUES (?,?,?,?,?) ON CONFLICT (endpoint, account) '
+                          'DO UPDATE SET keys = excluded.keys, url = excluded.url, lang = excluded.lang',
+                          (endpoint, account, json.dumps({'p256dh': keys['p256dh'], 'auth': keys['auth']}), url, lang))
+                return 200, {'ok': True, 'every': every_of(c, account)}
+            if path == '/every':
+                try:
+                    every = int(data.get('every'))
+                except (TypeError, ValueError):
+                    every = -1
+                if every not in EVERY:
+                    return 400, {'error': 'every: ' + ', '.join(map(str, EVERY))}
+                c.execute('INSERT INTO push_setting (account, every) VALUES (?, ?) '
+                          'ON CONFLICT (account) DO UPDATE SET every = excluded.every', (account, every))
+                return 200, {'ok': True, 'every': every}
+            if path == '/test':
+                s = c.execute('SELECT * FROM push_sub WHERE endpoint = ? AND account = ?',
+                              (str(data.get('endpoint') or ''), account)).fetchone()
+                if not s:
+                    return 404, {'error': 'not_subscribed'}
+                data = {'title': _t(s['lang'], 'test'), 'body': _t(s['lang'], 'test_body', account=account),
+                        'url': s['url'], 'tag': 'test'}
+                ok = _deliver(c, self.data_dir, s, data, self.send or _webpush)
+                return (200, {'ok': True}) if ok else (502, {'error': 'push_failed'})
+        return 404, {'error': 'unknown'}
+
+    def authorised(self, path, body, ts, signature):
+        try:
+            fresh = abs(time.time() - int(ts)) <= MAX_SKEW
+        except (TypeError, ValueError):
+            return False
+        return fresh and len(self.secret) >= 32 and hmac.compare_digest(sign(self.secret, ts, path, body), str(signature or ''))
+
+
+def serve(service, port):
+    class Handler(BaseHTTPRequestHandler):
+        def _answer(self, status, data):
+            out = json.dumps(data).encode()
+            self.send_response(status)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
+
+        def _run(self, body):
+            if not service.authorised(self.path, body, self.headers.get('X-Quokka-Time'), self.headers.get('X-Quokka-Sign')):
+                return self._answer(403, {'error': 'not signed'})
+            try:
+                data = json.loads(body or b'{}')
+                status, out = service.handle(self.path, data if isinstance(data, dict) else {})
+            except Exception as e:
+                log.warning('push service %s: %s: %s', self.path, type(e).__name__, e)
+                status, out = 500, {'error': 'failed'}
+            self._answer(status, out)
+
+        def do_GET(self):
+            self._run(b'')
+
+        def do_POST(self):
+            n = min(int(self.headers.get('Content-Length') or 0), 20000)
+            self._run(self.rfile.read(n))
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(('0.0.0.0', port), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True, name='push-service').start()
+    log.info('notifications: service on port %s', port)
+    return server
