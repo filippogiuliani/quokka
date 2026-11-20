@@ -238,13 +238,15 @@ def test_the_service_quokka_talks_to(tmp_path):
     assert svc.handle('/subscribe', {'account': 'me@example.it', 'subscription': {'endpoint': 'http://x'}, 'url': 'https://m'})[0] == 400
     assert svc.handle('/subscribe', {'account': 'me@example.it', 'subscription': sub, 'url': 'https://m', 'lang': 'it'})[0] == 200
     assert svc.handle('/status', {'account': 'me@example.it', 'endpoint': 'https://push.example/d1'}) == \
-        (200, {'watched': True, 'every': 5, 'subscribed': True})
+        (200, {'watched': True, 'every': 0, 'subscribed': True, 'checked_at': None})      # 0: at once, by default
     assert svc.handle('/every', {'account': 'me@example.it', 'every': 2000})[0] == 400
     assert svc.handle('/every', {'account': 'me@example.it', 'every': 'x'})[0] == 400
     assert svc.handle('/every', {'account': 'me@example.it', 'every': 2}) == (200, {'ok': True, 'every': 2})
     assert svc.handle('/every', {'account': 'me@example.it', 'every': 30}) == (200, {'ok': True, 'every': 30})
     assert svc.handle('/test', {'account': 'me@example.it', 'endpoint': 'https://push.example/d1'}) == (200, {'ok': True})
-    assert sent[0]['title'] == 'Le notifiche funzionano' and 'Me@Example.it' in sent[0]['body']
+    assert sent[0]['title'] == 'Le notifiche funzionano' and 'Me@Example.it' in sent[0]['body']   # sent when turned on
+    c = sorter.db(db_path); sorter._checked(c, 'Me@Example.it'); c.close()
+    assert svc.handle('/status', {'account': 'me@example.it'})[1]['checked_at'].endswith('Z')       # when it was last read
     assert svc.handle('/key', {})[0] == 200 and len(base64.urlsafe_b64decode(svc.handle('/key', {})[1]['key'] + '==')) == 65
     # the same device may follow a second mailbox: the first one stays
     accounts2 = lambda: [{'user': 'Me@Example.it', 'password': 'x'}, {'user': 'pluto@example.it', 'password': 'x'}]  # noqa: E731

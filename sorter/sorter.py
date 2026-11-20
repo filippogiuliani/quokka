@@ -17,7 +17,7 @@ Settings
   QUOKKA_SECRET            the key of those passwords (the same as Quokka's)
   IMAP_HOST / IMAP_PORT / IMAP_SECURITY   the mail provider's IMAP server (required) / 993 / ssl  (ssl | starttls | none)
   FIRST_DAYS              at the first start, sort the emails of the last N days too (default 30)
-  INTERVAL                seconds between rounds (default 60)
+  INTERVAL                seconds between rounds (default 30)
   DATA                    where its memory lives (default /data)
   PUSH_PORT               the notifications service for Quokka (default 8025, see push.py)
 
@@ -43,7 +43,7 @@ import secret
 log = logging.getLogger('sorter')
 DATA = os.environ.get('DATA', '/data')
 ACCOUNTS = os.environ.get('ACCOUNTS', '/config/accounts.json')
-INTERVAL = int(os.environ.get('INTERVAL', '60'))
+INTERVAL = int(os.environ.get('INTERVAL', '30'))
 FIRST_DAYS = int(os.environ.get('FIRST_DAYS', '30'))
 WATCH_DAYS = 30                 # corrections are looked for on the emails of the last 30 days
 TEXT_BYTES = 20000              # enough of the body to understand it
@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS sender (account TEXT NOT NULL, key TEXT NOT NULL, cat
     at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (account, key));
 -- the mailboxes Quokka passed on when someone signed in (password sealed like in accounts.json); after
 -- FAILURES_OFF refused sign-ins in a row one is left alone until Quokka passes it on again (a new password)
+CREATE TABLE IF NOT EXISTS checked (account TEXT PRIMARY KEY, at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS from_quokka (account TEXT PRIMARY KEY, password TEXT NOT NULL,
     at TEXT NOT NULL DEFAULT (datetime('now')), failures INTEGER NOT NULL DEFAULT 0);
 '''
@@ -321,6 +322,13 @@ def accounts(path=None):
     return out
 
 
+def _checked(conn, account):
+    """When the mailbox was last read (shown in Quokka, Settings → Notifications: proof the sorter reads it)."""
+    conn.execute("INSERT INTO checked (account, at) VALUES (?, datetime('now')) ON CONFLICT (account) DO UPDATE SET at = excluded.at",
+                 (account,))
+    conn.commit()
+
+
 def _signed_in(conn, acc, ok):
     """Count the refused sign-ins of a mailbox Quokka passed on (a password changed since)."""
     if acc.get('from_quokka'):
@@ -348,6 +356,7 @@ def main():
                     _signed_in(conn, acc, False)
                     raise
                 _signed_in(conn, acc, True)
+                _checked(conn, acc['user'])
                 try:
                     done, fixed = sort_round(conn, acc['user'], Mailbox(imap))
                     if done or fixed:

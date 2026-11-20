@@ -26,12 +26,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 log = logging.getLogger('sorter.push')
 MAX_EVERY = 1440                # minutes: any number from 0 (as soon as one arrives) to a day
-DEFAULT_EVERY = 5
+DEFAULT_EVERY = 0               # as soon as an email arrives (Quokka shows no interval: one notification per email, at once)
 MAX_SKEW = 300                  # a signed call older than this is refused
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS push_sub (endpoint TEXT NOT NULL, account TEXT NOT NULL, keys TEXT NOT NULL, url TEXT NOT NULL,
     lang TEXT NOT NULL DEFAULT 'it', at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (endpoint, account));
-CREATE TABLE IF NOT EXISTS push_setting (account TEXT PRIMARY KEY, every INTEGER NOT NULL DEFAULT 5, last_sent REAL NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS push_setting (account TEXT PRIMARY KEY, every INTEGER NOT NULL DEFAULT 0, last_sent REAL NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS push_pending (account TEXT NOT NULL, uid INTEGER NOT NULL, sender TEXT NOT NULL, subject TEXT NOT NULL,
     at REAL NOT NULL, PRIMARY KEY (account, uid));
 '''
@@ -219,7 +219,10 @@ class Service:
                     return 200, {'watched': False}
                 sub = c.execute('SELECT 1 FROM push_sub WHERE endpoint = ? AND account = ?',
                                 (str(data.get('endpoint') or ''), account)).fetchone()
-                return 200, {'watched': True, 'every': every_of(c, account), 'subscribed': bool(sub)}
+                seen = c.execute("SELECT at FROM checked WHERE account = ?", (account,)).fetchone() \
+                    if c.execute("SELECT 1 FROM sqlite_master WHERE name = 'checked'").fetchone() else None
+                return 200, {'watched': True, 'every': every_of(c, account), 'subscribed': bool(sub),
+                             'checked_at': (seen['at'].replace(' ', 'T') + 'Z') if seen else None}
             if not account:
                 return 404, {'error': 'not_watched'}
             if path == '/subscribe':
@@ -232,7 +235,11 @@ class Service:
                 c.execute('INSERT INTO push_sub (endpoint, account, keys, url, lang) VALUES (?,?,?,?,?) ON CONFLICT (endpoint, account) '
                           'DO UPDATE SET keys = excluded.keys, url = excluded.url, lang = excluded.lang',
                           (endpoint, account, json.dumps({'p256dh': keys['p256dh'], 'auth': keys['auth']}), url, lang))
-                return 200, {'ok': True, 'every': every_of(c, account)}
+                # a first notification at once: proof it works on this device
+                test = {'title': _t(lang, 'test'), 'body': _t(lang, 'test_body', account=account), 'url': url, 'tag': 'test'}
+                sub_row = c.execute('SELECT * FROM push_sub WHERE endpoint = ? AND account = ?', (endpoint, account)).fetchone()
+                sent = _deliver(c, self.data_dir, sub_row, test, self.send or _webpush)
+                return 200, {'ok': True, 'every': every_of(c, account), 'test_sent': bool(sent)}
             if path == '/every':
                 try:
                     every = int(data.get('every'))

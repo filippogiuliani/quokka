@@ -108,27 +108,27 @@
 		forgetKooka() { this.save('', '-'); }
 	}
 
-	// Settings → Notifications: new emails of this mailbox on this device, also with Quokka closed (the sorter sends them)
+	// Settings → Notifications: one switch per mailbox and device; every new email of the inbox, at once, also with
+	// Quokka closed (the sorter reads the mailboxes and sends them). Turning it on sends a first one: proof it works.
 	class QuokkaPushSettings
 	{
 		constructor()
 		{
 			this.state = ko.observable('loading');     // loading | unsupported | ios | off | not_watched | ready
-			this.mailbox = ko.observable('');
-			this.subscribed = ko.observable(false);
-			this.every = ko.observable(5);
+			this.on = ko.observable(false);
 			this.busy = ko.observable(false);
+			this.notBusy = ko.computed(() => !this.busy());
 			this.message = ko.observable('');
 			this.error = ko.observable(false);
-			this.denied = ko.observable(false);
-			// any number of minutes, 0 = as soon as an email arrives; saved a moment after typing stops
-			let timer;
-			this.every.subscribe(n => {
-				clearTimeout(timer);
-				const minutes = parseInt(n, 10);
-				if (!this.loaded || !this.subscribed() || !(minutes >= 0 && minutes <= 1440)) return;
-				timer = setTimeout(() => this.call('QuokkaPushEvery', { every: minutes }, () => this.say('PUSH_SAVED')), 700);
+			this.checkedAt = ko.observable(null);
+			this.checkedText = ko.computed(() => {
+				const at = this.checkedAt();
+				if (!at) return rl.i18n('QUOKKA_EXTRAS/PUSH_NOT_CHECKED');
+				const s = Math.max(0, Math.round((Date.now() - new Date(at)) / 1000));
+				const ago = s < 90 ? rl.i18n('QUOKKA_EXTRAS/PUSH_SECONDS', { N: s }) : rl.i18n('QUOKKA_EXTRAS/PUSH_MINUTES', { N: Math.round(s / 60) });
+				return rl.i18n('QUOKKA_EXTRAS/PUSH_CHECKED', { AGO: ago });
 			});
+			this.on.subscribe(value => this.loaded && !this.busy() && (value ? this.enable() : this.disable()));
 		}
 
 		say(key, error) { this.error(!!error); this.message(key ? rl.i18n('QUOKKA_EXTRAS/' + key) : ''); }
@@ -140,6 +140,7 @@
 				if (iError || !r || r.error) {
 					this.busy(false);
 					this.say(r?.error === 'not_watched' ? 'PUSH_NOT_WATCHED' : 'PUSH_FAILED', true);
+					this.loaded = false; this.on(!this.on()); this.loaded = true;     // back as it was
 				} else {
 					done(r);
 				}
@@ -156,7 +157,6 @@
 				this.state(ios && !navigator.standalone ? 'ios' : 'unsupported');
 				return;
 			}
-			this.denied(Notification.permission === 'denied');
 			let endpoint = '';
 			try {
 				this.reg = await navigator.serviceWorker.register('./quokka-sw.js', { scope: './' });
@@ -168,15 +168,16 @@
 				this.state('unsupported');
 				return;
 			}
-			this.call('QuokkaPushStatus', { endpoint }, r => {
-				this.mailbox(r.mailbox || '');
+			rl.pluginRemoteRequest((iError, oData) => {
+				const r = oData?.Result || {};
+				this.mailbox = r.mailbox || '';
 				this.key = r.key;
-				this.state(!r.available ? 'off' : r.watched ? 'ready' : 'not_watched');
-				this.subscribed(!!r.subscribed);
+				this.state(iError || !r.available ? 'off' : r.watched ? 'ready' : 'not_watched');
+				this.on(!!r.subscribed);
+				this.checkedAt(r.checked_at || null);
 				r.available && pushFlag(!!r.subscribed, r.mailbox);
-				this.every(r.every ?? 5);
 				this.loaded = true;
-			});
+			}, 'QuokkaPushStatus', { endpoint });
 		}
 
 		static urlKey(b64)
@@ -191,9 +192,9 @@
 			this.say('');
 			try {
 				if (await Notification.requestPermission() !== 'granted') {
-					this.denied(true);
 					this.busy(false);
 					this.say('PUSH_DENIED', true);
+					this.loaded = false; this.on(false); this.loaded = true;
 					return;
 				}
 				this.sub = await this.reg.pushManager.getSubscription()
@@ -202,14 +203,13 @@
 				console.log('Quokka notifications:', e);
 				this.busy(false);
 				this.say('PUSH_FAILED', true);
+				this.loaded = false; this.on(false); this.loaded = true;
 				return;
 			}
 			this.call('QuokkaPushSubscribe', { subscription: this.sub.toJSON(), lang: document.documentElement.lang || 'it' }, r => {
 				this.busy(false);
-				this.subscribed(true);
-				pushFlag(true, this.mailbox());
-				this.every(r.every ?? this.every());
-				this.say('PUSH_ON');
+				pushFlag(true, this.mailbox);
+				this.say(r.test_sent ? 'PUSH_ON' : 'PUSH_ON_NO_TEST', !r.test_sent);
 			});
 		}
 
@@ -219,16 +219,9 @@
 			// the browser's subscription stays: it may serve the other mailboxes of this device
 			this.call('QuokkaPushUnsubscribe', { endpoint: this.sub?.endpoint || '' }, () => {
 				this.busy(false);
-				this.subscribed(false);
-				pushFlag(false, this.mailbox());
+				pushFlag(false, this.mailbox);
 				this.say('PUSH_OFF');
 			});
-		}
-
-		test()
-		{
-			this.busy(true);
-			this.call('QuokkaPushTest', { endpoint: this.sub?.endpoint || '' }, () => { this.busy(false); this.say('PUSH_TEST_SENT'); });
 		}
 	}
 
