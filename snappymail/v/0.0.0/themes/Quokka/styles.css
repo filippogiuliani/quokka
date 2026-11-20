@@ -1161,6 +1161,8 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 .quokka-sel-actions a.disabled, .quokka-sel-actions a[disabled] { opacity: .45; pointer-events: none; }
 /* with the bar, the usual heading steps aside */
 .messageList:has(.quokka-selbar:not([style*="none"])) .quokka-head { display: none !important; }
+/* the accounts button sits where the bar's bin is (and above it): away while selecting, or the bin cannot be tapped */
+#rl-app:has(.quokka-selbar:not([style*="none"])) #V-SystemDropDown { visibility: hidden; pointer-events: none; }
 
 /* the swipe: what will happen shows under the row */
 .messageListItem.quokka-swiping { position: relative; z-index: 2; background-color: var(--fm-surface) !important; will-change: transform; }

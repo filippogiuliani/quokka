@@ -14,7 +14,8 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     tag: data.tag || undefined,
     renotify: !!data.tag,
-    // no large icon: Android already shows the app's own next to the notification; the face in white in the bar
+    // the quokka on the right (without one Android draws the first letter of the address); the face in white in the bar
+    icon: new URL('quokka-icon.png', self.registration.scope).href,
     badge: new URL('quokka-badge.png', self.registration.scope).href,
     data: { url: data.url || self.registration.scope, push: true },
   }));
@@ -29,10 +30,17 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
   event.waitUntil((async () => {
+    // Quokka already open: take it to that email (the address switches account if needed), else open it there
+    const url = data.url || self.registration.scope;
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const open = wins.find((w) => w.url.startsWith(self.registration.scope));
-    if (open && 'focus' in open) return open.focus();       // Quokka already open: it refreshes the list by itself
-    return self.clients.openWindow(data.url || self.registration.scope);
+    if (open) {
+      try {
+        const moved = 'navigate' in open ? await open.navigate(url) : null;
+        return (moved || open).focus();
+      } catch (e) { /* not ours to move: open a new one */ }
+    }
+    return self.clients.openWindow(url);
   })());
 });
 

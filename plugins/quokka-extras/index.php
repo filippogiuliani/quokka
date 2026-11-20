@@ -299,6 +299,17 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		return array($oResponse ? (int) $oResponse->status : 0, \is_array($aOut) ? $aOut : array());
 	}
 
+	/** The person's mailboxes: the main one, then the added ones */
+	private static function mailboxes() : array
+	{
+		$oActions = \RainLoop\Api::Actions();
+		$oMain = $oActions->getMainAccountFromToken(false);
+		if (!$oMain) {
+			return array();
+		}
+		return \array_values(\array_unique(\array_merge(array($oMain->Email()), \array_keys($oActions->GetAccounts($oMain)))));
+	}
+
 	/** The mailbox the person is in now: notifications are set per mailbox */
 	private static function mailbox() : string
 	{
@@ -366,14 +377,24 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			$sUrl = (($_SERVER['HTTPS'] ?? '') === 'on' || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https' ? 'https' : 'http')
 				. '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 		}
-		[$iStatus, $aOut] = self::sorter('/subscribe', array('account' => self::mailbox(), 'subscription' => \is_array($aSub) ? $aSub : array(),
-			'url' => $sUrl . '/', 'lang' => (string) $this->jsonParam('lang', 'it')));
+		// every mailbox of the person (main and added) on this device, one test notification at the end naming them
+		$this->RegisterMailboxes();
+		$aBoxes = self::mailboxes();
+		$sCurrent = self::mailbox();
+		$aBase = array('subscription' => \is_array($aSub) ? $aSub : array(), 'url' => $sUrl . '/', 'lang' => (string) $this->jsonParam('lang', 'it'));
+		foreach ($aBoxes as $sEmail) {
+			if ($sEmail !== $sCurrent) {
+				self::sorter('/subscribe', array('account' => $sEmail, 'test' => false) + $aBase);
+			}
+		}
+		[$iStatus, $aOut] = self::sorter('/subscribe', array('account' => $sCurrent, 'label' => \implode(', ', $aBoxes)) + $aBase);
 		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus ? $aOut : array('error' => $aOut['error'] ?? 'unavailable'));
 	}
 
 	public function JsonPushUnsubscribe()
 	{
-		[$iStatus] = self::sorter('/unsubscribe', array('endpoint' => (string) $this->jsonParam('endpoint', ''), 'account' => self::mailbox()));
+		// every mailbox on this device, as they were turned on together
+		[$iStatus] = self::sorter('/unsubscribe', array('endpoint' => (string) $this->jsonParam('endpoint', '')));
 		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus);
 	}
 

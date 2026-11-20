@@ -246,8 +246,11 @@ class Service:
                 c.execute('INSERT INTO push_sub (endpoint, account, keys, url, lang) VALUES (?,?,?,?,?) ON CONFLICT (endpoint, account) '
                           'DO UPDATE SET keys = excluded.keys, url = excluded.url, lang = excluded.lang',
                           (endpoint, account, json.dumps({'p256dh': keys['p256dh'], 'auth': keys['auth']}), url, lang))
+                if data.get('test') is False:
+                    return 200, {'ok': True, 'every': every_of(c, account)}
                 # a first notification at once: proof it works on this device
-                test = {'title': _t(lang, 'test'), 'body': _t(lang, 'test_body', account=account), 'url': url, 'tag': 'test'}
+                label = str(data.get('label') or account)[:300]
+                test = {'title': _t(lang, 'test'), 'body': _t(lang, 'test_body', account=label), 'url': url, 'tag': 'test'}
                 sub_row = c.execute('SELECT * FROM push_sub WHERE endpoint = ? AND account = ?', (endpoint, account)).fetchone()
                 sent = _deliver(c, self.data_dir, sub_row, test, self.send or _webpush)
                 return 200, {'ok': True, 'every': every_of(c, account), 'test_sent': bool(sent),

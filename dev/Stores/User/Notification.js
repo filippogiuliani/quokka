@@ -57,13 +57,13 @@ export const NotificationUserStore = new class {
 			if (localStorage.getItem('quokka.push.' + String(rl.settings.get('Email') || '').toLowerCase())) return;
 		} catch (e) { /* storage off */ }
 		if (DesktopNotifications && NotificationsGranted()) {
-			// Quokka: no large icon (Android already shows the app's own); the face in white in the bar
+			// Quokka: the quokka (not SnappyMail's envelope); the face in white in the bar
 			const options = {
 				body: text,
+				icon: imageSrc || './quokka-icon.png',
 				badge: './quokka-badge.png',
 				data: messageData
 			};
-			imageSrc && (options.icon = imageSrc);
 			if (messageData?.uid) {
 				options.tag = messageData.uid;
 			}

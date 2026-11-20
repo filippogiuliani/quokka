@@ -56,7 +56,8 @@ RUN set -eux; \
     chmod 440 /snappymail/include.php; \
     chmod +x /entrypoint.sh /quokka/setup.sh; \
     # the service worker at the root of the site: notifications also with Quokka closed (.docker/quokka/quokka-sw.js)
-    cp /quokka/quokka-sw.js /quokka/quokka-badge.png /snappymail/; chown www-data:www-data /snappymail/quokka-sw.js /snappymail/quokka-badge.png; \
+    cp /quokka/quokka-sw.js /quokka/quokka-badge.png /quokka/quokka-icon.png /snappymail/; \
+    chown www-data:www-data /snappymail/quokka-sw.js /snappymail/quokka-badge.png /snappymail/quokka-icon.png; \
     mv -v /usr/local/etc/php-fpm.d/docker.conf /usr/local/etc/php-fpm.d/docker.conf.disabled; \
     mv -v /usr/local/etc/php-fpm.d/www.conf /usr/local/etc/php-fpm.d/www.conf.disabled; \
     mv -v /usr/local/etc/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf.disabled; \
