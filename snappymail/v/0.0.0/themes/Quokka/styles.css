@@ -853,13 +853,14 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 }
 
 
-/* ---------- the logo: «qu●kka», the o is the quokka's face (sand, outlined in the text's colour) ---------- */
+/* ---------- the logo: the quokka's face (sand, outlined in the text's colour) before the name ---------- */
 .quokka-wordmark {
 	display: inline-flex; align-items: center; gap: 0;
 	font-family: 'Fredoka', 'Inter', system-ui, sans-serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1;
 	color: var(--fm-primary); white-space: nowrap; user-select: none;
 }
-.quokka-wordmark svg { width: 0.93em; height: 1em; margin: 0 0.02em; transform: translateY(0.1em); overflow: visible; }
+.quokka-wordmark { gap: 0.18em; }
+.quokka-wordmark svg { width: 0.93em; height: 1em; transform: translateY(0.04em); overflow: visible; }
 .quokka-wordmark .qf-fur { fill: #d9a46c; stroke: currentColor; }
 .quokka-wordmark .qf-ink { fill: var(--fm-ink); }
 :root[data-theme="dark"] .quokka-wordmark .qf-ink, #rl-app[data-color-scheme="dark"] .quokka-wordmark .qf-ink { fill: #0f1a26; }
