@@ -84,6 +84,15 @@ notification per email, like Gmail). Nothing else to set up, as long as:
 The sorter makes its notification key once and keeps it in `SORTER_DATA` (`vapid_private.pem`): keep it with the
 backups, or every device has to turn the notifications on again.
 
+## 9. All mailboxes in one list
+
+With more than one mailbox (Settings → Accounts), the column shows **Caselle**: "Tutte le caselle" puts the INBOX of
+every one of them in one list, each email marked with its mailbox; a mailbox alone works as before. The list comes
+from the sorter, which keeps an index of each INBOX (sorter/inbox.py, in `SORTER_DATA`): the same network and
+`QUOKKA_SECRET` as the notifications, nothing else to set up. `INDEX_DAYS` on the sorter (default 60) says how far
+back it goes. Opening an email switches to its mailbox; star, read, archive and delete work from the list itself
+(archive and delete use the folders chosen for that mailbox in Settings → Folders, else the server's own).
+
 ## Updating
 
 `sh ~/push-images.sh quokka quokka-sorter`, then Portainer → the stack → Update, with "Re-pull image". Settings,

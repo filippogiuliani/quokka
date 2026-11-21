@@ -9,6 +9,29 @@
 		<a class="btn buttonContacts fontastic" data-bind="visible: allowContacts, click: contactsClick" data-i18n="[title]GLOBAL/CONTACTS">📇</a>
 	</div>
 	<div class="b-content">
+		<!-- Quokka: the person's mailboxes, "All mailboxes" first (only with more than one) -->
+		<!-- ko if: hasMailboxes -->
+		<div class="b-categories-title" data-bind="text: mailboxesTitle"></div>
+		<ul class="b-mailboxes">
+			<li>
+				<a href="#" data-bind="click: selectAllMailboxes, css: {selected: allMailboxesSelected}">
+					<span class="box-badge box-all" aria-hidden="true">∗</span>
+					<span class="box-name" data-bind="text: allMailboxesLabel"></span>
+					<span class="box-unread" data-bind="text: allMailboxesUnread() || ''"></span>
+				</a>
+			</li>
+			<!-- ko foreach: mailboxes -->
+			<li>
+				<a href="#" data-bind="click: $root.selectMailbox, css: {selected: selected}, attr: {title: email}">
+					<span class="box-badge" aria-hidden="true" data-bind="text: letter, style: {backgroundColor: color}"></span>
+					<span class="box-name" data-bind="text: name"></span>
+					<span class="box-unread" data-bind="text: unread() || ''"></span>
+				</a>
+			</li>
+			<!-- /ko -->
+		</ul>
+		<hr class="b-mailboxes-end">
+		<!-- /ko -->
 		<ul class="b-folders-system" data-bind="foreach: systemFolders">
 			<li>
 				<a data-bind="dropmessages: $data,
@@ -43,14 +66,14 @@
 		<!-- Quokka: folders are made and arranged from here (the footer of upstream is hidden) -->
 		<div class="quokka-folder-actions">
 			<a href="#" data-bind="click: createFolder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg><span data-i18n="QUOKKA/NEW_FOLDER"></span></a>
-			<a href="#" data-bind="click: configureFolders" data-i18n="[title]QUOKKA/MANAGE_FOLDERS"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg><span data-i18n="QUOKKA/MANAGE"></span></a>
+			<a href="#" data-bind="click: configureFolders" data-i18n="[title]QUOKKA/MANAGE_FOLDERS"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg><span data-i18n="QUOKKA/MANAGE"></span></a>
 		</div>
 	</div>
 	<!-- Quokka: who is signed in; settings -->
 	<a class="quokka-account" data-bind="attr: {href: settingsHref, title: accountEmail}">
 		<span class="quokka-avatar" data-bind="text: accountInitial"></span>
 		<span class="quokka-account-email" data-bind="text: accountEmail"></span>
-		<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 	</a>
 	<div class="b-footer btn-toolbar">
 		<div class="btn-group">

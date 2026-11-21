@@ -44,6 +44,8 @@ import { ComposePopupView } from 'View/Popup/Compose';
 
 import { MessageModel } from 'Model/Message';
 import { CATEGORY_KEYS, CATEGORIES, categorySearch, isQuickSearch } from 'Common/Categories';
+import { unifiedView, unifiedMessages, unifiedLoading, unifiedAvailable, unifiedMore, unifiedPending, unifiedTotal,
+	mailboxTitle, loadUnified, openUnified, unifiedAct } from 'Common/Mailboxes';
 
 import { LayoutSideView, ClientSideKeyNameMessageListSize } from 'Common/EnumsUser';
 import { setLayoutResizer } from 'Common/UtilsUser';
@@ -131,7 +133,7 @@ export class MailMessageList extends AbstractViewRight {
 				return category ? i18n('MESSAGE_TAGS/' + category) : (FolderUserStore.currentFolder()?.localName() || '');
 			},
 			listUnread: () => {
-				const n = FolderUserStore.currentFolder()?.unreadCount() || 0;
+				const n = unifiedView() ? unifiedTotal() : (FolderUserStore.currentFolder()?.unreadCount() || 0);
 				return n ? i18n('QUOKKA/UNREAD_COUNT', { COUNT: n }) : '';
 			},
 			archiveHref: () => {
@@ -140,6 +142,29 @@ export class MailMessageList extends AbstractViewRight {
 			},
 			inboxHref: () => mailBox(getFolderHashFromCacheList('INBOX'))
 		});
+
+		// Quokka: "All mailboxes" (Common/Mailboxes.js): its own list in place of the one of the mailbox
+		this.unifiedView = unifiedView;
+		this.unifiedMessages = unifiedMessages;
+		this.unifiedLoading = unifiedLoading;
+		this.unifiedAvailable = unifiedAvailable;
+		this.unifiedMore = unifiedMore;
+		this.mailboxTitle = mailboxTitle;
+		this.unifiedEmpty = ko.computed(() => !unifiedLoading() && unifiedAvailable() && !unifiedMessages().length);
+		this.unifiedPendingText = ko.computed(() => unifiedPending().length
+			? i18n('QUOKKA/UNIFIED_PENDING', { MAILBOXES: unifiedPending().join(', ') }) : '');
+		const text = key => ko.computed(() => (translateTrigger(), i18n(key)));
+		this.unifiedTexts = { off: text('QUOKKA/UNIFIED_OFF'), empty: text('QUOKKA/UNIFIED_EMPTY'), loading: text('GLOBAL/LOADING'),
+			more: text('QUOKKA/UNIFIED_MORE'), archive: text('QUOKKA/ARCHIVE'), trash: text('QUOKKA/DELETE') };
+		this.openUnified = msg => openUnified(msg);
+		this.unifiedNoPic = (msg, event) => { event.target.hidden = true; };   // no picture: the initial under it shows
+		this.unifiedMoreClick = () => loadUnified(true);
+		// the buttons of a row: the click stops there, or the row would open the email too
+		const rowButton = fn => (msg, event) => { stopEvent(event); fn(msg); };
+		this.unifiedStar = rowButton(msg => unifiedAct(msg, msg.flagged() ? 'unflag' : 'flag'));
+		this.unifiedRead = rowButton(msg => unifiedAct(msg, msg.unseen() ? 'seen' : 'unseen'));
+		this.unifiedArchive = rowButton(msg => unifiedAct(msg, 'archive'));
+		this.unifiedTrash = rowButton(msg => unifiedAct(msg, 'trash'));
 
 		addComputablesTo(this, {
 
@@ -694,6 +719,10 @@ export class MailMessageList extends AbstractViewRight {
 
 		// initShortcuts
 
+		// Quokka: with "All mailboxes" shown the list of the mailbox is hidden: its keys must not act on it
+		// (with an email open they act on that one, as ever)
+		const listOnly = fn => () => unifiedView() && ScopeMessageView !== AppUserStore.focusedState() ? false : fn();
+
 		addShortcut('enter,open', '', ScopeMessageList, () => {
 			if (formFieldFocused()) {
 				MessagelistUserStore.mainSearch(sLastSearchValue);
@@ -706,21 +735,21 @@ export class MailMessageList extends AbstractViewRight {
 		});
 
 		// archive (zip)
-		registerShortcut('z', '', [ScopeMessageList, ScopeMessageView], () => {
+		registerShortcut('z', '', [ScopeMessageList, ScopeMessageView], listOnly(() => {
 			this.archiveCommand();
 			return false;
-		});
+		}));
 
 		// delete
-		registerShortcut('delete', 'shift', ScopeMessageList, () => {
+		registerShortcut('delete', 'shift', ScopeMessageList, listOnly(() => {
 			MessagelistUserStore.listCheckedOrSelected().length && this.deleteWithoutMoveCommand();
 			return false;
-		});
+		}));
 //		registerShortcut('3', 'shift', ScopeMessageList, () => {
-		registerShortcut('delete', '', ScopeMessageList, () => {
+		registerShortcut('delete', '', ScopeMessageList, listOnly(() => {
 			MessagelistUserStore.listCheckedOrSelected().length && this.deleteCommand();
 			return false;
-		});
+		}));
 
 		// check mail
 		addShortcut('r', 'meta', [ScopeFolderList, ScopeMessageList, ScopeMessageView], () => {
@@ -729,10 +758,10 @@ export class MailMessageList extends AbstractViewRight {
 		});
 
 		// check all
-		registerShortcut('a', 'meta', ScopeMessageList, () => {
+		registerShortcut('a', 'meta', ScopeMessageList, listOnly(() => {
 			this.checkAll(!(this.checkAll() && !this.isIncompleteChecked()));
 			return false;
-		});
+		}));
 
 		// write/compose (open compose popup)
 		registerShortcut('w,c,new', '', [ScopeMessageList, ScopeMessageView], () => {
@@ -741,7 +770,7 @@ export class MailMessageList extends AbstractViewRight {
 		});
 
 		// important - star/flag messages
-		registerShortcut('i', '', [ScopeMessageList, ScopeMessageView], () => {
+		registerShortcut('i', '', [ScopeMessageList, ScopeMessageView], listOnly(() => {
 			const checked = MessagelistUserStore.listCheckedOrSelected();
 			if (checked.length) {
 				listAction(
@@ -751,7 +780,7 @@ export class MailMessageList extends AbstractViewRight {
 				);
 			}
 			return false;
-		});
+		}));
 
 		registerShortcut('t', '', [ScopeMessageList], () => {
 			let message = MessagelistUserStore.selectedMessage() || MessagelistUserStore.focusedMessage();
@@ -762,22 +791,22 @@ export class MailMessageList extends AbstractViewRight {
 		});
 
 		// move
-		registerShortcut('insert', '', ScopeMessageList, () => {
+		registerShortcut('insert', '', ScopeMessageList, listOnly(() => {
 			this.moveCommand();
 			return false;
-		});
+		}));
 
 		// read
-		registerShortcut('q', '', [ScopeMessageList, ScopeMessageView], () => {
+		registerShortcut('q', '', [ScopeMessageList, ScopeMessageView], listOnly(() => {
 			this.seenMessagesFast(true);
 			return false;
-		});
+		}));
 
 		// unread
-		registerShortcut('u', '', [ScopeMessageList, ScopeMessageView], () => {
+		registerShortcut('u', '', [ScopeMessageList, ScopeMessageView], listOnly(() => {
 			this.seenMessagesFast(false);
 			return false;
-		});
+		}));
 
 		registerShortcut('f,mailforward', 'shift', [ScopeMessageList, ScopeMessageView], () => {
 			this.forwardCommand();

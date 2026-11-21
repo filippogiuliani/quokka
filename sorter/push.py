@@ -11,6 +11,7 @@ Quokka talks to it over the internal network (the stack's "quokka" network), sig
   POST /unsubscribe {endpoint, account?}     that mailbox on that device (no account: every mailbox)
   POST /every       {account, every}          minutes, 0 (as soon as an email arrives) to 1440
   POST /test        {account, endpoint}       a notification to that device now
+  POST /inbox, /act                           "All mailboxes": see inbox.py
 
 Settings: PUSH_PORT (8025). The VAPID key is made once and kept in DATA/vapid_private.pem."""
 import base64
@@ -209,8 +210,9 @@ def sign(secret, ts, path, body):
 class Service:
     """The handlers, apart from HTTP so tests can call them."""
 
-    def __init__(self, db_path, data_dir, accounts, secret, send=None):
+    def __init__(self, db_path, data_dir, accounts, secret, send=None, connect=None):
         self.db_path, self.data_dir, self.accounts, self.secret, self.send = db_path, data_dir, accounts, secret, send
+        self.connect = connect              # sorter.connect: an IMAP session on a mailbox (for /act)
 
     def conn(self):
         c = sqlite3.connect(self.db_path, timeout=15)
@@ -228,6 +230,13 @@ class Service:
     def handle(self, path, data):
         if path == '/key':
             return 200, {'key': public_key(self.data_dir)}
+        # "All mailboxes" (inbox.py): reading needs no lock, and an action talks to the mail server for a moment
+        if path == '/inbox':
+            import inbox
+            return inbox.handle_list(self, data)
+        if path == '/act':
+            import inbox
+            return inbox.handle_act(self, data, self.connect)
         with _lock, self.conn() as c:
             if path == '/register':
                 return self.register(c, data)

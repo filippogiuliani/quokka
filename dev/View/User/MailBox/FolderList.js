@@ -26,6 +26,7 @@ import { CATEGORY_KEYS, CATEGORIES, categorySearch } from 'Common/Categories';
 import { i18n, translateTrigger } from 'Common/Translator';
 import { getFolderHashFromCacheList, getFolderInboxName } from 'Common/Cache';
 import { ThemeStore } from '../../../Stores/Theme';
+import { mailboxes, hasMailboxes, unifiedOn, unifiedTotal, selectMailbox } from 'Common/Mailboxes';
 
 export class MailFolderList extends AbstractViewLeft {
 	constructor() {
@@ -49,6 +50,16 @@ export class MailFolderList extends AbstractViewLeft {
 		this.accountEmail = AccountUserStore.email;
 		this.accountInitial = ko.computed(() => (AccountUserStore.email() || '?').charAt(0).toUpperCase());
 		this.settingsHref = settings();
+
+		// Quokka: the person's mailboxes, "All mailboxes" first (Common/Mailboxes.js)
+		this.mailboxes = mailboxes;
+		this.hasMailboxes = hasMailboxes;
+		this.allMailboxesSelected = unifiedOn;
+		this.allMailboxesUnread = unifiedTotal;
+		this.selectAllMailboxes = () => selectMailbox(null);
+		this.selectMailbox = box => selectMailbox(box);
+		this.mailboxesTitle = ko.computed(() => (translateTrigger(), i18n('QUOKKA/MAILBOXES')));
+		this.allMailboxesLabel = ko.computed(() => (translateTrigger(), i18n('QUOKKA/ALL_MAILBOXES')));
 
 		// Quokka: the categories, each a search of the inbox
 		const categories = CATEGORY_KEYS.map(key => ({
@@ -79,7 +90,7 @@ export class MailFolderList extends AbstractViewLeft {
 
 		dom.addEventListener('click', event => {
 			// Quokka: on the phone a category closes the column and shows its emails (the link does the rest)
-			if (ThemeStore.isMobile() && eqs(event, '.b-categories a')) {
+			if (ThemeStore.isMobile() && eqs(event, '.b-categories a, .b-mailboxes a')) {
 				leftPanelDisabled(true);
 				return;
 			}

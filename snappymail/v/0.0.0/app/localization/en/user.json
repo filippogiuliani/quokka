@@ -660,6 +660,16 @@
 		"UnknownError": "Unknown error"
 	},
 	"QUOKKA": {
+		"MAILBOXES": "Mailboxes",
+		"ALL_MAILBOXES": "All mailboxes",
+		"UNIFIED_EMPTY": "No emails here",
+		"UNIFIED_PENDING": "These mailboxes show up here in a minute, as soon as the sorter reads them: %MAILBOXES%",
+		"UNIFIED_OFF": "The list of all mailboxes is not available now (the sorter does not answer). Choose a mailbox on the left.",
+		"UNIFIED_MORE": "Show more emails",
+		"UNIFIED_NO_FOLDER": "This mailbox has no folder for that: open it and choose the folder in Settings → Folders.",
+		"UNIFIED_FAILED": "That did not work: the list shows again how things really are.",
+		"UNIFIED_READ": "Mark as read",
+		"UNIFIED_UNREAD": "Mark as unread",
 		"MAIN_ACCOUNT": "Main",
 		"MAKE_MAIN": "Make main",
 		"MAKE_MAIN_ASK": "Make %EMAIL% the main account? Pocket ID will open this mailbox and the other accounts stay listed here, the current main one included.",

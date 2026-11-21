@@ -58,6 +58,9 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addJsonHook('QuokkaPushEvery', 'JsonPushEvery');
 		$this->addJsonHook('QuokkaPushTest', 'JsonPushTest');
 		$this->addJsonHook('QuokkaOpenAccount', 'JsonOpenAccount');
+		// "All mailboxes": the INBOX of every mailbox of the person in one list (the sorter's index, sorter/inbox.py)
+		$this->addJsonHook('QuokkaUnifiedList', 'JsonUnifiedList');
+		$this->addJsonHook('QuokkaUnifiedAct', 'JsonUnifiedAct');
 		$this->addTemplate('templates/QuokkaPushSettingsTab.html');
 	}
 
@@ -419,6 +422,100 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			$bOk = false;   // not one of this person's mailboxes, or it does not open: stay where we are
 		}
 		return $this->jsonResponse(__FUNCTION__, array('switched' => $bOk));
+	}
+
+	// ---------- "All mailboxes": one list for all of a person's mailboxes ----------
+
+	/**
+	 * {category, unseen, attachment, text, offset} → {available, messages, unread, more, pending}
+	 * Only the mailboxes of the person signed in (main and added) are ever asked for.
+	 */
+	public function JsonUnifiedList()
+	{
+		$aBoxes = self::mailboxes();
+		if (!$aBoxes) {
+			return $this->jsonResponse(__FUNCTION__, array('available' => false));
+		}
+		$aParams = array(
+			'accounts' => $aBoxes,
+			'category' => \preg_replace('/[^a-z]/', '', (string) $this->jsonParam('category', '')),
+			'unseen' => !empty($this->jsonParam('unseen', false)),
+			'attachment' => !empty($this->jsonParam('attachment', false)),
+			'text' => \mb_substr((string) $this->jsonParam('text', ''), 0, 200),
+			'offset' => \max(0, (int) $this->jsonParam('offset', 0)),
+			'limit' => 50
+		);
+		[$iStatus, $aOut] = self::sorter('/inbox', $aParams, 10);
+		if (200 === $iStatus && !empty($aOut['missing'])) {
+			// mailboxes the sorter does not read yet (added before Quokka passed them on): pass them on now
+			$this->RegisterMailboxes();
+			[$iStatus, $aOut] = self::sorter('/inbox', $aParams, 10);
+		}
+		if (200 !== $iStatus) {
+			return $this->jsonResponse(__FUNCTION__, array('available' => false));
+		}
+		return $this->jsonResponse(__FUNCTION__, array(
+			'available' => true,
+			'messages' => $aOut['messages'] ?? array(),
+			'unread' => $aOut['unread'] ?? array(),
+			'more' => !empty($aOut['more']),
+			'pending' => \array_values(\array_unique(\array_merge($aOut['pending'] ?? array(), $aOut['missing'] ?? array())))
+		));
+	}
+
+	/** {account, uids, action: seen|unseen|flag|unflag|opened|archive|trash} on emails of one of the person's mailboxes */
+	public function JsonUnifiedAct()
+	{
+		$sAccount = (string) $this->jsonParam('account', '');
+		$aBoxes = self::mailboxes();
+		$iKey = \array_search(\strtolower($sAccount), \array_map('strtolower', $aBoxes), true);
+		$sAction = (string) $this->jsonParam('action', '');
+		if (false === $iKey || !\in_array($sAction, array('seen', 'unseen', 'flag', 'unflag', 'opened', 'archive', 'trash'), true)) {
+			return $this->jsonResponse(__FUNCTION__, array('error' => 'invalid'));
+		}
+		$sAccount = $aBoxes[$iKey];
+		$aData = array(
+			'account' => $sAccount,
+			'action' => $sAction,
+			'uids' => \array_slice(\array_values(\array_filter(\array_map('intval', (array) $this->jsonParam('uids', array())))), 0, 500)
+		);
+		if ('archive' === $sAction || 'trash' === $sAction) {
+			// the folder that mailbox uses (Settings → Folders), else the sorter finds the server's own
+			$sFolder = self::systemFolder($sAccount, 'archive' === $sAction ? 'ArchiveFolder' : 'TrashFolder');
+			if ($sFolder) {
+				$aData['folder'] = $sFolder;
+			}
+		}
+		[$iStatus, $aOut] = self::sorter('/act', $aData, 30);
+		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus ? array('ok' => true) : array('error' => $aOut['error'] ?? 'unavailable'));
+	}
+
+	/** The Archive or Trash folder chosen for one of the person's mailboxes, '' when none was chosen */
+	private static function systemFolder(string $sEmail, string $sKey) : string
+	{
+		try {
+			$oActions = \RainLoop\Api::Actions();
+			$oMain = $oActions->getMainAccountFromToken(false);
+			if (!$oMain) {
+				return '';
+			}
+			$oAccount = null;
+			if (\strtolower($oMain->Email()) === \strtolower($sEmail)) {
+				$oAccount = $oMain;
+			} else {
+				foreach ($oActions->GetAccounts($oMain) as $sAddress => $aAccount) {
+					if (\strtolower($sAddress) === \strtolower($sEmail)) {
+						$oAccount = \RainLoop\Model\AdditionalAccount::NewInstanceFromTokenArray($oActions, $aAccount);
+						break;
+					}
+				}
+			}
+			$oSettings = $oAccount ? $oActions->SettingsProvider(true)->Load($oAccount) : null;
+			$sFolder = $oSettings instanceof \RainLoop\Settings ? (string) $oSettings->GetConf($sKey, '') : '';
+			return '' === $sFolder || '__UNUSE__' === $sFolder ? '' : $sFolder;
+		} catch (\Throwable $oException) {
+			return '';
+		}
 	}
 
 	public function JsonPushTest()

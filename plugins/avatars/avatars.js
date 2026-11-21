@@ -132,7 +132,7 @@
 		/**
 		 * Modify templates
 		 */
-		getEl('MailMessageList').content.querySelectorAll('.messageCheckbox')
+		getEl('MailMessageList').content.querySelectorAll('.messageListItem:not(.quokka-urow) .messageCheckbox')   // Quokka: not "All mailboxes"
 			.forEach(el => el.append(Element.fromHTML(`<img class="fromPic" data-bind="fromPic:$data" loading="lazy">`)));
 		const messageItemHeader = getEl(templateId).content.querySelector('.messageItemHeader');
 		if (messageItemHeader) {

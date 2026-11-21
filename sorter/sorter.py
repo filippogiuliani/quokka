@@ -20,8 +20,10 @@ Settings
   INTERVAL                seconds between rounds (default 30)
   DATA                    where its memory lives (default /data)
   PUSH_PORT               the notifications service for Quokka (default 8025, see push.py)
+  INDEX_DAYS              how far back "All mailboxes" in Quokka goes (default 60, see inbox.py)
 
-It also sends the notifications of new emails to the devices that asked for them in Quokka (push.py)."""
+It also sends the notifications of new emails to the devices that asked for them in Quokka (push.py), and keeps the
+index of every INBOX that Quokka shows as "All mailboxes" (inbox.py)."""
 import datetime
 import email
 import email.policy
@@ -37,6 +39,7 @@ import ssl
 import time
 
 import classify
+import inbox
 import push
 import secret
 
@@ -74,6 +77,7 @@ def db(path=None):
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
     push.init(conn)
+    inbox.init(conn)
     return conn
 
 
@@ -139,10 +143,14 @@ class Mailbox:
         """(raw bytes of headers + start of text, set of keywords) or (None, None) if it is gone."""
         typ, data = self.imap.uid('FETCH', str(uid), f'(FLAGS BODY.PEEK[HEADER] BODY.PEEK[TEXT]<0.{TEXT_BYTES}>)')
         parts = [d for d in data if isinstance(d, tuple)]
+        rest = b' '.join(d for d in data if isinstance(d, bytes))     # FLAGS may come after the last literal
         if typ != 'OK' or not parts:
             return None, None
+        # headers first, whatever order the server answers in (some send the text first: then sender and subject
+        # were read as empty, and nothing was learned by sender)
+        parts.sort(key=lambda p: 0 if b'HEADER' in p[0].upper() else 1)
         raw = b''.join(p[1] for p in parts)
-        return raw, _flags(b' '.join(p[0] for p in parts))
+        return raw, _flags(b' '.join(p[0] for p in parts) + b' ' + rest)
 
     def flags(self, uids):
         """{uid: set of keywords} for these emails (the ones gone are missing)."""
@@ -260,9 +268,15 @@ def sort_round(conn, account, box, first_days=FIRST_DAYS):
                 box.tag(uid, cat)
         conn.execute('INSERT OR REPLACE INTO handled (account, uidvalidity, uid, sender, category, why, features) VALUES (?,?,?,?,?,?,?)',
                      (account, uidvalidity, uid, classify.address(mail.sender), cat, why, json.dumps(mail.features())))
+        inbox.add(conn, account, uid, raw, mail, set(flags or ()) | ({cat} if cat else set()), classify.CATEGORIES)
         done += 1
     conn.execute('INSERT INTO mailbox (account, uidvalidity, last_uid) VALUES (?,?,?) ON CONFLICT (account) '
                  'DO UPDATE SET uidvalidity = excluded.uidvalidity, last_uid = excluded.last_uid', (account, uidvalidity, last))
+    # 3. the index of INBOX for Quokka's "All mailboxes" (inbox.py): a failure there never undoes the sorting
+    try:
+        inbox.sync(conn, account, uidvalidity, box, parse, classify.CATEGORIES)
+    except Exception as e:
+        log.warning('%s: index of INBOX: %s: %s', account, type(e).__name__, e)
     # what was handled long ago is not watched any more: keep the table small
     conn.execute(f"DELETE FROM handled WHERE account = ? AND at < datetime('now', '-{WATCH_DAYS + 5} days')", (account,))
     conn.commit()
@@ -345,7 +359,7 @@ def main():
     log.info('sorter: categories %s, every %ss', ', '.join(classify.CATEGORIES), INTERVAL)
     secret_key = os.environ.get('QUOKKA_SECRET', '')
     if len(secret_key) >= 32:
-        push.serve(push.Service(os.path.join(DATA, 'sorter.db'), DATA, accounts, secret_key),
+        push.serve(push.Service(os.path.join(DATA, 'sorter.db'), DATA, accounts, secret_key, connect=connect),
                    int(os.environ.get('PUSH_PORT', '8025')))
     else:
         log.warning('notifications off: QUOKKA_SECRET is missing or shorter than 32 characters')

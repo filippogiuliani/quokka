@@ -315,3 +315,133 @@ def test_mailboxes_come_from_quokka_with_no_file(tmp_path, monkeypatch):
     (tmp_path / 'a.json').write_text('[{"user": "pluto@example.it", "password": "enc:v1:x"}]')
     monkeypatch.setattr(sorter, 'ACCOUNTS', str(tmp_path / 'a.json'))
     assert [a.get('from_quokka', False) for a in sorter.accounts(db_path)] == [False]
+
+
+# ---------- "All mailboxes": the index of every INBOX (inbox.py) ----------
+
+import inbox
+
+
+def test_the_index_follows_inbox(tmp_path):
+    conn = sorter.db(str(tmp_path / 's.db'))
+    box = FakeBox()
+    old = box.add('Banca <info@banca.example>', 'Estratto conto di ottobre', 'Movimenti e saldo del conto', flags={'\\seen'})
+    sorter.sort_round(conn, 'me', box)                              # first start: the last days, already read
+    row = conn.execute("SELECT * FROM inbox WHERE account = 'me' AND uid = ?", (old,)).fetchone()
+    assert row['subject'] == 'Estratto conto di ottobre' and row['seen'] == 1 and row['category'] == 'bank'
+    assert row['sender'] == 'Banca' and row['address'] == 'info@banca.example' and 'saldo' in row['preview']
+
+    new = box.add('Mamma <mamma@example.it>', 'Pranzo', 'Domenica da noi?')
+    sorter.sort_round(conn, 'me', box)
+    assert conn.execute("SELECT seen FROM inbox WHERE uid = ?", (new,)).fetchone()['seen'] == 0
+    # read and starred elsewhere, the old one moved away: the next round says so
+    box.mails[new][1] |= {'\\seen', '\\flagged'}
+    del box.mails[old]
+    sorter.sort_round(conn, 'me', box)
+    assert [tuple(r) for r in conn.execute("SELECT uid, seen, flagged FROM inbox")] == [(new, 1, 1)]
+    # emails the index does not have (a sorter older than the index): filled in
+    conn.execute('DELETE FROM inbox')
+    sorter.sort_round(conn, 'me', box)
+    assert conn.execute('SELECT COUNT(*) FROM inbox').fetchone()[0] == 1
+
+
+def _row(conn, account, uid, at, subject, seen=0, category='', attachment=0):
+    conn.execute('INSERT INTO inbox (account, uid, at, sender, address, subject, preview, seen, category, attachment) '
+                 'VALUES (?,?,?,?,?,?,?,?,?,?)', (account, uid, at, 'X', 'x@example.it', subject, 'testo', seen, category, attachment))
+
+
+def test_one_list_for_all_the_mailboxes_of_one_person(tmp_path):
+    db_path = str(tmp_path / 's.db')
+    conn = sorter.db(db_path)
+    _row(conn, 'Me@Example.it', 1, 100, 'Bolletta', category='bills')
+    _row(conn, 'lavoro@example.it', 1, 300, 'Riunione 50%_off', seen=1)
+    _row(conn, 'lavoro@example.it', 2, 200, 'Allegato', attachment=1)
+    _row(conn, 'other@example.it', 1, 400, 'Not mine')
+    for a in ('Me@Example.it', 'lavoro@example.it'):
+        conn.execute('INSERT INTO inbox_state (account, uidvalidity) VALUES (?, 1)', (a,))
+    conn.commit()
+    accounts = lambda: [{'user': u, 'password': 'x'} for u in ('Me@Example.it', 'lavoro@example.it', 'other@example.it', 'new@example.it')]  # noqa: E731
+    svc = push.Service(db_path, str(tmp_path), accounts, SECRET)
+    status, out = svc.handle('/inbox', {'accounts': ['me@example.it', 'lavoro@example.it', 'new@example.it', 'nobody@example.it']})
+    assert status == 200
+    # newest first, only the mailboxes asked for, named as Quokka wrote them
+    assert [(m['account'], m['subject']) for m in out['messages']] == [
+        ('lavoro@example.it', 'Riunione 50%_off'), ('lavoro@example.it', 'Allegato'), ('me@example.it', 'Bolletta')]
+    assert out['unread'] == {'me@example.it': 1, 'lavoro@example.it': 1}
+    assert out['missing'] == ['nobody@example.it'] and out['pending'] == ['new@example.it'] and out['more'] is False
+    pick = lambda **kw: [m['subject'] for m in svc.handle('/inbox', {'accounts': ['me@example.it', 'lavoro@example.it'], **kw})[1]['messages']]  # noqa: E731
+    assert pick(category='bills') == ['Bolletta']
+    assert pick(unseen=True) == ['Allegato', 'Bolletta']
+    assert pick(attachment=True) == ['Allegato']
+    assert pick(text='50%') == ['Riunione 50%_off'] and pick(text='%') == ['Riunione 50%_off'] and pick(text='_o') == ['Riunione 50%_off']
+    out = svc.handle('/inbox', {'accounts': ['me@example.it', 'lavoro@example.it'], 'limit': 2})[1]
+    assert len(out['messages']) == 2 and out['more'] is True
+    assert svc.handle('/inbox', {'accounts': ['me@example.it', 'lavoro@example.it'], 'offset': 2})[1]['messages'][0]['subject'] == 'Bolletta'
+    # opened in Quokka: read in the list at once
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': [1], 'action': 'opened'}) == (200, {'ok': True})
+    assert svc.handle('/inbox', {'accounts': ['me@example.it']})[1]['unread'] == {}
+    assert svc.handle('/act', {'account': 'nobody@example.it', 'uids': [1], 'action': 'seen'})[0] == 404
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': ['x'], 'action': 'seen'})[0] == 400
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': [1], 'action': 'explode'})[0] == 400
+
+
+class FakeImap:
+    def __init__(self, caps=('IMAP4REV1', 'MOVE'), folders=()):
+        self.capabilities, self.calls, self.folders = caps, [], folders
+
+    def select(self, name):
+        return 'OK', [b'3']
+
+    def uid(self, *args):
+        self.calls.append(args)
+        return 'OK', [None]
+
+    def list(self):
+        return 'OK', list(self.folders)
+
+    def logout(self):
+        pass
+
+
+def test_actions_go_to_the_mail_server_and_the_index(tmp_path):
+    db_path = str(tmp_path / 's.db')
+    conn = sorter.db(db_path)
+    for uid in (1, 2, 3):
+        _row(conn, 'me@example.it', uid, uid, f'm{uid}')
+    conn.commit()
+    imap = FakeImap(folders=[b'(\\HasNoChildren) "." INBOX', b'(\\HasNoChildren \\Trash) "." "Cestino"',
+                             b'(\\HasNoChildren) "." Archivio'])
+    svc = push.Service(db_path, str(tmp_path), lambda: [{'user': 'me@example.it', 'password': 'x'}], SECRET,
+                       connect=lambda acc: imap)
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': [1, 2], 'action': 'flag'}) == (200, {'ok': True})
+    assert imap.calls[-1] == ('STORE', '1,2', '+FLAGS', '(\\Flagged)')
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': [1], 'action': 'trash'}) == (200, {'ok': True})
+    assert imap.calls[-1] == ('MOVE', '1', '"Cestino"')                  # the special-use folder
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': [2], 'action': 'archive'}) == (200, {'ok': True})
+    assert imap.calls[-1] == ('MOVE', '2', '"Archivio"')                 # by its usual name
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': [3], 'action': 'archive', 'folder': 'Già letti'})[0] == 200
+    assert imap.calls[-1] == ('MOVE', '3', '"Gi&AOA- letti"')            # Quokka's folder, in IMAP's UTF-7
+    left = [tuple(r) for r in sqlite3_rows(db_path, 'SELECT uid, flagged FROM inbox')]
+    assert left == []
+    # no MOVE and no UIDPLUS: refused rather than expunge other people's deleted emails
+    svc.connect = lambda acc: FakeImap(caps=('IMAP4REV1',), folders=[b'(\\Trash) "." Trash'])
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': [9], 'action': 'trash'})[0] == 502
+    svc.connect = lambda acc: FakeImap(folders=[b'(\\HasNoChildren) "." INBOX'])
+    assert svc.handle('/act', {'account': 'me@example.it', 'uids': [9], 'action': 'trash'}) == (409, {'error': 'no_folder'})
+
+
+def sqlite3_rows(path, sql):
+    import sqlite3
+    with sqlite3.connect(path) as c:
+        return c.execute(sql).fetchall()
+
+
+def test_headers_first_whatever_order_the_server_answers_in():
+    class Imap:
+        def uid(self, *args):
+            return 'OK', [(b'1 (UID 1 BODY[TEXT]<0> {5}', b'Ciao\r\n'),
+                          (b' BODY[HEADER] {40}', b'From: Anna <anna@example.it>\r\nSubject: Cena\r\n\r\n'), b' FLAGS (\\Seen))']
+    raw, flags = sorter.Mailbox(Imap()).fetch(1)
+    mail = sorter.parse(raw)
+    assert raw.startswith(b'From:') and mail.subject == 'Cena' and 'anna@example.it' in mail.sender
+    assert flags == {'\\seen'}

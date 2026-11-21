@@ -3,7 +3,7 @@ FROM python:3.12-alpine
 RUN adduser -D -u 1000 sorter && mkdir -p /data && chown sorter /data
 RUN pip install --no-cache-dir cryptography==50.0.2 pywebpush==2.5.0
 WORKDIR /app
-COPY classify.py push.py secret.py sorter.py ./
+COPY classify.py inbox.py push.py secret.py sorter.py ./
 USER sorter
 ENV PYTHONUNBUFFERED=1 DATA=/data ACCOUNTS=/config/accounts.json
 VOLUME /data

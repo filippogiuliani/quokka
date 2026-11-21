@@ -1295,3 +1295,77 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 /* the sender's picture (avatars plugin): in the open email it goes inside the round badge (QuokkaExtras.js) */
 #V-MailMessageView img.fromPic { position: absolute !important; width: 1px !important; height: 1px !important; opacity: 0; pointer-events: none; }
 #V-MailMessageView .quokka-sender-avatar.has-picture { background: var(--fm-surface) center / cover no-repeat; color: transparent; }
+
+/* ---------- the person's mailboxes, and "All mailboxes" in one list (Common/Mailboxes.js) ---------- */
+.b-folders .b-mailboxes { list-style: none; margin: 0; padding: 0; }
+.b-folders .b-mailboxes a {
+	display: flex; align-items: center; gap: 10px;
+	color: var(--folders-color); text-decoration: none; font-style: normal;
+	padding: 6px 10px;
+}
+.b-folders .b-mailboxes a:hover { background-color: var(--fm-surface-2); color: var(--fm-ink); }
+.b-folders .b-mailboxes a.selected { box-shadow: inset 0 0 0 1px var(--fm-line-strong); background: var(--fm-surface); color: var(--fm-primary); font-weight: 600; }
+.b-folders .b-mailboxes .box-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-folders .b-mailboxes .box-unread { font-size: 12px; font-weight: 600; color: var(--fm-primary); }
+.b-folders hr.b-mailboxes-end { margin: 8px 6px; }
+.box-badge {
+	display: inline-grid; place-items: center; flex: none;
+	width: 20px; height: 20px; border-radius: 6px;
+	color: #fff; font-size: 11px; font-weight: 700; font-style: normal; line-height: 1;
+}
+.box-badge.box-all { background: var(--fm-primary); color: var(--fm-primary-ink); font-size: 14px; }
+
+/* the heading says which mailbox; on the phone a tap opens the column to choose another */
+.quokka-head .quokka-titles { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 8px; }
+.quokka-head .quokka-titles .quokka-title { flex: none; }
+.quokka-head .quokka-mailbox { font-size: 13px; color: var(--fm-muted); text-decoration: none; pointer-events: none; }
+.quokka-head .quokka-mailbox::before { content: "· "; }
+
+/* the list of all the mailboxes takes the place of the one of the mailbox */
+.messageList.quokka-unified-on > .b-content, .messageList.quokka-unified-on > .b-footer,
+.messageList.quokka-unified-on .quokka-selbar, .messageList.quokka-unified-on .checkboxCheckAll { display: none !important; }
+.quokka-unified { flex: 1 1 auto; min-height: 0; overflow-y: auto; position: relative; }
+.quokka-unified-pending { margin: 8px 12px; padding: 8px 12px; border-radius: 8px; background: var(--fm-surface-2); color: var(--fm-ink-2); font-size: 13px; }
+.quokka-unified-more { text-align: center; padding: 14px; }
+.quokka-urow { position: relative; cursor: pointer; display: flex; }
+.quokka-urow .messageCheckbox { position: relative; flex: none; width: 30px; height: 30px; margin: 2px 10px 0 10px; padding: 0 !important; }
+.quokka-urow .quokka-uavatar, .quokka-urow img.quokka-upic {
+	position: absolute; inset: 0; width: 30px; height: 30px; margin: 0; padding: 0; border-radius: 50%;
+}
+.quokka-urow .quokka-uavatar { display: grid; place-items: center; background: var(--fm-primary-soft); color: var(--fm-primary); font-weight: 700; font-size: 13px; }
+.quokka-urow img.quokka-upic { object-fit: cover; background: var(--fm-surface); }
+.messageListItem .quokka-chips { grid-area: chip; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 5px; min-width: 0; }
+.messageListItem .quokka-chips .categoryParent { margin-top: 0; }
+.quokka-boxtag {
+	display: inline-flex; align-items: center; gap: 5px;
+	padding: 1px 8px 1px 2px; border-radius: 6px;
+	background: var(--fm-surface-2); color: var(--fm-ink-2);
+	font-size: 11px; font-weight: 600; line-height: 1.6; white-space: nowrap;
+}
+.quokka-boxtag .box-badge { width: 15px; height: 15px; border-radius: 4px; font-size: 9px; }
+.quokka-uactions { display: none; }
+@media (hover: hover) and (pointer: fine) {
+	.quokka-urow:hover .quokka-uactions {
+		position: absolute; right: 12px; bottom: 8px; display: flex; gap: 4px;
+		padding: 3px; border-radius: 8px; background: var(--fm-surface); box-shadow: 0 1px 4px rgba(17, 24, 39, .15);
+	}
+	.quokka-uactions a { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 6px; color: var(--fm-ink-2); }
+	.quokka-uactions a:hover { background: var(--fm-surface-2); color: var(--fm-ink); }
+	.quokka-uactions a.danger:hover { color: var(--fm-danger); }
+	.quokka-uactions svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+}
+@media screen and (max-width: 1023px) {
+	.quokka-head .quokka-titles { flex-direction: column; align-items: flex-start; }
+	.quokka-head .quokka-mailbox { pointer-events: auto; color: var(--fm-primary); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+	.quokka-head .quokka-mailbox::before { content: none; }
+	.quokka-head .quokka-mailbox::after { content: ""; width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); margin-left: 4px; }
+	.quokka-unified { padding-bottom: 140px; }
+	.quokka-urow .messageCheckbox { display: none; }
+	#rl-left .b-folders .b-mailboxes a { font-size: 16px; padding: 12px 12px !important; }
+	#rl-left .box-badge { width: 24px; height: 24px; font-size: 12px; }
+}
+/* the mailbox in the heading: on the computer only words (upstream hides every .toggleLeft there) */
+@media screen and (min-width: 1024px) {
+	#rl-right .quokka-head .quokka-mailbox.toggleLeft:not([style*="none"]) { display: inline !important; }
+}
+.b-folders .b-mailboxes a, .b-folders .b-mailboxes a * { font-style: normal !important; }

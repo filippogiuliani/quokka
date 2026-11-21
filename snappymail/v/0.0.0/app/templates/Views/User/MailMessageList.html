@@ -117,7 +117,7 @@
 	</div>
 </div>
 
-<div class="messageList g-ui-user-select-none" data-bind="css: {'hideMessageListCheckbox': !useCheckboxesInList() }">
+<div class="messageList g-ui-user-select-none" data-bind="css: {'hideMessageListCheckbox': !useCheckboxesInList(), 'quokka-unified-on': unifiedView }">
 	<!-- Quokka: the heading of the list -->
 	<!-- Quokka: what is selected, and what to do with it (shown while something is selected) -->
 	<div class="quokka-selbar" data-bind="visible: checkedCount">
@@ -133,7 +133,11 @@
 	</div>
 	<div class="quokka-head">
 		<a class="quokka-menu toggleLeft" href="#" data-i18n="[title]QUOKKA/FOLDERS_AND_CATEGORIES"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></a>
-		<h1 class="quokka-title" data-bind="text: listTitle"></h1>
+		<div class="quokka-titles">
+			<h1 class="quokka-title" data-bind="text: listTitle"></h1>
+			<!-- Quokka: which mailbox (only with more than one); on the phone a tap opens the column to choose -->
+			<a class="quokka-mailbox toggleLeft" href="#" data-bind="visible: mailboxTitle, text: mailboxTitle"></a>
+		</div>
 		<span class="quokka-unread" data-bind="text: listUnread"></span>
 	</div>
 	<div class="second-toolbar thm-message-list-top-toolbar">
@@ -215,6 +219,45 @@
 
 		<div id="messagesDragImage"><span class="text"></span>&nbsp;<span class="fontastic">✉</span></div>
 	</div>
+	<!-- Quokka: "All mailboxes": the emails of every mailbox, each with its mailbox (Common/Mailboxes.js) -->
+	<!-- ko if: unifiedView -->
+	<div class="quokka-unified">
+		<div class="listError error" data-bind="visible: !unifiedAvailable(), text: unifiedTexts.off"></div>
+		<div class="quokka-unified-pending" data-bind="visible: unifiedPendingText, text: unifiedPendingText"></div>
+		<div class="listEmptyMessage" data-bind="visible: unifiedEmpty, text: unifiedTexts.empty"></div>
+		<div class="listLoading" data-bind="visible: unifiedLoading() && !unifiedMessages().length">
+			<i class="icon-spinner"></i>
+			<span data-bind="text: unifiedTexts.loading"></span>
+		</div>
+		<div class="messageListPlace" data-bind="foreach: unifiedMessages">
+			<div class="messageListItem quokka-urow" data-bind="css: lineCss, click: $root.openUnified, attr: {title: preview}">
+				<div class="messageCheckbox">
+					<span class="quokka-uavatar" aria-hidden="true" data-bind="text: initial"></span>
+					<img class="quokka-upic" loading="lazy" alt="" data-bind="visible: avatar, attr: {src: avatar || null}, event: {error: $root.unifiedNoPic}">
+				</div><div>
+					<div class="flagParent fontastic" data-bind="click: $root.unifiedStar"></div>
+					<div class="senderParent" data-bind="text: sender, attr: {title: address}"></div>
+					<div class="subjectParent" data-bind="text: subject"></div>
+					<div class="previewParent" data-bind="text: preview"></div>
+					<div class="quokka-chips">
+						<span class="quokka-boxtag"><span class="box-badge" aria-hidden="true" data-bind="text: box.letter, attr: {style: boxStyle}"></span><!-- ko text: box.name --><!-- /ko --></span>
+						<span class="categoryParent" data-bind="visible: categoryLabel, text: categoryLabel, attr: {'data-category': category}"></span>
+					</div>
+					<div class="attachmentParent"><i data-bind="css: attachment ? 'icon-attachment' : ''"></i></div>
+					<time data-time-format="AUTO" data-bind="time: at"></time>
+					<span class="quokka-uactions">
+						<a href="#" data-bind="click: $root.unifiedRead, attr: {title: readTitle}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"></path></svg></a>
+						<a href="#" data-bind="click: $root.unifiedArchive, attr: {title: $root.unifiedTexts.archive}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11h14V8M10 12h4"></path></svg></a>
+						<a href="#" class="danger" data-bind="click: $root.unifiedTrash, attr: {title: $root.unifiedTexts.trash}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg></a>
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="quokka-unified-more" data-bind="visible: unifiedMore">
+			<a href="#" class="btn" data-bind="click: unifiedMoreClick, text: unifiedTexts.more"></a>
+		</div>
+	</div>
+	<!-- /ko -->
 	<div class="b-footer thm-message-list-bottom-toolbar">
 		<!-- ko if: userUsageProc() -->
 		<span data-bind="attr: { title: quotaTooltip() }" class="e-quota">
