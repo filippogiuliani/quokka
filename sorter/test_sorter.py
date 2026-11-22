@@ -565,3 +565,39 @@ def test_search_everywhere_on_the_mail_servers(tmp_path):
     svc.connect = lambda acc: acted
     assert svc.handle('/act', {'account': 'me@example.it', 'in': 'Già letti', 'uids': [5], 'action': 'flag'}) == (200, {'ok': True})
     assert acted.selected == '"Gi&AOA- letti"' and acted.calls[-1] == ('STORE', '5', '+FLAGS', '(\\Flagged)')
+
+
+def test_the_folders_of_every_mailbox_for_the_column(tmp_path):
+    """Outlook's way: each mailbox with its folders. Subscribed ones (and the parents they need), system folders first,
+    their unread counts; Quokka gets them with the list."""
+    db_path = str(tmp_path / 's.db')
+    conn = sorter.db(db_path)
+
+    class Imap(FakeImap):
+        def __init__(self):
+            super().__init__(folders=[b'(\\HasNoChildren) "." INBOX', b'(\\HasNoChildren \\Sent) "." "Posta inviata"',
+                                      b'(\\HasNoChildren) "." ARCHIVED', b'(\\HasNoChildren) "." "Gi&AOA- letti"',
+                                      b'(\\HasNoChildren) "." "Vecchie"', b'(\\Noselect \\HasChildren) "." Lavoro',
+                                      b'(\\HasNoChildren) "." "Lavoro.Clienti"'])
+
+        def lsub(self):
+            return 'OK', [b'() "." ARCHIVED', b'() "." "Gi&AOA- letti"', b'() "." "Lavoro.Clienti"']
+
+        def status(self, name, what):
+            return 'OK', [name.encode() + b' (UNSEEN ' + (b'4' if 'ARCHIVED' in name else b'0') + b')']
+
+        def response(self, what):
+            return what, [b'7']
+    imap = Imap()
+    tree = inbox.folder_tree(imap, inbox.system_folders(imap))
+    assert [(f['name'], f['role'], f['unseen'], f['selectable']) for f in tree] == [
+        ('INBOX', 'inbox', 0, True), ('Posta inviata', 'sent', 0, True), ('ARCHIVED', '', 4, True),
+        ('Già letti', '', 0, True), ('Lavoro', '', None, False), ('Lavoro.Clienti', '', 0, True)]   # not "Vecchie"
+    assert tree[-1]['delim'] == '.'
+    inbox.sync_folders(conn, 'me@example.it', imap, FakeBox(), sorter.parse, classify.CATEGORIES)
+    conn.commit()
+    svc = push.Service(db_path, str(tmp_path), lambda: [{'user': 'me@example.it', 'password': 'x'}], SECRET)
+    out = svc.handle('/inbox', {'accounts': ['me@example.it'], 'folders': True})[1]
+    assert [f['name'] for f in out['folders']['me@example.it']][:3] == ['INBOX', 'Posta inviata', 'ARCHIVED']
+    assert 'folders' not in svc.handle('/inbox', {'accounts': ['me@example.it']})[1] or \
+        svc.handle('/inbox', {'accounts': ['me@example.it']})[1]['folders'] == {}

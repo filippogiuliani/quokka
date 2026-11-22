@@ -27,7 +27,7 @@ import { i18n, translateTrigger } from 'Common/Translator';
 import { getFolderHashFromCacheList, getFolderInboxName } from 'Common/Cache';
 import { ThemeStore } from '../../../Stores/Theme';
 import 'Common/CalendarPanel';      // Quokka: Kooka's calendar in a panel
-import { mailboxes, hasMailboxes, unifiedOn, unifiedTotal, selectMailbox, mailboxesOpen, chosenMailbox } from 'Common/Mailboxes';
+import { mailboxes, hasMailboxes, unifiedOn, unifiedTotal, unifiedFolders, openUnifiedRole, openBoxFolder } from 'Common/Mailboxes';
 
 export class MailFolderList extends AbstractViewLeft {
 	constructor() {
@@ -57,12 +57,13 @@ export class MailFolderList extends AbstractViewLeft {
 		this.hasMailboxes = hasMailboxes;
 		this.allMailboxesSelected = unifiedOn;
 		this.allMailboxesUnread = unifiedTotal;
-		this.selectAllMailboxes = () => selectMailbox(null);
-		this.selectMailbox = box => selectMailbox(box);
-		// one line (the mailbox chosen) that opens the list: the categories stay in view on a phone
-		this.mailboxesOpen = mailboxesOpen;
-		this.chosenMailbox = chosenMailbox;
-		this.toggleMailboxes = () => mailboxesOpen(!mailboxesOpen());
+		// as Outlook: "All mailboxes" (their Inbox, Sent… together), then every mailbox with its folders, each one closes
+		this.unifiedFolders = unifiedFolders;
+		this.openUnified = item => openUnifiedRole(item.role);
+		this.openBoxFolder = (box, folder) => openBoxFolder(box, folder);
+		this.toggleBox = box => box.collapsed(!box.collapsed());
+		// text inside templates shown later (a data-i18n there stays empty)
+		this.tr = key => (translateTrigger(), i18n(key));
 		// Quokka: Kooka's calendar (when Kooka is there), in a tab of its own
 		this.calendarUrl = SettingsGet('QuokkaCalendarUrl') || '';
 		this.calendarLabel = ko.computed(() => (translateTrigger(), i18n('QUOKKA/CALENDAR')));
@@ -98,9 +99,13 @@ export class MailFolderList extends AbstractViewLeft {
 
 		dom.addEventListener('click', event => {
 			// Quokka: on the phone a category closes the column and shows its emails (the link does the rest)
-			if (ThemeStore.isMobile() && eqs(event, '.b-categories a, .b-mailboxes a')) {
+			if (ThemeStore.isMobile() && eqs(event, '.b-categories a, .quokka-all-folders a, .quokka-remote-folders a')) {
 				leftPanelDisabled(true);
 				return;
+			}
+			// Quokka: a folder of the mailbox shown, from its place among the mailboxes: that mailbox alone
+			if (eqs(event, '.quokka-box.is-current a.selectable')) {
+				unifiedOn(false);
 			}
 			let el = eqs(event, '.e-collapsed-sign');
 			if (el) {

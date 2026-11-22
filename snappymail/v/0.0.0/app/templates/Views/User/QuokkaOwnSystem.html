@@ -1,0 +1,13 @@
+<!-- Quokka: the system folders of the mailbox shown (MailFolderList) -->
+<ul class="b-folders-system" data-bind="foreach: systemFolders">
+	<li>
+		<a data-bind="dropmessages: $data,
+			css: { 'selected': selected, 'selectable': selectable, 'anim-action-class': actionBlink, 'is-flagged': isFlagged },
+			attr: { 'data-icon': icon, 'data-unread': unreadCount }">
+			<!-- ko text: localName --><!-- /ko -->
+			<!-- ko if: isInbox -->
+			<span class="flag-icon fontastic"></span>
+			<!-- /ko -->
+		</a>
+	</li>
+</ul>

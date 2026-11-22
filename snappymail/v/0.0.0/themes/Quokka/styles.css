@@ -500,7 +500,7 @@ input:focus, select:focus, textarea:focus {
 }
 .b-folders .b-toolbar { display: flex !important; }
 .b-folders .b-toolbar .buttonCompose { flex: 1 1 auto !important; }
-.b-folders .b-content > .e-checkbox { display: none; }        /* "Non letti" filters folders, not emails: the list has its own filter */
+.b-folders .b-content > .e-checkbox, .b-folders .quokka-box > .e-checkbox { display: none; }        /* "Non letti" filters folders, not emails: the list has its own filter */
 .messageItemHeader .subjectParent { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
 #rl-left .b-folders .buttonCompose { max-width: none; max-height: none; width: auto; }
 
@@ -763,7 +763,8 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 		box-shadow: none !important; border: 0 !important; background: var(--fm-bg) !important; z-index: 95 !important;
 	}
 	#rl-left .b-folders { height: 100%; overflow-y: auto; }
-	#rl-left .b-folders .b-content { flex: 0 0 auto; }
+	/* one scroll for the whole column: the folders' own box does not scroll by itself (a swipe stopped at Calendario) */
+	#rl-left .b-folders .b-content { flex: 0 0 auto; overflow: visible; height: auto; max-height: none; }
 	#rl-left .quokka-account { margin-top: auto; }
 	#rl-left .b-folders .b-content a { font-size: 16px; padding: 12px 12px !important; }
 	#rl-left .b-folders .b-categories a { font-size: 16px; padding: 12px 12px !important; }
@@ -791,6 +792,7 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 }
 @media screen and (max-width: 1023px) {
 	#V-SettingsPane > div:not(.btn-toolbar) { padding-top: 0 !important; }
+	#V-SettingsPane { overflow: visible; }   /* the page scrolls, not a box inside it as well */
 	#rl-content:has(#V-SettingsMenu:not([hidden])) #V-SystemDropDown { height: 0; margin: 0; padding: 0; overflow: visible; }   /* the bottom menu lives in it: fixed, still shown */
 }
 @media screen and (max-width: 1023px) {
@@ -1297,17 +1299,6 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 #V-MailMessageView .quokka-sender-avatar.has-picture { background: var(--fm-surface) center / cover no-repeat; color: transparent; }
 
 /* ---------- the person's mailboxes, and "All mailboxes" in one list (Common/Mailboxes.js) ---------- */
-.b-folders .b-mailboxes { list-style: none; margin: 0; padding: 0; }
-.b-folders .b-mailboxes a {
-	display: flex; align-items: center; gap: 10px;
-	color: var(--folders-color); text-decoration: none; font-style: normal;
-	padding: 6px 10px;
-}
-.b-folders .b-mailboxes a:hover { background-color: var(--fm-surface-2); color: var(--fm-ink); }
-.b-folders .b-mailboxes a.selected { box-shadow: inset 0 0 0 1px var(--fm-line-strong); background: var(--fm-surface); color: var(--fm-primary); font-weight: 600; }
-.b-folders .b-mailboxes .box-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-folders .b-mailboxes .box-unread { font-size: 12px; font-weight: 600; color: var(--fm-primary); }
-.b-folders hr.b-mailboxes-end { margin: 8px 6px; }
 .box-badge {
 	display: inline-grid; place-items: center; flex: none;
 	width: 20px; height: 20px; border-radius: 6px;
@@ -1361,14 +1352,12 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 	.quokka-head .quokka-mailbox::after { content: ""; width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); margin-left: 4px; }
 	.quokka-unified { padding-bottom: 140px; }
 	.quokka-urow .messageCheckbox { display: none; }
-	#rl-left .b-folders .b-mailboxes a { font-size: 16px; padding: 12px 12px !important; }
 	#rl-left .box-badge { width: 24px; height: 24px; font-size: 12px; }
 }
 /* the mailbox in the heading: on the computer only words (upstream hides every .toggleLeft there) */
 @media screen and (min-width: 1024px) {
 	#rl-right .quokka-head .quokka-mailbox.toggleLeft:not([style*="none"]) { display: inline !important; }
 }
-.b-folders .b-mailboxes a, .b-folders .b-mailboxes a * { font-style: normal !important; }
 
 /* ---------- Kooka's calendar: a link in the column and in the phone's bottom menu ---------- */
 .b-folders .quokka-calendar-link {
@@ -1410,19 +1399,42 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 .quokka-invite-status { font-size: 13px; color: var(--fm-ink-2); }
 @media screen and (max-width: 1023px) { .quokka-invite { margin: 12px 14px 4px; } .quokka-invite-actions .btn { flex: 1 1 auto; justify-content: center; } }
 
-/* the mailboxes: one line (the one chosen) that opens the list */
-.b-folders .b-mailbox-chosen {
-	display: flex; align-items: center; gap: 10px; margin: 0 0 2px;
-	padding: 6px 10px; border-radius: 8px; color: var(--folders-color); text-decoration: none; font-style: normal; font-weight: 600;
+/* every mailbox with its folders (as Outlook): "All mailboxes" first, then each one, closed or open */
+.b-folders .quokka-all-head {
+	display: flex; align-items: center; gap: 10px; margin: 2px 6px 2px; padding: 6px 10px;
+	font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--fm-muted);
 }
-.b-folders .b-mailbox-chosen:hover { background: var(--fm-surface-2); color: var(--fm-ink); }
-.b-folders .b-mailbox-chosen .box-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-folders .b-mailbox-chosen .box-unread { font-size: 12px; font-weight: 600; color: var(--fm-primary); }
-.b-folders .b-mailbox-chosen .box-chevron { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .6; transition: transform .15s; }
-.b-folders .b-mailbox-chosen.open .box-chevron { transform: rotate(180deg); }
-.b-folders .b-mailboxes { margin: 0 0 4px 12px; padding-left: 8px; border-left: 2px solid var(--fm-line); }
+.b-folders .quokka-all-head .box-badge { width: 20px; height: 20px; font-size: 12px; }
+.b-folders .quokka-all-folders a, .b-folders .quokka-remote-folders a { cursor: pointer; font-style: normal !important; font-weight: 400; color: var(--folders-color); }
+.b-folders .quokka-all-folders a[data-unread], .b-folders .quokka-remote-folders a[data-unread] { font-weight: 600; }
+.b-folders .quokka-all-folders a:hover, .b-folders .quokka-remote-folders a:hover { background-color: var(--folders-hover-bg-color); color: var(--fm-ink); }
+.b-folders .quokka-all-folders a.selected { background-color: var(--folders-selected-bg-color); color: var(--fm-primary); font-weight: 600; }
+.b-folders .quokka-remote-folders a:not([data-icon])::before, .b-folders .quokka-folder-parent::before,
+.b-folders .b-folders-user a:not(.system)::before {
+	content: ""; display: inline-block; width: 16px; height: 16px; margin-right: 10px; flex-shrink: 0; background-color: currentColor; opacity: .7;
+	-webkit-mask: var(--quokka-folder-icon) center / contain no-repeat; mask: var(--quokka-folder-icon) center / contain no-repeat;
+}
+.b-folders { --quokka-folder-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z%22/%3E%3C/svg%3E"); }
+.b-folders .quokka-folder-parent { display: flex; align-items: center; padding: 8px 10px; margin: 1px 6px; color: var(--fm-muted); font-size: 14px; }
+.b-folders .quokka-box { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--fm-line); }
+.b-folders .b-content a.quokka-box-head {
+	display: flex; align-items: center; gap: 10px; padding: 8px 10px !important;
+	color: var(--fm-ink); text-decoration: none; font-style: normal; font-weight: 600; cursor: pointer;
+}
+.b-folders .b-content a.quokka-box-head:hover { background: var(--fm-surface-2); }
+.b-folders .quokka-box-head .box-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-folders .quokka-box-head .box-unread { font-size: 12px; font-weight: 600; color: var(--fm-primary); }
+.b-folders .quokka-box-head .box-chevron { width: 14px; height: 14px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: .55; transition: transform .15s; }
+.b-folders .quokka-box.is-collapsed .box-chevron { transform: rotate(-90deg); }
+/* "All mailboxes" shown: its own line is the selected one, not the same folder in the mailbox it is read from */
+.b-folders .quokka-box.is-quiet .b-folders-system a.selected, .b-folders .quokka-box.is-quiet .b-folders-user a.selected {
+	background-color: transparent; color: var(--folders-color); font-weight: inherit;
+}
+.b-folders .quokka-box .b-folders-system, .b-folders .quokka-box .b-folders-user { margin-left: 8px; }
+.b-folders .quokka-box .quokka-folder-actions { border-top: 0; margin-top: 0; }
 @media screen and (max-width: 1023px) {
-	#rl-left .b-folders .b-mailbox-chosen { font-size: 16px; padding: 12px 12px !important; }
+	#rl-left .b-folders .b-content a.quokka-box-head { font-size: 16px; padding: 12px 12px !important; }
+	#rl-left .b-folders .quokka-folder-parent { font-size: 16px; padding: 12px; }
 }
 
 /* the list is a flex column: with many emails it squeezed the heading and the quick filters (their pills cut) */
@@ -1438,7 +1450,10 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 #quokka-calendar .qc-title { flex: 1; text-align: center; font-size: 15px; color: var(--fm-ink); }
 #quokka-calendar .qc-out { font-size: 13px; color: var(--fm-muted); text-decoration: none; white-space: nowrap; }
 #quokka-calendar .qc-out:hover { color: var(--fm-ink); }
-#quokka-calendar iframe { flex: 1; width: 100%; border: 0; background: var(--fm-bg); }
+/* Safari on the iPhone sizes an iframe to its content, not to width: 100% (a few pixels too wide: a sideways scroll);
+   1px wide with min-width 100% keeps it to the panel, and the panel never scrolls sideways itself */
+#quokka-calendar { overflow: hidden; }
+#quokka-calendar iframe { flex: 1; width: 1px; min-width: 100%; max-width: 100%; border: 0; background: var(--fm-bg); }
 @media screen and (max-width: 1023px) {
 	#quokka-calendar { bottom: calc(64px + env(safe-area-inset-bottom)); border-left: 0; }
 	html.quokka-calendar-open .quokka-tabbar a.tab-calendar { color: var(--fm-primary); font-weight: 600; }
@@ -1453,3 +1468,5 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 #V-MailMessageList .listEmptyMessage { position: relative; padding: 80px 24px 40px; font-size: 15px; line-height: 1.45; font-weight: 500; color: var(--fm-muted); text-align: center; }
 #V-MailMessageList .listEmptyMessage::before { content: ""; display: block; width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; background: var(--fm-surface-2); }
 #V-MailMessageList .listEmptyMessage::after { content: ""; position: absolute; top: 98px; left: 50%; width: 28px; height: 28px; margin-left: -14px; background-color: var(--fm-muted); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M22 12h-6l-2 3h-4l-2-3H2%22/%3E%3Cpath d=%22M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M22 12h-6l-2 3h-4l-2-3H2%22/%3E%3Cpath d=%22M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+/* the folders of the mailbox shown: the arrow of the subfolders first, then the folder, as in the other mailboxes */
+.b-folders .b-folders-user a > i.e-collapsed-sign { order: -1; flex: 0 0 14px; width: 14px; margin: 0 2px 0 -6px; text-align: center; font-size: 100%; }

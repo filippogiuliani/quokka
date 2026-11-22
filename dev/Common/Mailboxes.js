@@ -9,7 +9,8 @@ import { CATEGORIES } from 'Common/Categories';
 import { FolderType } from 'Common/EnumsUser';
 import { mailBox } from 'Common/Links';
 import { getFolderHashFromCacheList, getFolderFromCacheList, getFolderInboxName } from 'Common/Cache';
-import { i18n, getNotification } from 'Common/Translator';
+import { i18n, getNotification, translateTrigger } from 'Common/Translator';
+import { UNUSED_OPTION_VALUE } from 'Common/Consts';
 
 import Remote from 'Remote/User/Fetch';
 import { MessageUserStore } from 'Stores/User/Message';
@@ -43,6 +44,47 @@ export const unifiedLoading = ko.observable(false);
 export const unifiedAvailable = ko.observable(true);    // false: the sorter does not answer
 export const unifiedMore = ko.observable(false);
 export const unifiedPending = ko.observable([]);        // mailboxes the sorter has not read yet
+export const boxFolders = ko.observable({});            // {mailbox (lower case): [{name, delim, role, unseen, selectable}]}
+
+// Outlook's way: every mailbox in the column with its folders, each one closed or open (remembered on this device)
+const COLLAPSED = 'quokka.collapsed', collapsedOf = {};
+const collapsedSaved = (() => { try { return JSON.parse(localStorage.getItem(COLLAPSED) || '[]'); } catch (e) { return []; } })();
+const collapsed = email => collapsedOf[lower(email)] || (collapsedOf[lower(email)] = (() => {
+	const o = ko.observable(collapsedSaved.includes(lower(email)));
+	o.subscribe(() => {
+		try {
+			localStorage.setItem(COLLAPSED, JSON.stringify(Object.keys(collapsedOf).filter(k => collapsedOf[k]())));
+		} catch (e) { /* storage off: not remembered */ }
+	});
+	return o;
+})());
+
+const ROLE_ICONS = { inbox: '📥', sent: '📧', drafts: '🗎', junk: '⚠', trash: '🗑', archive: '🗄' },
+	ROLE_LABELS = { inbox: 'INBOX_NAME', sent: 'SENT_NAME', drafts: 'DRAFTS_NAME', junk: 'SPAM_NAME', trash: 'TRASH_NAME', archive: 'ARCHIVE_NAME' },
+	ROLE_STORES = { sent: 'sentFolder', drafts: 'draftsFolder', junk: 'spamFolder', trash: 'trashFolder', archive: 'archiveFolder' },
+	roleLabel = role => i18n('FOLDER_LIST/' + ROLE_LABELS[role]),
+	// the folder of this role in the mailbox shown (its full name), '' when it has none
+	roleFolder = role => {
+		const name = 'inbox' === role ? getFolderInboxName() : FolderUserStore[ROLE_STORES[role]]?.();
+		return name && UNUSED_OPTION_VALUE !== name && getFolderFromCacheList(name) ? name : '';
+	};
+
+/** The folders of a mailbox that is not the one shown, as the sorter saw them: a tree, its system folders first */
+const remoteFolders = email => ko.computed(() => {
+	translateTrigger();
+	const list = boxFolders()[lower(email)] || [{ name: 'INBOX', delim: '', role: 'inbox', unseen: null, selectable: true }];
+	return list.map(f => {
+		let parts = f.delim ? f.name.split(f.delim) : [f.name];
+		if (1 < parts.length && 'INBOX' === parts[0].toUpperCase()) parts = parts.slice(1);   // "INBOX.Clienti": a folder
+		return {
+			...f,
+			label: f.role ? roleLabel(f.role) : parts[parts.length - 1],
+			icon: ROLE_ICONS[f.role] || null,
+			unread: f.unseen || null,
+			indent: (f.role ? 0 : parts.length - 1) * 14 + 6 + 'px'
+		};
+	});
+}, null, deferred);
 
 /** The person's mailboxes: {email, name, letter, color, unread, current, selected} */
 export const mailboxes = ko.computed(() => {
@@ -58,7 +100,9 @@ export const mailboxes = ko.computed(() => {
 			color: COLORS[i % COLORS.length],
 			unread: ko.computed(() => unifiedUnread()[lower(a.email)] || 0),
 			current: ko.computed(() => lower(AccountUserStore.email()) === lower(a.email)),
-			selected: ko.computed(() => !unifiedOn() && lower(AccountUserStore.email()) === lower(a.email))
+			selected: ko.computed(() => !unifiedOn() && lower(AccountUserStore.email()) === lower(a.email)),
+			collapsed: collapsed(a.email),
+			folders: remoteFolders(a.email)
 		};
 	});
 }, null, deferred);
@@ -67,18 +111,6 @@ export const hasMailboxes = ko.computed(() => 1 < mailboxes().length, null, defe
 
 export const unifiedTotal = ko.computed(() => Object.values(unifiedUnread()).reduce((s, n) => s + n, 0), null, deferred);
 
-/** The list of mailboxes in the column is open (closed: one line, the mailbox chosen) */
-export const mailboxesOpen = ko.observable(false);
-
-/** The mailbox chosen, as the closed line shows it: "All mailboxes" or one of them */
-export const chosenMailbox = ko.computed(() => {
-	if (unifiedOn()) {
-		return { all: true, letter: '∗', color: '', name: i18n('QUOKKA/ALL_MAILBOXES'), unread: unifiedTotal() };
-	}
-	const box = mailboxes().find(b => b.current());
-	return box ? { all: false, letter: box.letter, color: box.color, name: box.name, unread: box.unread() }
-		: { all: false, letter: '?', color: '', name: '', unread: 0 };
-}, null, deferred);
 
 /** The kind of folder shown (inbox, sent, drafts, trash, junk, archive), '' for the others: the sorter knows those */
 const ROLES = { [FolderType.Inbox]: 'inbox', [FolderType.Sent]: 'sent', [FolderType.Drafts]: 'drafts',
@@ -154,7 +186,8 @@ export const loadUnified = more => {
 		unifiedHere(0);
 	}
 	const n = ++seq,
-		params = { ...filterOf(MessagelistUserStore.listSearch()), role: currentRole() || 'inbox', offset: more ? unifiedMessages().length : 0 };
+		params = { ...filterOf(MessagelistUserStore.listSearch()), role: currentRole() || 'inbox', offset: more ? unifiedMessages().length : 0,
+			folders: more ? 0 : 1 };
 	unifiedLoading(true);
 	rl.pluginRemoteRequest((iError, oData) => {
 		if (n !== seq) return;                       // an answer to an older question
@@ -168,6 +201,7 @@ export const loadUnified = more => {
 		unifiedUnread(Object.fromEntries(Object.entries(r.unread || {}).map(([k, v]) => [lower(k), v])));
 		unifiedHere(r.unread_here || 0);
 		unifiedPending(r.pending || []);
+		r.folders && !more && boxFolders(Object.fromEntries(Object.entries(r.folders).map(([k, v]) => [lower(k), v])));
 		unifiedMore(!!r.more);
 		const items = (r.messages || []).map(item);
 		more ? unifiedMessages.push(...items) : unifiedMessages(items);
@@ -304,17 +338,38 @@ export const openUnified = msg => {
 	msg.unseen() ? unifiedAct(msg, 'opened', start) : start();
 };
 
-/** "All mailboxes" (no box) or one of them, from the column */
-export const selectMailbox = box => {
-	mailboxesOpen(false);
-	if (!box) {
-		unifiedOn(true);
-		hasher.setHash(mailBox(inboxHash()));
+/** "All mailboxes" in the column: their Inbox, Sent, Drafts, Spam, Trash, Archive (those some mailbox has) */
+export const unifiedFolders = ko.computed(() => {
+	translateTrigger();
+	FolderUserStore.folderList();
+	const all = Object.values(boxFolders()).flat();
+	return Object.keys(ROLE_ICONS).filter(role => 'inbox' === role || roleFolder(role) || all.some(f => f.role === role))
+		.map(role => ({
+			role, label: roleLabel(role), icon: ROLE_ICONS[role],
+			unread: 'inbox' === role ? unifiedTotal() : all.filter(f => f.role === role).reduce((n, f) => n + (f.unseen || 0), 0),
+			selected: unifiedOn() && currentRole() === role && !/keyword=/.test(MessagelistUserStore.listSearch())
+		}));
+}, null, deferred);
+
+/** One of the folders of "All mailboxes": shown in the mailbox shown if it has one, else in one that has */
+export const openUnifiedRole = role => {
+	unifiedOn(true);
+	const here = roleFolder(role);
+	if (here) {
+		go(mailBox(getFolderHashFromCacheList(here)));
 		loadUnified();
-	} else {
-		unifiedOn(false);
-		box.current() ? hasher.setHash(mailBox(inboxHash())) : switchTo(box.email, () => go(mailBox(inboxHash())));
+		return;
 	}
+	const other = mailboxes().find(b => (boxFolders()[lower(b.email)] || []).some(f => f.role === role));
+	other && switchTo(other.email, () => go(mailBox(getFolderHashFromCacheList(roleFolder(role) || getFolderInboxName()))));
+};
+
+/** A folder of a mailbox in the column: that mailbox alone, in that folder */
+export const openBoxFolder = (box, folder) => {
+	unifiedOn(false);
+	const hash = () => getFolderHashFromCacheList('inbox' === folder.role ? getFolderInboxName()
+		: (folder.role && roleFolder(folder.role)) || folder.name) || inboxHash();
+	box.current() ? go(mailBox(hash())) : switchTo(box.email, () => go(mailBox(hash())));
 };
 
 // the list follows the search and the filters; the counts in the column come with it (every minute)

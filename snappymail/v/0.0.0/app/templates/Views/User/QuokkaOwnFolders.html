@@ -1,0 +1,16 @@
+<!-- Quokka: the other folders of the mailbox shown, and making/arranging them (MailFolderList) -->
+<div class="search-input-wrp" data-bind="visible: foldersFilterVisible">
+	<input type="search" id="folderSearchInput" data-bind="textInput: foldersFilter, attr: {placeholder: tr('GLOBAL/SEARCH')}">
+	<a data-bind="click: clearFolderSearch, visible: foldersFilter">✕</a>
+</div>
+<div class="e-checkbox" tabindex="0" data-bind="toggle: filterUnseen">
+	<i role="checkbox" class="fontastic" data-bind="text: filterUnseen() ? '☑' : '☐'"></i>
+	<span data-bind="text: tr('SEARCH/UNSEEN')"></span>
+</div>
+<ul class="b-folders-user" data-bind="css: {unreadOnly: filterUnseen}, template: { name: 'MailFolderListItem', foreach: folderListVisible }"></ul>
+<div class="move-action-content-wrapper" data-bind="visible: moveAction"></div>
+<!-- Quokka: folders are made and arranged from here (the footer of upstream is hidden) -->
+<div class="quokka-folder-actions">
+	<a href="#" data-bind="click: createFolder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg><span data-bind="text: tr('QUOKKA/NEW_FOLDER')"></span></a>
+	<a href="#" data-bind="click: configureFolders, attr: {title: tr('QUOKKA/MANAGE_FOLDERS')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg><span data-bind="text: tr('QUOKKA/MANAGE')"></span></a>
+</div>

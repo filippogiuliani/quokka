@@ -48,6 +48,9 @@ CREATE INDEX IF NOT EXISTS inbox_at ON inbox (role, at DESC);
 CREATE TABLE IF NOT EXISTS inbox_state (account TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'inbox',
     uidvalidity INTEGER NOT NULL, folder TEXT NOT NULL DEFAULT 'INBOX', raw TEXT NOT NULL DEFAULT 'INBOX',
     at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (account, role));
+CREATE TABLE IF NOT EXISTS folders (account TEXT NOT NULL, pos INTEGER NOT NULL, name TEXT NOT NULL,
+    delim TEXT NOT NULL DEFAULT '', role TEXT NOT NULL DEFAULT '', unseen INTEGER, selectable INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (account, pos));
 '''
 
 
@@ -126,6 +129,10 @@ def sync_folders(conn, account, imap, box, parse, categories):
     """The system folders of a mailbox (after its INBOX): each one examined (read only) and its index brought up to
     date; a folder that is gone leaves the index. box: a Mailbox on that IMAP session (it reads what is selected)."""
     found = system_folders(imap)
+    try:
+        save_folders(conn, account, folder_tree(imap, found))
+    except Exception as e:                     # the column of other mailboxes waits; the index goes on
+        log.warning('%s: the folders: %s: %s', account, type(e).__name__, e)
     for role, (raw, name) in found.items():
         if role == 'inbox':
             continue
@@ -138,6 +145,102 @@ def sync_folders(conn, account, imap, box, parse, categories):
         if role not in found:
             conn.execute('DELETE FROM inbox WHERE account = ? AND role = ?', (account, role))
             conn.execute('DELETE FROM inbox_state WHERE account = ? AND role = ?', (account, role))
+
+
+FOLDERS_MAX = 300
+ROLE_ORDER = ('inbox', 'sent', 'drafts', 'junk', 'trash', 'archive')     # as Quokka shows them (systemFoldersNames)
+
+
+def _unquote(name):
+    return name[1:-1].replace('\\"', '"').replace('\\\\', '\\') if name.startswith('"') else name
+
+
+def folder_tree(imap, roles):
+    """The folders people see of a mailbox, for Quokka's column (Outlook's way: every mailbox and its folders):
+    [{name (as people read it), delim, role, unseen (None: not asked), selectable}], INBOX and the system folders
+    first, then the others as a tree. Only the subscribed ones (all, if the server keeps no subscriptions), and
+    the parents they need."""
+    typ, data = imap.list()
+    every = []                                  # (flags, delimiter, raw name)
+    for line in data or []:
+        line = line[0] if isinstance(line, tuple) else line
+        m = _LIST_DELIM.match(line or b'')
+        if m:
+            every.append(({f.lower() for f in m.group('flags').decode('ascii', 'replace').split()},
+                          (m.group('delim') or b'').decode('ascii', 'replace').replace('\\\\', '\\'),
+                          m.group('name').decode('utf-8', 'replace').strip()))
+    subscribed = None
+    try:
+        typ, sub = imap.lsub()
+        if typ == 'OK':
+            names = set()
+            for line in sub or []:
+                line = line[0] if isinstance(line, tuple) else line
+                m = _LIST_DELIM.match(line or b'')
+                if m:
+                    names.add(_utf7_decode(_unquote(m.group('name').decode('utf-8', 'replace').strip())))
+            subscribed = names or None
+    except Exception:
+        pass
+    role_of = {name.lower() if raw == 'INBOX' else name: role for role, (raw, name) in roles.items()}
+    by_name, keep = {}, set()
+    for flags, delim, raw in every:
+        name = _utf7_decode(_unquote(raw))
+        if name.upper() == 'INBOX':
+            name = 'INBOX'
+        role = role_of.get(name.lower() if name == 'INBOX' else name, '')
+        selectable = not ({'\\noselect', '\\nonexistent'} & flags)
+        by_name[name] = {'name': name, 'delim': delim, 'role': role, 'unseen': None, 'selectable': selectable, 'raw': raw}
+        if role or (selectable and (subscribed is None or name in subscribed)):
+            keep.add(name)
+    for name in list(keep):                     # the parents a kept folder needs, even if not subscribed
+        delim = by_name[name]['delim']
+        parts = name.split(delim) if delim else [name]
+        for i in range(1, len(parts)):
+            parent = delim.join(parts[:i])
+            if parent not in by_name:
+                by_name[parent] = {'name': parent, 'delim': delim, 'role': '', 'unseen': None, 'selectable': False, 'raw': ''}
+            keep.add(parent)
+    if 'INBOX' not in by_name:
+        by_name['INBOX'] = {'name': 'INBOX', 'delim': '', 'role': 'inbox', 'unseen': None, 'selectable': True, 'raw': 'INBOX'}
+    keep.add('INBOX')
+    by_name['INBOX']['role'] = 'inbox'
+
+    def order(f):
+        role = f['role']
+        if role in ROLE_ORDER:
+            return (0, ROLE_ORDER.index(role), [])
+        parts = f['name'].split(f['delim']) if f['delim'] else [f['name']]
+        return (1, 0, [p.casefold() for p in parts])
+    out = sorted((by_name[n] for n in keep), key=order)[:FOLDERS_MAX]
+    for f in out:
+        raw = f.pop('raw')
+        if f['selectable'] and raw:
+            try:
+                typ, st = imap.status(raw if raw.startswith('"') else _quote(raw), '(UNSEEN)')
+                m = re.search(rb'UNSEEN (\d+)', (st or [b''])[0] or b'') if typ == 'OK' else None
+                f['unseen'] = int(m.group(1)) if m else None
+            except Exception:
+                f['unseen'] = None
+    return out
+
+
+def save_folders(conn, account, folders):
+    conn.execute('DELETE FROM folders WHERE account = ?', (account,))
+    conn.executemany('INSERT INTO folders (account, pos, name, delim, role, unseen, selectable) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                     [(account, i, f['name'], f['delim'], f['role'], f['unseen'], int(f['selectable']))
+                      for i, f in enumerate(folders)])
+
+
+def folders_of(conn, accounts):
+    """{account: [{name, delim, role, unseen, selectable}]} as the last round saw them"""
+    out = {}
+    if accounts:
+        marks = ','.join('?' * len(accounts))
+        for r in conn.execute(f'SELECT * FROM folders WHERE account IN ({marks}) ORDER BY account, pos', list(accounts)):
+            out.setdefault(r['account'], []).append({'name': r['name'], 'delim': r['delim'], 'role': r['role'],
+                                                     'unseen': r['unseen'], 'selectable': bool(r['selectable'])})
+    return out
 
 
 # ---------- what Quokka asks ----------
@@ -187,7 +290,9 @@ def handle_list(service, data):
             c, list(back), category=str(data.get('category') or '')[:30], unseen=bool(data.get('unseen')),
             attachment=bool(data.get('attachment')), text=str(data.get('text') or '')[:200],
             offset=_int(data.get('offset'), 0), limit=_int(data.get('limit'), 50), role=role)
+        folders = folders_of(c, list(back)) if data.get('folders') else {}
     return 200, {
+        'folders': {back[a]: f for a, f in folders.items()},
         'messages': [{'account': back[r['account']], 'uid': r['uid'], 'at': int(r['at']), 'from': r['sender'],
                       'address': r['address'], 'subject': r['subject'], 'preview': r['preview'], 'seen': bool(r['seen']),
                       'flagged': bool(r['flagged']), 'category': r['category'], 'attachment': bool(r['attachment']),
@@ -306,6 +411,7 @@ def move(imap, uidset, target):
 
 
 _LIST = re.compile(rb'^\((?P<flags>[^)]*)\) (?:"(?:[^"\\]|\\.)*"|NIL) (?P<name>.+)$')
+_LIST_DELIM = re.compile(rb'^\((?P<flags>[^)]*)\) (?:"(?P<delim>(?:[^"\\]|\\.)*)"|NIL) (?P<name>.+)$')
 
 
 def _listing(imap):

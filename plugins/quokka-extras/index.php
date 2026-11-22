@@ -693,7 +693,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	// ---------- "All mailboxes": one list for all of a person's mailboxes ----------
 
 	/**
-	 * {category, unseen, attachment, text, offset} → {available, messages, unread, more, pending}
+	 * {category, unseen, attachment, text, offset, folders} → {available, messages, unread, folders, more, pending}
 	 * Only the mailboxes of the person signed in (main and added) are ever asked for.
 	 */
 	public function JsonUnifiedList()
@@ -710,7 +710,8 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			'attachment' => !empty($this->jsonParam('attachment', false)),
 			'text' => \mb_substr((string) $this->jsonParam('text', ''), 0, 200),
 			'offset' => \max(0, (int) $this->jsonParam('offset', 0)),
-			'limit' => 50
+			'limit' => 50,
+			'folders' => !empty($this->jsonParam('folders', false))     // every mailbox's folders, for the column
 		);
 		[$iStatus, $aOut] = self::sorter('/inbox', $aParams, 10);
 		if (200 === $iStatus && !empty($aOut['missing'])) {
@@ -726,6 +727,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			'messages' => $aOut['messages'] ?? array(),
 			'unread' => $aOut['unread'] ?? array(),
 			'unread_here' => (int) ($aOut['unread_here'] ?? 0),
+			'folders' => $aOut['folders'] ?? array(),
 			'more' => !empty($aOut['more']),
 			'pending' => \array_values(\array_unique(\array_merge($aOut['pending'] ?? array(), $aOut['missing'] ?? array())))
 		));

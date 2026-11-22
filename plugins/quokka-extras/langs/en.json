@@ -1,7 +1,7 @@
 {
 	"QUOKKA_EXTRAS": {
 		"TAB_APPS": "Family apps",
-		"TAB_CATEGORIES": "Categories",
+		"TAB_CATEGORIES": "Folders",
 		"TAB_PUSH": "Notifications",
 		"PUSH_INTRO": "A notification for every new email of the inbox, as soon as it arrives, also with Quokka closed. For all your mailboxes (main and added accounts) on this device.",
 		"PUSH_ON": "Notifications on: a test notification has just arrived.",

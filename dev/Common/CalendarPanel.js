@@ -72,7 +72,7 @@ document.addEventListener('click', event => {
 	} else if (a.href && a.href.startsWith(base()) && !a.closest('#quokka-calendar')) {
 		event.preventDefault();
 		openCalendar('#' + (a.href.split('#')[1] || '/calendar'));
-	} else if (a.closest('.quokka-tabbar, #rl-left .b-content') && !a.closest('.b-mailbox-chosen')) {
+	} else if (a.closest('.quokka-tabbar, #rl-left .b-content') && !a.closest('.quokka-box-head')) {
 		closeCalendar();
 	}
 }, true);
