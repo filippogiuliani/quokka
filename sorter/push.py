@@ -210,9 +210,10 @@ def sign(secret, ts, path, body):
 class Service:
     """The handlers, apart from HTTP so tests can call them."""
 
-    def __init__(self, db_path, data_dir, accounts, secret, send=None, connect=None):
+    def __init__(self, db_path, data_dir, accounts, secret, send=None, connect=None, parse=None, categories=()):
         self.db_path, self.data_dir, self.accounts, self.secret, self.send = db_path, data_dir, accounts, secret, send
-        self.connect = connect              # sorter.connect: an IMAP session on a mailbox (for /act)
+        self.connect = connect              # sorter.connect: an IMAP session on a mailbox (for /act, /search)
+        self.parse, self.categories = parse, categories     # sorter.parse, classify.CATEGORIES (for /search)
 
     def conn(self):
         c = sqlite3.connect(self.db_path, timeout=15)
@@ -237,6 +238,9 @@ class Service:
         if path == '/act':
             import inbox
             return inbox.handle_act(self, data, self.connect)
+        if path == '/search':
+            import inbox
+            return inbox.handle_search(self, data, self.connect, self.parse, self.categories)
         with _lock, self.conn() as c:
             if path == '/register':
                 return self.register(c, data)

@@ -502,3 +502,66 @@ def test_an_index_of_inbox_alone_is_made_again(tmp_path):
     conn = sorter.db(path)
     assert 'role' in {r[1] for r in conn.execute('PRAGMA table_info(inbox)')}
     assert conn.execute('SELECT COUNT(*) FROM inbox').fetchone()[0] == 0
+
+
+def test_search_everywhere_on_the_mail_servers(tmp_path):
+    """Every folder of every mailbox, any date: what matches all the words, with its folder and the folder's role."""
+    def raw(sender, subject, text):
+        return f'From: {sender}\r\nSubject: {subject}\r\nDate: Mon, 02 Mar 2020 10:00:00 +0100\r\n\r\n'.encode(), f'{text}\r\n'.encode()
+    boxes = {
+        'INBOX': {7: raw('Anna <anna@example.it>', 'Preventivo cucina', 'Ecco il preventivo')},
+        'Cestino': {3: raw('Shop <shop@example.it>', 'Il tuo preventivo', 'Scaduto')},
+        'Gi&AOA- letti': {5: raw('Ufficio <u@example.it>', 'Preventivo città', 'Vecchio preventivo del 2020')},
+    }
+
+    class Imap:
+        def __init__(self):
+            self.sel, self.literal, self.searches = None, None, []
+
+        def list(self):
+            return 'OK', [b'(\\HasNoChildren) "." INBOX', b'(\\HasNoChildren \\Trash) "." Cestino',
+                          b'(\\HasNoChildren) "." "Gi&AOA- letti"', b'(\\Noselect \\HasChildren) "." Vecchie']
+
+        def select(self, name, readonly=False):
+            assert readonly
+            self.sel = name.strip('"')
+            return 'OK', [b'1']
+
+        def uid(self, cmd, *args):
+            mails = boxes[self.sel]
+            if cmd == 'SEARCH':
+                self.searches.append((args, self.literal))
+                self.literal = None
+                return 'OK', [' '.join(map(str, mails)).encode()]
+            out = []
+            for uid in map(int, args[0].split(',')):
+                head, text = mails[uid]
+                out += [(f'{uid} (UID {uid} FLAGS (\\Seen) BODY[HEADER] {{{len(head)}}}'.encode(), head),
+                        (f' BODY[TEXT]<0> {{{len(text)}}}'.encode(), text), b')']
+            return 'OK', out
+
+        def logout(self):
+            pass
+    imap = Imap()
+    rows = inbox.search_mailbox(imap, ['preventivo', 'città'], sorter.parse, classify.CATEGORIES)
+    assert sorted((r['folder'], r['role'], r['subject']) for r in rows) == [
+        ('Cestino', 'trash', 'Il tuo preventivo'), ('Già letti', '', 'Preventivo città'), ('INBOX', 'inbox', 'Preventivo cucina')]
+    assert all(r['seen'] and r['from'] for r in rows)
+    args, literal = imap.searches[0]
+    assert args == ('CHARSET', 'UTF-8', 'TEXT', '"preventivo"', 'TEXT') and literal == 'città'.encode()   # accents: a literal
+    assert len(imap.searches) == 3                                     # the \Noselect folder is not opened
+
+    svc = push.Service(str(tmp_path / 's.db'), str(tmp_path), lambda: [{'user': 'me@example.it', 'password': 'x'},
+                       {'user': 'down@example.it', 'password': 'x'}], SECRET,
+                       connect=lambda acc: Imap() if acc['user'] == 'me@example.it' else (_ for _ in ()).throw(OSError('down')),
+                       parse=sorter.parse, categories=classify.CATEGORIES)
+    sorter.db(str(tmp_path / 's.db')).close()
+    status, out = svc.handle('/search', {'accounts': ['Me@example.it', 'down@example.it', 'nobody@example.it'], 'text': 'preventivo'})
+    assert status == 200 and out['failed'] == ['down@example.it'] and len(out['messages']) == 3
+    assert {m['account'] for m in out['messages']} == {'Me@example.it'}            # named as Quokka wrote it
+    assert svc.handle('/search', {'accounts': ['me@example.it'], 'text': '  '})[0] == 400
+    # an action on a result: in its folder, by name
+    acted = FakeImap()
+    svc.connect = lambda acc: acted
+    assert svc.handle('/act', {'account': 'me@example.it', 'in': 'Già letti', 'uids': [5], 'action': 'flag'}) == (200, {'ok': True})
+    assert acted.selected == '"Gi&AOA- letti"' and acted.calls[-1] == ('STORE', '5', '+FLAGS', '(\\Flagged)')

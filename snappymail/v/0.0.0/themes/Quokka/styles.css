@@ -1424,3 +1424,27 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 @media screen and (max-width: 1023px) {
 	#rl-left .b-folders .b-mailbox-chosen { font-size: 16px; padding: 12px 12px !important; }
 }
+
+/* the list is a flex column: with many emails it squeezed the heading and the quick filters (their pills cut) */
+.messageList > .quokka-head, .messageList > .second-toolbar, .messageList > .quokka-filters, .messageList > .quokka-selbar { flex-shrink: 0; }
+
+/* Kooka's calendar in a panel over the mail (Common/CalendarPanel.js) */
+#quokka-calendar { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 900; display: flex; flex-direction: column; background: var(--fm-bg); border-left: 1px solid var(--fm-line); }
+#quokka-calendar[hidden] { display: none; }
+#quokka-calendar .qc-bar { flex: none; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px; border-bottom: 1px solid var(--fm-line); background: var(--fm-surface); }
+#quokka-calendar .qc-back { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 10px 0 6px; border: 0; border-radius: 8px; background: none; color: var(--fm-primary); font: inherit; font-weight: 600; cursor: pointer; }
+#quokka-calendar .qc-back:hover { background: var(--fm-surface-2); }
+#quokka-calendar .qc-back svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+#quokka-calendar .qc-title { flex: 1; text-align: center; font-size: 15px; color: var(--fm-ink); }
+#quokka-calendar .qc-out { font-size: 13px; color: var(--fm-muted); text-decoration: none; white-space: nowrap; }
+#quokka-calendar .qc-out:hover { color: var(--fm-ink); }
+#quokka-calendar iframe { flex: 1; width: 100%; border: 0; background: var(--fm-bg); }
+@media screen and (max-width: 1023px) {
+	#quokka-calendar { bottom: calc(64px + env(safe-area-inset-bottom)); border-left: 0; }
+	html.quokka-calendar-open .quokka-tabbar a.tab-calendar { color: var(--fm-primary); font-weight: 600; }
+	html.quokka-calendar-open .quokka-tabbar a.tab-mail, html.quokka-calendar-open .quokka-tabbar a.tab-categories { color: var(--fm-muted) !important; font-weight: 400 !important; }
+	html.quokka-calendar-open #V-MailMessageList .buttonCompose { display: none !important; }
+}
+.quokka-unified-search { margin: 8px 12px; padding: 8px 12px; border-radius: 8px; background: var(--fm-primary-soft); color: var(--fm-primary); font-size: 13px; }
+.quokka-unified-search.busy::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -1px; animation: quokka-spin .8s linear infinite; }
+@keyframes quokka-spin { to { transform: rotate(360deg); } }

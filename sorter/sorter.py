@@ -359,7 +359,8 @@ def main():
     log.info('sorter: categories %s, every %ss', ', '.join(classify.CATEGORIES), INTERVAL)
     secret_key = os.environ.get('QUOKKA_SECRET', '')
     if len(secret_key) >= 32:
-        push.serve(push.Service(os.path.join(DATA, 'sorter.db'), DATA, accounts, secret_key, connect=connect),
+        push.serve(push.Service(os.path.join(DATA, 'sorter.db'), DATA, accounts, secret_key, connect=connect, parse=parse,
+                                 categories=classify.CATEGORIES),
                    int(os.environ.get('PUSH_PORT', '8025')))
     else:
         log.warning('notifications off: QUOKKA_SECRET is missing or shorter than 32 characters')

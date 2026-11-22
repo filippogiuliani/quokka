@@ -660,6 +660,12 @@
 		"UnknownError": "Unknown error"
 	},
 	"QUOKKA": {
+		"SEARCH_FOLDER_HIDDEN": "The folder \"%FOLDER%\" is hidden in Quokka: show it in Settings → Folders to open this email.",
+		"SEARCH_EVERYWHERE_BUSY": "Searching every mailbox and every folder, older emails too…",
+		"SEARCH_EVERYWHERE_DONE": "%COUNT% found in every mailbox and folder.",
+		"SEARCH_EVERYWHERE_MISSING": "No answer from: %MAILBOXES%.",
+		"SEARCH_EVERYWHERE_FAILED": "Searching every folder is not available now: above are only the emails of the last 60 days.",
+		"CALENDAR_OPEN": "Open Kooka",
 		"CALENDAR": "Calendar",
 		"TAB_CALENDAR": "Calendar",
 		"INVITE_TITLE": "Invitation",

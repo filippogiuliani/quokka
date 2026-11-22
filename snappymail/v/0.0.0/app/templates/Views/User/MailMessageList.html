@@ -224,6 +224,7 @@
 	<div class="quokka-unified">
 		<div class="listError error" data-bind="visible: !unifiedAvailable(), text: unifiedTexts.off"></div>
 		<div class="quokka-unified-pending" data-bind="visible: unifiedPendingText, text: unifiedPendingText"></div>
+		<div class="quokka-unified-search" data-bind="visible: unifiedSearchText, text: unifiedSearchText, css: {busy: 'busy' === unifiedSearching()}"></div>
 		<div class="listEmptyMessage" data-bind="visible: unifiedEmpty, text: unifiedTexts.empty"></div>
 		<div class="listLoading" data-bind="visible: unifiedLoading() && !unifiedMessages().length">
 			<i class="icon-spinner"></i>
@@ -240,7 +241,7 @@
 					<div class="subjectParent" data-bind="text: subject"></div>
 					<div class="previewParent" data-bind="text: preview"></div>
 					<div class="quokka-chips">
-						<span class="quokka-boxtag"><span class="box-badge" aria-hidden="true" data-bind="text: box.letter, attr: {style: boxStyle}"></span><!-- ko text: box.name --><!-- /ko --></span>
+						<span class="quokka-boxtag"><span class="box-badge" aria-hidden="true" data-bind="text: box.letter, attr: {style: boxStyle}"></span><!-- ko text: box.name --><!-- /ko --><!-- ko if: folderLabel --> · <!-- ko text: folderLabel --><!-- /ko --><!-- /ko --></span>
 						<span class="categoryParent" data-bind="visible: categoryLabel, text: categoryLabel, attr: {'data-category': category}"></span>
 					</div>
 					<div class="attachmentParent"><i data-bind="css: attachment ? 'icon-attachment' : ''"></i></div>

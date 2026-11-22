@@ -143,16 +143,18 @@ export class MailBoxUserScreen extends AbstractScreen {
 		return [
 			// Folder: INBOX | INBOX.sub | Sent | fullNameHash
 			[/^([^/]*)$/, { normalize_: fNormS }],
+			// Quokka: a folder may have spaces and accents ("Posta inviata", "Già letti"): upstream allowed only
+			// [a-zA-Z0-9.~_-] in these three, so its emails, pages and searches could not be opened by address
 			// Search: {folder}/{string}
-			[/^([a-zA-Z0-9.~_-]+)\/(.+)\/?$/, { normalize_: (request, vals) =>
+			[/^([^/]+)\/(.+)\/?$/, { normalize_: (request, vals) =>
 				[folder(request, vals), 1, decodeURI(pString(vals[1]))]
 			}],
 			// Message: {folder}/m{uid}(/p{int})?(/{search})?
-			[/^([a-zA-Z0-9.~_-]+)\/m([1-9][0-9]*)(?:\/(.+))?$/, { normalize_: (request, vals) =>
+			[/^([^/]+)\/m([1-9][0-9]*)(?:\/(.+))?$/, { normalize_: (request, vals) =>
 				[folder(request, vals), pInt(vals[2]), pString(vals[3]), pInt(vals[1])]
 			}],
 			// Page: {folder}/p{int}(/{search})?
-			[/^([a-zA-Z0-9.~_-]+)\/p([1-9][0-9]*)(?:\/(.+))?$/, { normalize_: fNormS }]
+			[/^([^/]+)\/p([1-9][0-9]*)(?:\/(.+))?$/, { normalize_: fNormS }]
 		];
 	}
 }

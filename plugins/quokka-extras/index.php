@@ -43,6 +43,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addTemplate('templates/QuokkaAppsSettingsTab.html');
 		$this->addTemplate('templates/QuokkaCategoriesSettingsTab.html');
 		$this->addHook('filter.app-data', 'FilterAppData');
+		$this->addHook('main.content-security-policy', 'ContentSecurityPolicy');
 		$this->addJsonHook('QuokkaCategoriesSave', 'JsonCategorieSave');
 		$this->addJsonHook('QuokkaExtrasGet', 'JsonGet');
 		$this->addJsonHook('QuokkaExtrasSave', 'JsonSave');
@@ -61,6 +62,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		// "All mailboxes": the INBOX of every mailbox of the person in one list (the sorter's index, sorter/inbox.py)
 		$this->addJsonHook('QuokkaUnifiedList', 'JsonUnifiedList');
 		$this->addJsonHook('QuokkaUnifiedAct', 'JsonUnifiedAct');
+		$this->addJsonHook('QuokkaUnifiedSearch', 'JsonUnifiedSearch');
 		// invitations in emails (.ics): what is on in Kooka at that time, saved there, answered to the organiser
 		$this->addJsonHook('QuokkaInvite', 'JsonInvite');
 		$this->addJsonHook('QuokkaInviteAnswer', 'JsonInviteAnswer');
@@ -71,6 +73,16 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	{
 		$sUrl = \trim((string) \getenv($sName));
 		return \preg_match('#^https?://#i', $sUrl) ? \rtrim($sUrl, '/') : '';
+	}
+
+	/** Kooka's calendar is shown inside Quokka (Common/CalendarPanel.js): its address, and only it, may be framed */
+	public function ContentSecurityPolicy(\SnappyMail\HTTP\CSP $CSP) : void
+	{
+		$aUrl = \parse_url(self::appUrl('QUOKKA_KOOKA_URL'));
+		if (!empty($aUrl['scheme']) && !empty($aUrl['host'])) {
+			$CSP->add('frame-src', "'self'");
+			$CSP->add('frame-src', $aUrl['scheme'] . '://' . $aUrl['host'] . (empty($aUrl['port']) ? '' : ':' . $aUrl['port']));
+		}
 	}
 
 	/** The categories this person turned off, and Kooka's calendar (when Kooka is there), for the page from the start */
@@ -719,6 +731,20 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		));
 	}
 
+	/** {text}: every folder of every mailbox of the person, at any date, on the mail servers (as Outlook searches) */
+	public function JsonUnifiedSearch()
+	{
+		$sText = \trim(\mb_substr((string) $this->jsonParam('text', ''), 0, 200));
+		$aBoxes = self::mailboxes();
+		if ('' === $sText || !$aBoxes) {
+			return $this->jsonResponse(__FUNCTION__, array('error' => 'invalid'));
+		}
+		[$iStatus, $aOut] = self::sorter('/search', array('accounts' => $aBoxes, 'text' => $sText), 90);
+		return $this->jsonResponse(__FUNCTION__, 200 === $iStatus
+			? array('messages' => $aOut['messages'] ?? array(), 'more' => !empty($aOut['more']), 'failed' => $aOut['failed'] ?? array())
+			: array('error' => 'unavailable'));
+	}
+
 	/** {account, uids, action: seen|unseen|flag|unflag|opened|archive|trash} on emails of one of the person's mailboxes */
 	public function JsonUnifiedAct()
 	{
@@ -732,7 +758,8 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$sAccount = $aBoxes[$iKey];
 		$aData = array(
 			'account' => $sAccount,
-			'role' => \in_array($sRole = (string) $this->jsonParam('role', 'inbox'), array('inbox', 'sent', 'drafts', 'trash', 'junk', 'archive'), true) ? $sRole : 'inbox',
+			'role' => \in_array($sRole = (string) $this->jsonParam('role', 'inbox'), array('inbox', 'sent', 'drafts', 'trash', 'junk', 'archive', ''), true) ? $sRole : 'inbox',
+			'in' => \mb_substr((string) $this->jsonParam('in', ''), 0, 300),   // a search result: its folder by name
 			'action' => $sAction,
 			'uids' => \array_slice(\array_values(\array_filter(\array_map('intval', (array) $this->jsonParam('uids', array())))), 0, 500)
 		);

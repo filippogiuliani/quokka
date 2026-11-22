@@ -92,12 +92,15 @@ every one of them in one list, each email marked with its mailbox, and so do Sen
 from the sorter, which keeps an index of each INBOX and system folder (sorter/inbox.py, in `SORTER_DATA`; the system
 folders are found by their special-use flag or the usual names, and only read): the same network and
 `QUOKKA_SECRET` as the notifications, nothing else to set up. `INDEX_DAYS` on the sorter (default 60) says how far
-back it goes. Opening an email switches to its mailbox; star, read, archive and delete work from the list itself
+back it goes. Words in the search box, with "Tutte le caselle" chosen, also search every folder of every mailbox at
+any date, on the mail servers themselves (the sorter asks them all at once). Opening an email switches to its mailbox; star, read, archive and delete work from the list itself
 (archive and delete use the folders chosen for that mailbox in Settings → Folders, else the server's own).
 
 ## 10. Calendar and invitations (Kooka)
 
-With `QUOKKA_KOOKA_URL` set, the column and the phone's bottom menu have **Calendario**, which opens Kooka's calendar.
+With `QUOKKA_KOOKA_URL` set, the column and the phone's bottom menu have **Calendario**: Kooka's calendar in a panel
+inside Quokka ("Posta" goes back to the mail). Kooka must allow it: `KOOKA_EMBED_FROM=<Quokka's address>` in Kooka's
+environment (and both on the same domain, e.g. kooka.example.com and quokka.example.com, so the Kooka sign-in is kept).
 An email with an invitation (.ics) shows a card: the event at the local time (`TZ`), what the person already has in
 Kooka at that time, and **Accetta / Forse / Rifiuta** (saved in Kooka, and the answer goes to the organiser from the
 person's own mailbox) or **Aggiungi al calendario** for a plain .ics. Each person links Kooka once in Settings →

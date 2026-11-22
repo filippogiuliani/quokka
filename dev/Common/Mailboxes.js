@@ -8,7 +8,7 @@ import { MessagelistUserStore } from 'Stores/User/Messagelist';
 import { CATEGORIES } from 'Common/Categories';
 import { FolderType } from 'Common/EnumsUser';
 import { mailBox } from 'Common/Links';
-import { getFolderHashFromCacheList, getFolderInboxName } from 'Common/Cache';
+import { getFolderHashFromCacheList, getFolderFromCacheList, getFolderInboxName } from 'Common/Cache';
 import { i18n, getNotification } from 'Common/Translator';
 
 import Remote from 'Remote/User/Fetch';
@@ -36,6 +36,9 @@ unifiedOn.subscribe(remember);
 export const unifiedMessages = ko.observableArray([]);
 export const unifiedUnread = ko.observable({});         // {mailbox (lower case): unread} of the INBOXes
 export const unifiedHere = ko.observable(0);            // unread in the folder shown (Trash of all the mailboxes…)
+export const unifiedSearching = ko.observable('');      // '' | 'busy' | 'done' | 'failed': the search everywhere
+export const unifiedFound = ko.observable(0);
+export const unifiedFailed = ko.observable([]);         // mailboxes that did not answer the search
 export const unifiedLoading = ko.observable(false);
 export const unifiedAvailable = ko.observable(true);    // false: the sorter does not answer
 export const unifiedMore = ko.observable(false);
@@ -128,7 +131,9 @@ const item = m => {
 		avatar: m.address ? '?Avatar/' + (m.signed ? 1 : 0) + '-/' + b64url(lower(m.address)) : '',
 		sender: m.from || m.address,           // not "from": the avatars plugin reads that as a list of addresses
 		initial: (m.from || m.address || '?').trim().charAt(0).toUpperCase(),
-		role: m.role || 'inbox', folder: m.folder || 'INBOX',
+		role: undefined === m.role ? 'inbox' : m.role, folder: m.folder || 'INBOX',
+		// a result of the search everywhere says its folder too (unless the inbox); a folder's own list need not
+		folderLabel: m.everywhere && m.folder && 'INBOX' !== m.folder.toUpperCase() ? m.folder : '',
 		// from the Trash nothing goes to the Trash or the Archive; from the Archive nothing to the Archive
 		canArchive: !['trash', 'archive'].includes(m.role), canTrash: 'trash' !== m.role,
 		threadsLen: () => 0
@@ -166,7 +171,34 @@ export const loadUnified = more => {
 		unifiedMore(!!r.more);
 		const items = (r.messages || []).map(item);
 		more ? unifiedMessages.push(...items) : unifiedMessages(items);
+		more || searchEverywhere(params.text, n);
 	}, 'QuokkaUnifiedList', params);
+};
+
+/**
+ * With words in the search: after the quick answer of the index (60 days, this folder), the mail servers themselves,
+ * every folder of every mailbox, at any date, as Outlook searches. Its results take the place of the quick ones.
+ */
+const searchEverywhere = (text, n) => {
+	if (!text || !text.trim()) {
+		unifiedSearching('');
+		return;
+	}
+	clearTimeout(timer);                            // not every minute: a search is asked again only when it changes
+	unifiedSearching('busy');
+	rl.pluginRemoteRequest((iError, oData) => {
+		if (n !== seq) return;
+		const r = oData?.Result;
+		if (iError || !r || r.error) {
+			unifiedSearching('failed');
+			return;
+		}
+		unifiedMessages((r.messages || []).map(m => item({ ...m, everywhere: true })));
+		unifiedMore(false);
+		unifiedFound((r.messages || []).length);
+		unifiedFailed(r.failed || []);
+		unifiedSearching('done');
+	}, 'QuokkaUnifiedSearch', { text }, 95000);
 };
 
 const countDown = (msg, by) => {
@@ -198,7 +230,7 @@ export const unifiedAct = (msg, action, done) => {
 			alert(i18n('no_folder' === error ? 'QUOKKA/UNIFIED_NO_FOLDER' : 'QUOKKA/UNIFIED_FAILED'));
 		}
 		done?.();
-	}, 'QuokkaUnifiedAct', { account: msg.account, role: msg.role, uids: [msg.uid], action });
+	}, 'QuokkaUnifiedAct', { account: msg.account, role: msg.role, in: msg.role ? '' : msg.folder, uids: [msg.uid], action });
 };
 
 /** To another of the person's mailboxes, then that address (the page starts again there) */
@@ -259,7 +291,15 @@ const inboxHash = () => getFolderHashFromCacheList(getFolderInboxName());
 /** An email of the list: opened in its mailbox (switching to it when it is another one) */
 export const openUnified = msg => {
 	// in its own folder (that mailbox's Trash, Sent…): its hash is known once the folders of that mailbox are
-	const open = () => go(mailBox(getFolderHashFromCacheList(msg.folder) || inboxHash(), 1, MessagelistUserStore.listSearch(), 0, msg.uid)),
+	const open = () => {
+			const folder = getFolderFromCacheList('INBOX' === msg.folder.toUpperCase() ? getFolderInboxName() : msg.folder);
+			// a folder Quokka does not show (not subscribed): said, never another email with the same number
+			if (!folder) {
+				alert(i18n('QUOKKA/SEARCH_FOLDER_HIDDEN', { FOLDER: msg.folder }));
+				return;
+			}
+			go(mailBox(folder.fullNameHash, 1, MessagelistUserStore.listSearch(), 0, msg.uid));
+		},
 		start = () => lower(msg.account) === lower(AccountUserStore.email()) ? open() : switchTo(msg.account, open);
 	msg.unseen() ? unifiedAct(msg, 'opened', start) : start();
 };

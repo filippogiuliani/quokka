@@ -13,7 +13,9 @@ Quokka asks over the same signed internal service as the notifications (push.py)
         role: inbox (default) | sent | drafts | trash | junk | archive
         → {messages: [... with their folder], unread: {account: n} (INBOX), unread_here: n (that role), more,
            missing: [not read by the sorter], pending: [not indexed yet]}
-  POST /act   {account, role?, uids, action, folder?}
+  POST /search {accounts, text}  every folder of every mailbox, at any date, on the mail servers themselves (as Outlook
+        searches): → {messages: [... with their folder and its role], failed: [mailboxes that did not answer]}
+  POST /act   {account, role? | in?, uids, action, folder?}   in: the folder by its name (a result of /search)
         action: seen | unseen | flag | unflag (on the server and in the index), opened (the index only: Quokka marks
         it read itself when it opens it), archive | trash (moved to `folder`, else the server's special-use folder)
 
@@ -65,6 +67,15 @@ def _category(flags, categories):
 
 def add(conn, account, uid, raw, mail, flags, categories, role='inbox'):
     """An email of a folder into the index. raw: its headers and the start of its text; mail: classify.Email."""
+    f = fields(raw, mail, flags, categories)
+    conn.execute('INSERT OR REPLACE INTO inbox (account, role, uid, at, sender, address, subject, preview, seen, flagged, '
+                 'category, attachment, signed) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                 (account, role, uid, f['at'], f['from'], f['address'], f['subject'], f['preview'], int(f['seen']),
+                  int(f['flagged']), f['category'], int(f['attachment']), int(f['signed'])))
+
+
+def fields(raw, mail, flags, categories):
+    """What the list shows of an email: raw (headers and the start of its text), mail (classify.Email), its flags"""
     head = raw.split(b'\r\n\r\n', 1)[0] if b'\r\n\r\n' in raw else raw.split(b'\n\n', 1)[0]
     head_l = head.lower()
     date = re.search(rb'^date:[ \t]*(.+(?:\r?\n[ \t].+)*)', head, re.I | re.M)
@@ -76,11 +87,10 @@ def add(conn, account, uid, raw, mail, flags, categories, role='inbox'):
     ctype = re.search(rb'^content-type:[ \t]*([^;\r\n]+)', head_l, re.M)
     attachment = bool(ctype and ctype.group(1).strip() == b'multipart/mixed')
     flags = flags or set()
-    conn.execute('INSERT OR REPLACE INTO inbox (account, role, uid, at, sender, address, subject, preview, seen, flagged, '
-                 'category, attachment, signed) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                 (account, role, uid, min(at, time.time() + 86400), (name or addr or mail.sender)[:200], addr[:200],
-                  mail.subject[:300], ' '.join(mail.text.split())[:PREVIEW], int('\\seen' in flags),
-                  int('\\flagged' in flags), _category(flags, categories), int(attachment), int(b'dkim=pass' in head_l)))
+    return {'at': min(at, time.time() + 86400), 'from': (name or addr or mail.sender)[:200], 'address': addr[:200],
+            'subject': mail.subject[:300], 'preview': ' '.join(mail.text.split())[:PREVIEW], 'seen': '\\seen' in flags,
+            'flagged': '\\flagged' in flags, 'category': _category(flags, categories), 'attachment': attachment,
+            'signed': b'dkim=pass' in head_l}
 
 
 def sync(conn, account, uidvalidity, box, parse, categories, role='inbox', folder='INBOX', raw='INBOX'):
@@ -217,23 +227,27 @@ def handle_act(service, data, connect):
     """One action on emails of one mailbox. The IMAP part runs outside the service's lock (it takes a moment)."""
     account = service.watched(data.get('account'))
     action = str(data.get('action') or '')
-    role = str(data.get('role') or 'inbox')
+    role = str(data.get('role') or ('' if data.get('in') else 'inbox'))
+    named = _imap_name(str(data.get('in') or '')) if not role else ''     # a folder by its name: a search result
     try:
         uids = sorted({int(u) for u in (data.get('uids') or [])[:MAX_UIDS] if int(u) > 0})
     except (TypeError, ValueError):
         uids = []
     if not account:
         return 404, {'error': 'not_watched'}
-    if not uids or role not in ROLES or action not in set(FLAG_ACTIONS) | set(SPECIAL) | {'opened'} or action == role:
+    if not uids or (role not in ROLES and not named) or action not in set(FLAG_ACTIONS) | set(SPECIAL) | {'opened'} or action == role:
         return 400, {'error': 'invalid'}       # (to the Trash from the Trash, to the Archive from the Archive: no)
     if action == 'opened':               # Quokka marks it read when it opens it; the index shows it at once
-        return _index(service, account, role, uids, 'seen', 1)
-    with service.conn() as c:
-        init(c)
-        state = c.execute('SELECT raw FROM inbox_state WHERE account = ? AND role = ?', (account, role)).fetchone()
-    if not state and role != 'inbox':
-        return 404, {'error': 'no_folder'}
-    source = state[0] if state else 'INBOX'
+        return _index(service, account, role, uids, 'seen', 1) if role else (200, {'ok': True})
+    if named:
+        source = named
+    else:
+        with service.conn() as c:
+            init(c)
+            state = c.execute('SELECT raw FROM inbox_state WHERE account = ? AND role = ?', (account, role)).fetchone()
+        if not state and role != 'inbox':
+            return 404, {'error': 'no_folder'}
+        source = state[0] if state else 'INBOX'
     acc = next((a for a in service.accounts() if a['user'] == account), None)
     if not acc or connect is None:
         return 404, {'error': 'not_watched'}
@@ -252,7 +266,7 @@ def handle_act(service, data, connect):
             typ, _ = imap.uid('STORE', uidset, op, f'({flag})')
             if typ != 'OK':
                 return 502, {'error': 'imap'}
-            return _index(service, account, role, uids, column, value)
+            return _index(service, account, role, uids, column, value) if role else (200, {'ok': True})
         target = _imap_name(str(data.get('folder') or '')) or special_folder(imap, action)
         if not target:
             return 409, {'error': 'no_folder'}
@@ -376,3 +390,113 @@ def _imap_name(name):
             buf.append(ch)
     flush()
     return _quote(''.join(out))
+
+
+# ---------- searching everywhere (as Outlook does): on the mail servers, every folder, any date ----------
+
+SEARCH_PER_FOLDER = 50          # the newest matches of each folder
+SEARCH_LIMIT = 200              # all together, newest first
+SEARCH_TEXT_BYTES = 2000
+
+
+def _search_criteria(words):
+    """IMAP SEARCH arguments for "all these words, anywhere in the email"; a word with accents goes as a literal
+    (imaplib sends one per command: the others with accents are left to the first)"""
+    args, literal = ['CHARSET', 'UTF-8'], None
+    for w in words:
+        if all(ord(ch) < 128 for ch in w):
+            args += ['TEXT', '"' + w.replace('\\', '\\\\').replace('"', '\\"') + '"']
+        elif literal is None:
+            literal = w.encode()
+    if literal is not None:
+        args.append('TEXT')
+    return args, literal
+
+
+def _fetch_found(imap, uids):
+    """{uid: (raw headers + start of the text, flags)} of these emails, read without marking them read"""
+    out, current = {}, None
+    typ, data = imap.uid('FETCH', ','.join(map(str, uids)),
+                         f'(UID FLAGS BODY.PEEK[HEADER] BODY.PEEK[TEXT]<0.{SEARCH_TEXT_BYTES}>)')
+    for item in data or []:
+        meta = item[0] if isinstance(item, tuple) else item
+        m = re.search(rb'UID (\d+)', meta or b'')
+        if m:
+            current = int(m.group(1))
+            out.setdefault(current, [b'', b'', set()])
+        if current is None:
+            continue
+        f = re.search(rb'FLAGS \(([^)]*)\)', meta or b'')
+        if f:
+            out[current][2] = {x.decode('utf-8', 'replace').lower() for x in f.group(1).split()}
+        if isinstance(item, tuple):
+            (out[current].__setitem__(0, item[1]) if b'HEADER' in meta.upper() else out[current].__setitem__(1, item[1]))
+    return {uid: (h + t, flags) for uid, (h, t, flags) in out.items() if h}
+
+
+def search_mailbox(imap, words, parse, categories):
+    """[row] of every folder of this mailbox matching all the words, the newest SEARCH_PER_FOLDER of each"""
+    found, roles = _listing(imap), {}
+    for role in ROLE_FOLDERS:
+        raw = _pick(found, role)
+        if raw:
+            roles[raw] = role
+    criteria, literal = _search_criteria(words)
+    rows = []
+    for flags, name in found:
+        if '\\noselect' in flags or '\\nonexistent' in flags:
+            continue
+        raw = name if name.startswith('"') else _quote(name)
+        folder = _utf7_decode(raw[1:-1].replace('\\"', '"').replace('\\\\', '\\'))
+        typ, _ = imap.select(raw, readonly=True)
+        if typ != 'OK':
+            continue
+        if literal is not None:
+            imap.literal = literal
+        typ, data = imap.uid('SEARCH', *criteria)
+        uids = sorted(map(int, (data[0] or b'').split()))[-SEARCH_PER_FOLDER:] if typ == 'OK' and data else []
+        if not uids:
+            continue
+        role = 'inbox' if folder.upper() == 'INBOX' else roles.get(raw, '')
+        for uid, (raw_mail, mail_flags) in _fetch_found(imap, uids).items():
+            f = fields(raw_mail, parse(raw_mail), mail_flags, categories)
+            rows.append({'uid': uid, 'folder': folder, 'role': role, **f})
+    return rows
+
+
+def handle_search(service, data, connect, parse, categories):
+    """The mailboxes asked for, searched at the same time; a mailbox that does not answer is left out (and said)"""
+    from concurrent.futures import ThreadPoolExecutor
+    asked = [str(a) for a in (data.get('accounts') or [])][:20]
+    words = [w for w in str(data.get('text') or '').split() if w][:5]
+    if not words or connect is None or parse is None:
+        return 400, {'error': 'invalid'}
+    accounts = {a['user']: a for a in service.accounts()}
+    targets = [(name, accounts[service.watched(name)]) for name in asked if service.watched(name) in accounts]
+
+    def one(target):
+        name, acc = target
+        try:
+            imap = connect(acc)
+        except Exception as e:
+            log.warning('%s: search: %s: %s', name, type(e).__name__, e)
+            return name, None
+        try:
+            return name, search_mailbox(imap, words, parse, categories)
+        except Exception as e:
+            log.warning('%s: search: %s: %s', name, type(e).__name__, e)
+            return name, None
+        finally:
+            try:
+                imap.logout()
+            except Exception:
+                pass
+    messages, failed = [], []
+    with ThreadPoolExecutor(max_workers=max(1, min(8, len(targets)))) as pool:
+        for name, rows in pool.map(one, targets):
+            if rows is None:
+                failed.append(name)
+            else:
+                messages += [dict(r, account=name, at=int(r['at'])) for r in rows]
+    messages.sort(key=lambda m: (m['at'], m['uid']), reverse=True)
+    return 200, {'messages': messages[:SEARCH_LIMIT], 'more': len(messages) > SEARCH_LIMIT, 'failed': failed}

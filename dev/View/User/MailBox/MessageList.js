@@ -45,7 +45,8 @@ import { ComposePopupView } from 'View/Popup/Compose';
 import { MessageModel } from 'Model/Message';
 import { CATEGORY_KEYS, CATEGORIES, categorySearch, isQuickSearch } from 'Common/Categories';
 import { unifiedView, unifiedMessages, unifiedLoading, unifiedAvailable, unifiedMore, unifiedPending, unifiedTotal,
-	mailboxTitle, loadUnified, openUnified, unifiedAct, mailboxesOpen, currentRole, unifiedHere } from 'Common/Mailboxes';
+	mailboxTitle, loadUnified, openUnified, unifiedAct, mailboxesOpen, currentRole, unifiedHere,
+	unifiedSearching, unifiedFound, unifiedFailed } from 'Common/Mailboxes';
 
 import { LayoutSideView, ClientSideKeyNameMessageListSize } from 'Common/EnumsUser';
 import { setLayoutResizer } from 'Common/UtilsUser';
@@ -157,6 +158,16 @@ export class MailMessageList extends AbstractViewRight {
 		const text = key => ko.computed(() => (translateTrigger(), i18n(key)));
 		this.unifiedTexts = { off: text('QUOKKA/UNIFIED_OFF'), empty: text('QUOKKA/UNIFIED_EMPTY'), loading: text('GLOBAL/LOADING'),
 			more: text('QUOKKA/UNIFIED_MORE'), archive: text('QUOKKA/ARCHIVE'), trash: text('QUOKKA/DELETE') };
+		this.unifiedSearching = unifiedSearching;
+		this.unifiedSearchText = ko.computed(() => {
+			translateTrigger();
+			const state = unifiedSearching(), failed = unifiedFailed();
+			return 'busy' === state ? i18n('QUOKKA/SEARCH_EVERYWHERE_BUSY')
+				: 'failed' === state ? i18n('QUOKKA/SEARCH_EVERYWHERE_FAILED')
+				: 'done' === state ? i18n('QUOKKA/SEARCH_EVERYWHERE_DONE', { COUNT: unifiedFound() })
+					+ (failed.length ? ' ' + i18n('QUOKKA/SEARCH_EVERYWHERE_MISSING', { MAILBOXES: failed.join(', ') }) : '')
+				: '';
+		});
 		this.openUnified = msg => openUnified(msg);
 		this.unifiedNoPic = (msg, event) => { event.target.hidden = true; };   // no picture: the initial under it shows
 		this.unifiedMoreClick = () => loadUnified(true);

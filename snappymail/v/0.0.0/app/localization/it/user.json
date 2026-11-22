@@ -660,6 +660,12 @@
 		"UnknownError": "Errore sconosciuto"
 	},
 	"QUOKKA": {
+		"SEARCH_FOLDER_HIDDEN": "La cartella «%FOLDER%» è nascosta in Quokka: rendila visibile in Impostazioni → Cartelle per aprire questa email.",
+		"SEARCH_EVERYWHERE_BUSY": "Cerco in tutte le caselle e in tutte le cartelle, anche nelle email più vecchie…",
+		"SEARCH_EVERYWHERE_DONE": "%COUNT% trovate in tutte le caselle e cartelle.",
+		"SEARCH_EVERYWHERE_MISSING": "Non hanno risposto: %MAILBOXES%.",
+		"SEARCH_EVERYWHERE_FAILED": "La ricerca in tutte le cartelle ora non è disponibile: qui sopra ci sono solo le email degli ultimi 60 giorni.",
+		"CALENDAR_OPEN": "Apri Kooka",
 		"CALENDAR": "Calendario",
 		"TAB_CALENDAR": "Calendario",
 		"INVITE_TITLE": "Invito",

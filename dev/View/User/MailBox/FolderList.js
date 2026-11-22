@@ -26,6 +26,7 @@ import { CATEGORY_KEYS, CATEGORIES, categorySearch } from 'Common/Categories';
 import { i18n, translateTrigger } from 'Common/Translator';
 import { getFolderHashFromCacheList, getFolderInboxName } from 'Common/Cache';
 import { ThemeStore } from '../../../Stores/Theme';
+import 'Common/CalendarPanel';      // Quokka: Kooka's calendar in a panel
 import { mailboxes, hasMailboxes, unifiedOn, unifiedTotal, selectMailbox, mailboxesOpen, chosenMailbox } from 'Common/Mailboxes';
 
 export class MailFolderList extends AbstractViewLeft {
