@@ -527,9 +527,9 @@ input:focus, select:focus, textarea:focus {
 #V-SettingsMenu .quokka-logo { width: 32px; height: 32px; border-radius: 8px; background: var(--fm-primary); display: grid; place-items: center; }
 #V-SettingsMenu .quokka-logo svg { width: 18px; height: 18px; fill: none; stroke: var(--fm-primary-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 #V-SettingsMenu .quokka-settings-title { padding: 16px 16px 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fm-muted); }
-#V-SettingsMenu nav { display: flex; flex-direction: column; gap: 2px; padding: 0 6px; flex: 1; }
+#V-SettingsMenu nav { display: flex; flex-direction: column; gap: 4px; padding: 4px 10px 0; flex: 1; }
 #V-SettingsMenu nav a {
-	display: flex !important; align-items: center; gap: 10px; padding: 9px 10px !important; border-radius: 8px;
+	display: flex !important; align-items: center; gap: 12px; padding: 12px 12px !important; border-radius: 10px;
 	color: var(--fm-ink-2) !important; background: none !important; font-size: 14px !important; text-decoration: none;
 }
 #V-SettingsMenu nav a:hover { background: var(--fm-surface-2) !important; color: var(--fm-ink) !important; }
@@ -540,6 +540,11 @@ input:focus, select:focus, textarea:focus {
 #V-SettingsPane { background: transparent !important; border: 0 !important; box-shadow: none !important; overflow-y: auto; }
 #V-SettingsPane > .btn-toolbar { display: none; }
 #V-SettingsPane > div:not(.btn-toolbar) { max-width: 760px; margin: 0 auto; padding: 8px 24px 48px; box-sizing: border-box; }
+/* sections in containers (quokka-cols > quokka-section): on a computer they stand side by side, see below */
+#V-SettingsPane .form-horizontal .quokka-section { display: flex; flex-direction: column; }
+#V-SettingsPane .quokka-section > .legend:first-child { margin-top: 26px !important; }
+#V-SettingsPane .quokka-cols > .quokka-section:first-child > .legend:first-child { margin-top: 12px !important; }
+#V-SettingsPane .quokka-section > .control-group:last-child { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
 #V-SettingsPane .form-horizontal { display: flex; flex-direction: column; }
 #V-SettingsPane .legend {
 	font-size: 18px !important; font-weight: 700; letter-spacing: -0.02em; color: var(--fm-ink);
@@ -563,6 +568,24 @@ input:focus, select:focus, textarea:focus {
 #V-SettingsPane .control-group input[type="text"], #V-SettingsPane .control-group input[type="number"] { height: 38px; }
 #V-SettingsPane .editMainIdentity { border-bottom: 0 !important; color: var(--fm-primary); cursor: pointer; font-weight: 600; }
 #V-SettingsPane .btn { height: 38px; }
+/* several switches in one card: each on its own row, with room and a thin line between them */
+#V-SettingsPane .control-group > div > div:has(> .e-checkbox) { padding: 10px 0; }
+#V-SettingsPane .control-group > div > div:has(> .e-checkbox):first-child { padding-top: 2px; }
+#V-SettingsPane .control-group > div > div:has(> .e-checkbox):last-child { padding-bottom: 2px; }
+#V-SettingsPane .control-group > div > div:has(> .e-checkbox) ~ div:has(> .e-checkbox) { border-top: 1px solid var(--fm-line); }
+#V-SettingsPane .control-group { padding: 14px 16px; min-height: 56px; }
+
+/* a computer: the whole width; pages with sections in two, then three columns, filled from the top */
+@media screen and (min-width: 1024px) {
+	#V-SettingsPane > div:not(.btn-toolbar) { max-width: 1000px; margin: 0; padding: 8px 32px 48px; }
+	#V-SettingsPane > div:not(.btn-toolbar):has(.quokka-cols) { max-width: none; }
+}
+@media screen and (min-width: 1280px) {
+	#V-SettingsPane .quokka-cols { display: block; columns: 2; column-gap: 24px; }
+	#V-SettingsPane .quokka-cols > .quokka-section { break-inside: avoid; padding-bottom: 8px; }
+	#V-SettingsPane .quokka-cols > .quokka-section > .legend:first-child { margin-top: 12px !important; }
+}
+@media screen and (min-width: 1800px) { #V-SettingsPane .quokka-cols { columns: 3; } }
 
 /* switches instead of SnappyMail's tick boxes */
 .e-checkbox.material-design { display: flex !important; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: 16px; width: 100% !important; cursor: pointer; line-height: 1.4 !important; }
@@ -953,13 +976,13 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 #V-SettingsPane .control-group.quokka-note > span { flex: 1 1 260px; }
 
 /* Accounts, Folders, Security: the title, the switch in a card, the list as a card, the buttons under it */
-#V-Settings-Accounts > div, #V-Settings-Folders, #V-Settings-Security { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; align-content: flex-start; }
-#V-Settings-Accounts > div > *, #V-Settings-Folders > *, #V-Settings-Security > * { flex: 1 1 100%; }
-#V-Settings-Accounts > div > .btn, #V-Settings-Folders > .btn, #V-Settings-Security > .btn { flex: 0 0 auto; order: 5; margin: 10px 0 0 !important; }
-#V-Settings-Accounts > div > .list-table, #V-Settings-Folders > .list-table { order: 4; }
+#V-Settings-Accounts .quokka-section, #V-Settings-Folders, #V-Settings-Security { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; align-content: flex-start; }
+#V-Settings-Accounts .quokka-section > *, #V-Settings-Folders > *, #V-Settings-Security > * { flex: 1 1 100%; }
+#V-Settings-Accounts .quokka-section > .btn, #V-Settings-Folders > .btn, #V-Settings-Security > .btn { flex: 0 0 auto; order: 5; margin: 10px 0 0 !important; }
+#V-Settings-Accounts .quokka-section > .list-table, #V-Settings-Folders > .list-table { order: 4; }
 #V-Settings-Accounts .legend, #V-Settings-Folders .legend { display: flex; align-items: center; gap: 8px; }
 #V-Settings-Accounts .legend > i { margin: 0 !important; }
-#V-Settings-Accounts > div > div:has(> .e-checkbox), #V-Settings-Folders > div:has(> .e-checkbox) {
+#V-Settings-Accounts .quokka-section > div:has(> .e-checkbox), #V-Settings-Folders > div:has(> .e-checkbox) {
 	order: 3; box-sizing: border-box; padding: 14px 16px; margin-bottom: 10px;
 	background: var(--fm-surface); border: 1px solid var(--fm-line); border-radius: 12px;
 }
