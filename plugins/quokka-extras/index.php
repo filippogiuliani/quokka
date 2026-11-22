@@ -692,6 +692,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		}
 		$aParams = array(
 			'accounts' => $aBoxes,
+			'role' => \in_array($sRole = (string) $this->jsonParam('role', 'inbox'), array('inbox', 'sent', 'drafts', 'trash', 'junk', 'archive'), true) ? $sRole : 'inbox',
 			'category' => \preg_replace('/[^a-z]/', '', (string) $this->jsonParam('category', '')),
 			'unseen' => !empty($this->jsonParam('unseen', false)),
 			'attachment' => !empty($this->jsonParam('attachment', false)),
@@ -712,6 +713,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			'available' => true,
 			'messages' => $aOut['messages'] ?? array(),
 			'unread' => $aOut['unread'] ?? array(),
+			'unread_here' => (int) ($aOut['unread_here'] ?? 0),
 			'more' => !empty($aOut['more']),
 			'pending' => \array_values(\array_unique(\array_merge($aOut['pending'] ?? array(), $aOut['missing'] ?? array())))
 		));
@@ -730,6 +732,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$sAccount = $aBoxes[$iKey];
 		$aData = array(
 			'account' => $sAccount,
+			'role' => \in_array($sRole = (string) $this->jsonParam('role', 'inbox'), array('inbox', 'sent', 'drafts', 'trash', 'junk', 'archive'), true) ? $sRole : 'inbox',
 			'action' => $sAction,
 			'uids' => \array_slice(\array_values(\array_filter(\array_map('intval', (array) $this->jsonParam('uids', array())))), 0, 500)
 		);

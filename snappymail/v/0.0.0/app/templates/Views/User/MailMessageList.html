@@ -247,8 +247,8 @@
 					<time data-time-format="AUTO" data-bind="time: at"></time>
 					<span class="quokka-uactions">
 						<a href="#" data-bind="click: $root.unifiedRead, attr: {title: readTitle}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"></path></svg></a>
-						<a href="#" data-bind="click: $root.unifiedArchive, attr: {title: $root.unifiedTexts.archive}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11h14V8M10 12h4"></path></svg></a>
-						<a href="#" class="danger" data-bind="click: $root.unifiedTrash, attr: {title: $root.unifiedTexts.trash}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg></a>
+						<a href="#" data-bind="visible: canArchive, click: $root.unifiedArchive, attr: {title: $root.unifiedTexts.archive}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11h14V8M10 12h4"></path></svg></a>
+						<a href="#" class="danger" data-bind="visible: canTrash, click: $root.unifiedTrash, attr: {title: $root.unifiedTexts.trash}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg></a>
 					</span>
 				</div>
 			</div>

@@ -345,9 +345,9 @@ def test_the_index_follows_inbox(tmp_path):
     assert conn.execute('SELECT COUNT(*) FROM inbox').fetchone()[0] == 1
 
 
-def _row(conn, account, uid, at, subject, seen=0, category='', attachment=0):
-    conn.execute('INSERT INTO inbox (account, uid, at, sender, address, subject, preview, seen, category, attachment) '
-                 'VALUES (?,?,?,?,?,?,?,?,?,?)', (account, uid, at, 'X', 'x@example.it', subject, 'testo', seen, category, attachment))
+def _row(conn, account, uid, at, subject, seen=0, category='', attachment=0, role='inbox'):
+    conn.execute('INSERT INTO inbox (account, role, uid, at, sender, address, subject, preview, seen, category, attachment) '
+                 'VALUES (?,?,?,?,?,?,?,?,?,?,?)', (account, role, uid, at, 'X', 'x@example.it', subject, 'testo', seen, category, attachment))
 
 
 def test_one_list_for_all_the_mailboxes_of_one_person(tmp_path):
@@ -389,7 +389,8 @@ class FakeImap:
     def __init__(self, caps=('IMAP4REV1', 'MOVE'), folders=()):
         self.capabilities, self.calls, self.folders = caps, [], folders
 
-    def select(self, name):
+    def select(self, name, readonly=False):
+        self.selected = name
         return 'OK', [b'3']
 
     def uid(self, *args):
@@ -445,3 +446,59 @@ def test_headers_first_whatever_order_the_server_answers_in():
     mail = sorter.parse(raw)
     assert raw.startswith(b'From:') and mail.subject == 'Cena' and 'anna@example.it' in mail.sender
     assert flags == {'\\seen'}
+
+
+def test_the_system_folders_of_all_the_mailboxes(tmp_path):
+    """One Trash, one Sent… for all the mailboxes: found by special-use or by name, only read, kept up to date."""
+    db_path = str(tmp_path / 's.db')
+    conn = sorter.db(db_path)
+
+    class Imap(FakeImap):
+        def __init__(self):
+            super().__init__(folders=[b'(\\HasNoChildren) "." INBOX', b'(\\HasNoChildren \\Sent) "." "Posta inviata"',
+                                      b'(\\HasNoChildren) "." Cestino', b'(\\HasNoChildren) "." "Gi&AOA- letti"',
+                                      b'(\\Noselect) "." Spam'])
+            self.readonly = []
+
+        def select(self, name, readonly=False):
+            self.readonly.append((name, readonly))
+            return 'OK', [b'1']
+
+        def response(self, what):
+            return what, [b'7']
+    imap = Imap()
+    found = inbox.system_folders(imap)
+    assert found == {'inbox': ('INBOX', 'INBOX'), 'sent': ('"Posta inviata"', 'Posta inviata'), 'trash': ('"Cestino"', 'Cestino')}
+    box = FakeBox()
+    box.add('Io <me@example.it>', 'Il preventivo', 'In allegato', flags={'\\seen'})
+    inbox.sync_folders(conn, 'me@example.it', imap, box, sorter.parse, classify.CATEGORIES)
+    assert all(ro for _, ro in imap.readonly)                       # only examined, never selected for writing
+    rows = conn.execute("SELECT role, subject FROM inbox ORDER BY role").fetchall()
+    assert [tuple(r) for r in rows] == [('sent', 'Il preventivo'), ('trash', 'Il preventivo')]
+    conn.execute("INSERT INTO inbox_state (account, role, uidvalidity) VALUES ('me@example.it', 'inbox', 1)")
+    _row(conn, 'me@example.it', 9, 10, 'In arrivo')
+    conn.commit()
+    svc = push.Service(db_path, str(tmp_path), lambda: [{'user': 'me@example.it', 'password': 'x'}], SECRET, connect=lambda acc: FakeImap())
+    out = svc.handle('/inbox', {'accounts': ['me@example.it'], 'role': 'trash'})[1]
+    assert [(m['subject'], m['role'], m['folder']) for m in out['messages']] == [('Il preventivo', 'trash', 'Cestino')]
+    assert out['unread'] == {'me@example.it': 1} and out['unread_here'] == 0     # the column counts INBOX
+    assert svc.handle('/inbox', {'accounts': ['me@example.it'], 'role': 'nope'})[0] == 400
+    # the actions go to the folder of that list
+    assert svc.handle('/act', {'account': 'me@example.it', 'role': 'trash', 'uids': [1], 'action': 'flag'}) == (200, {'ok': True})
+    assert svc.handle('/act', {'account': 'me@example.it', 'role': 'trash', 'uids': [1], 'action': 'trash'})[0] == 400
+    assert conn.execute("SELECT flagged FROM inbox WHERE role = 'trash'").fetchone()[0] == 1
+    # a folder that is gone leaves the index
+    imap.folders = [b'(\\HasNoChildren) "." INBOX', b'(\\Sent) "." "Posta inviata"']
+    inbox.sync_folders(conn, 'me@example.it', imap, box, sorter.parse, classify.CATEGORIES)
+    assert [r[0] for r in conn.execute("SELECT DISTINCT role FROM inbox ORDER BY role")] == ['inbox', 'sent']
+
+
+def test_an_index_of_inbox_alone_is_made_again(tmp_path):
+    import sqlite3
+    path = str(tmp_path / 'old.db')
+    with sqlite3.connect(path) as c:
+        c.execute('CREATE TABLE inbox (account TEXT, uid INTEGER, at REAL, PRIMARY KEY (account, uid))')
+        c.execute("INSERT INTO inbox VALUES ('a', 1, 0)")
+    conn = sorter.db(path)
+    assert 'role' in {r[1] for r in conn.execute('PRAGMA table_info(inbox)')}
+    assert conn.execute('SELECT COUNT(*) FROM inbox').fetchone()[0] == 0

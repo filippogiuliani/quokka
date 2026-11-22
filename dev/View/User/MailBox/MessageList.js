@@ -45,7 +45,7 @@ import { ComposePopupView } from 'View/Popup/Compose';
 import { MessageModel } from 'Model/Message';
 import { CATEGORY_KEYS, CATEGORIES, categorySearch, isQuickSearch } from 'Common/Categories';
 import { unifiedView, unifiedMessages, unifiedLoading, unifiedAvailable, unifiedMore, unifiedPending, unifiedTotal,
-	mailboxTitle, loadUnified, openUnified, unifiedAct, mailboxesOpen } from 'Common/Mailboxes';
+	mailboxTitle, loadUnified, openUnified, unifiedAct, mailboxesOpen, currentRole, unifiedHere } from 'Common/Mailboxes';
 
 import { LayoutSideView, ClientSideKeyNameMessageListSize } from 'Common/EnumsUser';
 import { setLayoutResizer } from 'Common/UtilsUser';
@@ -133,7 +133,8 @@ export class MailMessageList extends AbstractViewRight {
 				return category ? i18n('MESSAGE_TAGS/' + category) : (FolderUserStore.currentFolder()?.localName() || '');
 			},
 			listUnread: () => {
-				const n = unifiedView() ? unifiedTotal() : (FolderUserStore.currentFolder()?.unreadCount() || 0);
+				const n = unifiedView() ? ('inbox' === currentRole() ? unifiedTotal() : unifiedHere())
+					: (FolderUserStore.currentFolder()?.unreadCount() || 0);
 				return n ? i18n('QUOKKA/UNREAD_COUNT', { COUNT: n }) : '';
 			},
 			archiveHref: () => {

@@ -377,6 +377,13 @@ def main():
                     done, fixed = sort_round(conn, acc['user'], Mailbox(imap))
                     if done or fixed:
                         log.info('%s: %d sorted, %d corrections learned', acc['user'], done, fixed)
+                    # Sent, Drafts, Trash, Spam, Archive for "All mailboxes" (inbox.py): only read
+                    try:
+                        inbox.sync_folders(conn, acc['user'], imap, Mailbox(imap), parse, classify.CATEGORIES)
+                        conn.commit()
+                    except Exception as e:
+                        conn.rollback()
+                        log.warning('%s: index of the system folders: %s: %s', acc['user'], type(e).__name__, e)
                 finally:
                     try:
                         imap.logout()

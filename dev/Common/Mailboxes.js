@@ -6,6 +6,7 @@ import { AccountUserStore } from 'Stores/User/Account';
 import { FolderUserStore } from 'Stores/User/Folder';
 import { MessagelistUserStore } from 'Stores/User/Messagelist';
 import { CATEGORIES } from 'Common/Categories';
+import { FolderType } from 'Common/EnumsUser';
 import { mailBox } from 'Common/Links';
 import { getFolderHashFromCacheList, getFolderInboxName } from 'Common/Cache';
 import { i18n, getNotification } from 'Common/Translator';
@@ -33,7 +34,8 @@ export const unifiedOn = ko.observable('0' !== remembered());
 unifiedOn.subscribe(remember);
 
 export const unifiedMessages = ko.observableArray([]);
-export const unifiedUnread = ko.observable({});         // {mailbox (lower case): unread}
+export const unifiedUnread = ko.observable({});         // {mailbox (lower case): unread} of the INBOXes
+export const unifiedHere = ko.observable(0);            // unread in the folder shown (Trash of all the mailboxes…)
 export const unifiedLoading = ko.observable(false);
 export const unifiedAvailable = ko.observable(true);    // false: the sorter does not answer
 export const unifiedMore = ko.observable(false);
@@ -75,9 +77,17 @@ export const chosenMailbox = ko.computed(() => {
 		: { all: false, letter: '?', color: '', name: '', unread: 0 };
 }, null, deferred);
 
-/** The list shows all the mailboxes: chosen, more than one, in the inbox */
-export const unifiedView = ko.computed(() => unifiedOn() && hasMailboxes()
-	&& !!FolderUserStore.currentFolder()?.isInbox?.() && !MessagelistUserStore.threadUid(), null, deferred);
+/** The kind of folder shown (inbox, sent, drafts, trash, junk, archive), '' for the others: the sorter knows those */
+const ROLES = { [FolderType.Inbox]: 'inbox', [FolderType.Sent]: 'sent', [FolderType.Drafts]: 'drafts',
+	[FolderType.Junk]: 'junk', [FolderType.Trash]: 'trash', [FolderType.Archive]: 'archive' };
+export const currentRole = ko.computed(() => {
+	const folder = FolderUserStore.currentFolder();
+	return folder?.isInbox?.() ? 'inbox' : ROLES[folder?.type?.()] || '';
+}, null, deferred);
+
+/** The list shows all the mailboxes: chosen, more than one, in the inbox or a system folder (one Trash for all…) */
+export const unifiedView = ko.computed(() => unifiedOn() && hasMailboxes() && !!currentRole()
+	&& !MessagelistUserStore.threadUid(), null, deferred);
 
 /** The name of the mailbox shown, for the heading ("All mailboxes" or one of them), '' with only one */
 export const mailboxTitle = ko.computed(() => {
@@ -118,19 +128,28 @@ const item = m => {
 		avatar: m.address ? '?Avatar/' + (m.signed ? 1 : 0) + '-/' + b64url(lower(m.address)) : '',
 		sender: m.from || m.address,           // not "from": the avatars plugin reads that as a list of addresses
 		initial: (m.from || m.address || '?').trim().charAt(0).toUpperCase(),
+		role: m.role || 'inbox', folder: m.folder || 'INBOX',
+		// from the Trash nothing goes to the Trash or the Archive; from the Archive nothing to the Archive
+		canArchive: !['trash', 'archive'].includes(m.role), canTrash: 'trash' !== m.role,
 		threadsLen: () => 0
 	};
 };
 
-let seq = 0, timer = 0;
+let seq = 0, timer = 0, shownRole = '';
 
 /** (Re)load the list; more: the next page after the ones shown */
 export const loadUnified = more => {
 	if (!hasMailboxes()) return;
 	clearTimeout(timer);
 	timer = setTimeout(() => loadUnified(), REFRESH);
+	const role = currentRole() || 'inbox';
+	if (role !== shownRole && !more) {           // another folder: its rows only, never the last folder's meanwhile
+		shownRole = role;
+		unifiedMessages([]);
+		unifiedHere(0);
+	}
 	const n = ++seq,
-		params = { ...filterOf(MessagelistUserStore.listSearch()), offset: more ? unifiedMessages().length : 0 };
+		params = { ...filterOf(MessagelistUserStore.listSearch()), role: currentRole() || 'inbox', offset: more ? unifiedMessages().length : 0 };
 	unifiedLoading(true);
 	rl.pluginRemoteRequest((iError, oData) => {
 		if (n !== seq) return;                       // an answer to an older question
@@ -142,6 +161,7 @@ export const loadUnified = more => {
 		}
 		unifiedAvailable(true);
 		unifiedUnread(Object.fromEntries(Object.entries(r.unread || {}).map(([k, v]) => [lower(k), v])));
+		unifiedHere(r.unread_here || 0);
 		unifiedPending(r.pending || []);
 		unifiedMore(!!r.more);
 		const items = (r.messages || []).map(item);
@@ -150,6 +170,8 @@ export const loadUnified = more => {
 };
 
 const countDown = (msg, by) => {
+	unifiedHere(Math.max(0, unifiedHere() - by));
+	if ('inbox' !== msg.role) return;              // the column counts the INBOXes
 	const key = lower(msg.account), all = { ...unifiedUnread() };
 	all[key] = Math.max(0, (all[key] || 0) - by);
 	unifiedUnread(all);
@@ -176,7 +198,7 @@ export const unifiedAct = (msg, action, done) => {
 			alert(i18n('no_folder' === error ? 'QUOKKA/UNIFIED_NO_FOLDER' : 'QUOKKA/UNIFIED_FAILED'));
 		}
 		done?.();
-	}, 'QuokkaUnifiedAct', { account: msg.account, uids: [msg.uid], action });
+	}, 'QuokkaUnifiedAct', { account: msg.account, role: msg.role, uids: [msg.uid], action });
 };
 
 /** To another of the person's mailboxes, then that address (the page starts again there) */
@@ -236,7 +258,8 @@ const inboxHash = () => getFolderHashFromCacheList(getFolderInboxName());
 
 /** An email of the list: opened in its mailbox (switching to it when it is another one) */
 export const openUnified = msg => {
-	const open = () => go(mailBox(inboxHash(), 1, MessagelistUserStore.listSearch(), 0, msg.uid)),
+	// in its own folder (that mailbox's Trash, Sent…): its hash is known once the folders of that mailbox are
+	const open = () => go(mailBox(getFolderHashFromCacheList(msg.folder) || inboxHash(), 1, MessagelistUserStore.listSearch(), 0, msg.uid)),
 		start = () => lower(msg.account) === lower(AccountUserStore.email()) ? open() : switchTo(msg.account, open);
 	msg.unseen() ? unifiedAct(msg, 'opened', start) : start();
 };
@@ -258,5 +281,6 @@ export const selectMailbox = box => {
 ko.computed(() => {
 	MessagelistUserStore.listSearch();
 	unifiedView();
+	currentRole();                                 // another folder: Trash of all the mailboxes, Sent…
 	hasMailboxes() && setTimeout(() => loadUnified(), 1);
 }).extend({ throttle: 100 });
