@@ -42,7 +42,7 @@
 				<svg class="box-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
 				<span class="box-badge" aria-hidden="true" data-bind="text: letter, style: {backgroundColor: color}"></span>
 				<span class="box-name" data-bind="text: name"></span>
-				<span class="box-unread" data-bind="text: collapsed() && unread() || ''"></span>
+				<span class="box-unread" data-bind="text: collapsed() && closedUnread() || ''"></span>
 			</a>
 			<!-- ko ifnot: collapsed -->
 			<!-- ko if: current -->

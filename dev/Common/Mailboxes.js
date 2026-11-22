@@ -46,15 +46,21 @@ export const unifiedMore = ko.observable(false);
 export const unifiedPending = ko.observable([]);        // mailboxes the sorter has not read yet
 export const boxFolders = ko.observable({});            // {mailbox (lower case): [{name, delim, role, unseen, selectable}]}
 
-// Outlook's way: every mailbox in the column with its folders, each one closed or open (remembered on this device)
+// Outlook's way: every mailbox in the column with its folders, each one closed or open (remembered on this device).
+// Never touched: open on a computer, closed on a phone (a long column of folders to swipe through)
 const COLLAPSED = 'quokka.collapsed', collapsedOf = {};
-const collapsedSaved = (() => { try { return JSON.parse(localStorage.getItem(COLLAPSED) || '[]'); } catch (e) { return []; } })();
+const collapsedSaved = (() => {
+	try {
+		const v = JSON.parse(localStorage.getItem(COLLAPSED) || '{}');
+		return Array.isArray(v) ? Object.fromEntries(v.map(k => [k, true])) : v;   // before: the list of the closed ones
+	} catch (e) { return {}; }
+})();
 const collapsed = email => collapsedOf[lower(email)] || (collapsedOf[lower(email)] = (() => {
-	const o = ko.observable(collapsedSaved.includes(lower(email)));
-	o.subscribe(() => {
-		try {
-			localStorage.setItem(COLLAPSED, JSON.stringify(Object.keys(collapsedOf).filter(k => collapsedOf[k]())));
-		} catch (e) { /* storage off: not remembered */ }
+	const key = lower(email),
+		o = ko.observable(key in collapsedSaved ? !!collapsedSaved[key] : matchMedia('(max-width: 1023px)').matches);
+	o.subscribe(v => {
+		collapsedSaved[key] = v;
+		try { localStorage.setItem(COLLAPSED, JSON.stringify(collapsedSaved)); } catch (e) { /* storage off: not remembered */ }
 	});
 	return o;
 })());
@@ -99,6 +105,10 @@ export const mailboxes = ko.computed(() => {
 			email: a.email, name, letter,
 			color: COLORS[i % COLORS.length],
 			unread: ko.computed(() => unifiedUnread()[lower(a.email)] || 0),
+			// closed: the new emails of the whole mailbox, its inbox and its own folders (not junk, trash and the like)
+			closedUnread: ko.computed(() => (unifiedUnread()[lower(a.email)] || 0)
+				+ (boxFolders()[lower(a.email)] || []).filter(f => !f.role && f.selectable && 'INBOX' !== f.name.toUpperCase())
+					.reduce((n, f) => n + (f.unseen || 0), 0)),
 			current: ko.computed(() => lower(AccountUserStore.email()) === lower(a.email)),
 			selected: ko.computed(() => !unifiedOn() && lower(AccountUserStore.email()) === lower(a.email)),
 			collapsed: collapsed(a.email),
