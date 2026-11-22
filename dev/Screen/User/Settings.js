@@ -13,7 +13,6 @@ import { UserSettingsContacts } from 'Settings/User/Contacts';
 import { UserSettingsAccounts } from 'Settings/User/Accounts';
 import { UserSettingsFilters } from 'Settings/User/Filters';
 import { UserSettingsSecurity } from 'Settings/User/Security';
-import { UserSettingsFolders } from 'Settings/User/Folders';
 import { UserSettingsThemes } from 'Settings/User/Themes';
 
 import { SystemDropDownUserView } from 'View/User/SystemDropDown';
@@ -44,7 +43,7 @@ export class SettingsUserScreen extends AbstractSettingsScreen {
 
 		views.push(UserSettingsSecurity);
 
-		views.push(UserSettingsFolders);
+		// Quokka: no "Folders" page: each mailbox's folders are in Settings → Accounts (Settings/User/Boxes.js)
 
 		if (SettingsCapa('Themes')) {
 			views.push(UserSettingsThemes);

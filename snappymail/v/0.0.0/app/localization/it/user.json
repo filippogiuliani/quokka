@@ -660,6 +660,18 @@
 		"UnknownError": "Errore sconosciuto"
 	},
 	"QUOKKA": {
+		"BOX_TITLE": "Caselle",
+		"BOX_INTRO": "Apri una casella per le sue identità, le sue cartelle e le cartelle di sistema. Tutte le altre impostazioni valgono per tutte le caselle.",
+		"BOX_OPEN_NOW": "aperta ora",
+		"BOX_EDIT_ACCOUNT": "Modifica",
+		"BOX_IDENTITIES_NOTE": "Il nome, l'indirizzo e la firma con cui scrivi da questa casella. Più identità se la casella riceve anche per altri indirizzi.",
+		"BOX_FOLDERS": "Cartelle",
+		"BOX_FOLDERS_NOTE": "Le cartelle di questa casella sul server di posta. Quelle nascoste non compaiono nella colonna. Si può eliminare solo una cartella vuota.",
+		"BOX_HIDE": "Nascondi",
+		"BOX_SHOW": "Mostra",
+		"BOX_RENAME": "Rinomina",
+		"BOX_INSIDE": "dentro",
+		"BOX_TOP_LEVEL": "(nessuna, al primo livello)",
 		"SEARCH_FOLDER_HIDDEN": "La cartella «%FOLDER%» è nascosta in Quokka: rendila visibile in Impostazioni → Cartelle per aprire questa email.",
 		"SEARCH_EVERYWHERE_BUSY": "Cerco in tutte le caselle e in tutte le cartelle, anche nelle email più vecchie…",
 		"SEARCH_EVERYWHERE_DONE": "%COUNT% trovate in tutte le caselle e cartelle.",

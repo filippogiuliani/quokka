@@ -26,7 +26,8 @@ export class IdentityPopupView extends AbstractViewPopup {
 			labelFocused: false,
 			nameFocused: false,
 			submitRequest: false,
-			submitError: ''
+			submitError: '',
+			quokkaOther: false      // another mailbox than the open one: its folders are not here
 		});
 /*
 		this.email.valueHasMutated();
@@ -100,12 +101,15 @@ export class IdentityPopupView extends AbstractViewPopup {
 			const data = new FormData(form);
 			data.set('Id', identity.id());
 			data.set('Signature', identity.signature());
+			// Quokka: the identity of any of the person's mailboxes (Settings → Accounts), not only the open one
+			this.quokkaAccount && data.set('QuokkaAccount', this.quokkaAccount);
 			Remote.request('IdentityUpdate', iError => {
 					this.submitRequest(false);
 					if (iError) {
 						this.submitError(getNotification(iError));
 					} else {
 						rl.app.loadAccountsAndIdentities();
+						this.quokkaDone?.();
 						this.close();
 					}
 				}, data
@@ -116,7 +120,10 @@ export class IdentityPopupView extends AbstractViewPopup {
 	/**
 	 * @param {?IdentityModel} oIdentity
 	 */
-	onShow(identity) {
+	onShow(identity, quokkaAccount, quokkaDone) {
+		this.quokkaAccount = quokkaAccount || '';
+		this.quokkaDone = quokkaDone;
+		this.quokkaOther(!!quokkaAccount && quokkaAccount.toLowerCase() !== (rl.settings.get('Email') || '').toLowerCase());
 		this.submitRequest(false);
 		this.submitError('');
 		if (identity) {
@@ -125,6 +132,7 @@ export class IdentityPopupView extends AbstractViewPopup {
 			this.edit(false);
 			identity = new IdentityModel;
 			identity.id(Jua.randomId());
+			this.quokkaAccount && (identity.email = this.quokkaAccount);     // a new identity of that mailbox
 		}
 		this.identity(identity);
 	}

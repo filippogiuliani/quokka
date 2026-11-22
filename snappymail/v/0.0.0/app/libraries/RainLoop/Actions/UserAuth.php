@@ -185,6 +185,36 @@ trait UserAuth
 		return $oAccount;
 	}
 
+	/** Quokka: the person's mailbox with this address (the main one or an added one), for this request only */
+	private array $aQuokkaAccounts = array();
+	private function quokkaAccount(string $sEmail): Account
+	{
+		$sEmail = \strtolower(\SnappyMail\IDN::emailToAscii($sEmail));
+		if (!isset($this->aQuokkaAccounts[$sEmail])) {
+			$oMainAccount = $this->oMainAuthAccount;
+			if (\strtolower($oMainAccount->EmailAscii()) === $sEmail) {
+				$this->aQuokkaAccounts[$sEmail] = $oMainAccount;
+			} else {
+				$oAccount = null;
+				foreach ($this->GetCapa(Capa::ADDITIONAL_ACCOUNTS) ? $this->GetAccounts($oMainAccount) : array() as $sAddress => $aAccount) {
+					if (\strtolower($sAddress) === $sEmail) {
+						try {
+							$oAccount = AdditionalAccount::NewInstanceFromTokenArray($this, $aAccount, true);
+						} catch (\Throwable $e) {
+							throw new ClientException(Notifications::AccountSwitchFailed, $e);
+						}
+						break;
+					}
+				}
+				if (!$oAccount) {
+					throw new ClientException(Notifications::AccountDoesNotExist);
+				}
+				$this->aQuokkaAccounts[$sEmail] = $oAccount;
+			}
+		}
+		return $this->aQuokkaAccounts[$sEmail];
+	}
+
 	public function switchAccount(Email $oEmail): bool
 	{
 		$sEmail = $oEmail->GetEmail();
@@ -227,6 +257,20 @@ trait UserAuth
 	 * @throws \RainLoop\Exceptions\ClientException
 	 */
 	public function getAccountFromToken(bool $bThrowExceptionOnFalse = true): ?Account
+	{
+		$this->getMainAccountFromToken($bThrowExceptionOnFalse);
+
+		// Quokka: a request may act on another of the person's mailboxes without switching to it (folders,
+		// identities, sending from it), naming it in QuokkaAccount; only the main one and the added ones
+		$sQuokkaAccount = \trim((string) $this->GetActionParam('QuokkaAccount', ''));
+		if ('' !== $sQuokkaAccount && $this->oMainAuthAccount) {
+			return $this->quokkaAccount($sQuokkaAccount);
+		}
+		return $this->quokkaOpenAccount($bThrowExceptionOnFalse);
+	}
+
+	/** Quokka: the mailbox open in the page (whatever the request names), e.g. where the attachments were uploaded */
+	public function quokkaOpenAccount(bool $bThrowExceptionOnFalse = true): ?Account
 	{
 		$this->getMainAccountFromToken($bThrowExceptionOnFalse);
 

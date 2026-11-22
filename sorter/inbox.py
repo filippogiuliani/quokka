@@ -15,6 +15,7 @@ Quokka asks over the same signed internal service as the notifications (push.py)
            missing: [not read by the sorter], pending: [not indexed yet]}
   POST /search {accounts, text}  every folder of every mailbox, at any date, on the mail servers themselves (as Outlook
         searches): → {messages: [... with their folder and its role], failed: [mailboxes that did not answer]}
+  POST /folders {account}   that mailbox's folders read again at once (after Quokka created, renamed or deleted one)
   POST /act   {account, role? | in?, uids, action, folder?}   in: the folder by its name (a result of /search)
         action: seen | unseen | flag | unflag (on the server and in the index), opened (the index only: Quokka marks
         it read itself when it opens it), archive | trash (moved to `folder`, else the server's special-use folder)
@@ -303,6 +304,34 @@ def handle_list(service, data):
         'missing': [a for a in asked if not watched[a]],
         'pending': [a for a in asked if watched[a] and watched[a] not in indexed],
     }
+
+
+def handle_refresh(service, data, connect):
+    """POST /folders {account}: the folder tree of one mailbox read again at once (Quokka changed its folders),
+    without waiting for the next round; → {folders}"""
+    account = service.watched(data.get('account'))
+    acc = next((a for a in service.accounts() if a['user'] == account), None) if account else None
+    if not acc or connect is None:
+        return 404, {'error': 'not_watched'}
+    try:
+        imap = connect(acc)
+    except Exception as e:
+        log.warning('%s: %s: %s', account, type(e).__name__, e)
+        return 502, {'error': 'imap'}
+    try:
+        tree = folder_tree(imap, system_folders(imap))
+    except Exception as e:
+        log.warning('%s: the folders: %s: %s', account, type(e).__name__, e)
+        return 502, {'error': 'imap'}
+    finally:
+        try:
+            imap.logout()
+        except Exception:
+            pass
+    with service.conn() as c:
+        init(c)
+        save_folders(c, account, tree)
+    return 200, {'folders': tree}
 
 
 def _int(value, default):

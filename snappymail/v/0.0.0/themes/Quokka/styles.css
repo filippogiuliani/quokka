@@ -1493,3 +1493,74 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 #V-MailMessageList .listEmptyMessage::after { content: ""; position: absolute; top: 98px; left: 50%; width: 28px; height: 28px; margin-left: -14px; background-color: var(--fm-muted); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M22 12h-6l-2 3h-4l-2-3H2%22/%3E%3Cpath d=%22M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M22 12h-6l-2 3h-4l-2-3H2%22/%3E%3Cpath d=%22M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z%22/%3E%3C/svg%3E") center / contain no-repeat; }
 /* the folders of the mailbox shown: the arrow of the subfolders first, then the folder, as in the other mailboxes */
 .b-folders .b-folders-user a > i.e-collapsed-sign { order: -1; flex: 0 0 14px; width: 14px; margin: 0 2px 0 -6px; text-align: center; font-size: 100%; }
+
+/* ---------- Settings → Accounts: each mailbox a card that opens on its identities and folders ---------- */
+#V-SettingsPane .quokka-boxes { display: flex; flex-direction: column; gap: 10px; }
+#V-SettingsPane .quokka-boxes > .legend { margin-bottom: 0 !important; }
+#V-SettingsPane .quokka-boxes > .quokka-intro { margin: 0; color: var(--fm-muted); font-size: 14px; }
+#V-SettingsPane .quokka-boxes > div:has(> .e-checkbox) { padding: 12px 16px; background: var(--fm-surface); border: 1px solid var(--fm-line); border-radius: 12px; }
+.quokka-acc { background: var(--fm-surface); border: 1px solid var(--fm-line); border-radius: 12px; overflow: hidden; }
+.quokka-acc-head { display: flex; align-items: center; gap: 14px; padding: 0 16px 0 0; min-height: 56px; }
+.quokka-acc-toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; align-self: stretch; padding: 0 0 0 14px;
+	color: var(--fm-ink) !important; text-decoration: none !important; font-weight: 600; font-size: 15px; }
+.quokka-acc-toggle:hover { background: var(--fm-surface-2); }
+.quokka-acc-toggle .box-chevron { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--fm-muted); transition: transform .15s; }
+.quokka-acc.is-open .quokka-acc-toggle .box-chevron { transform: rotate(90deg); }
+.quokka-acc-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quokka-acc .quokka-main-tag, .quokka-open-tag { flex-shrink: 0; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--fm-primary-soft); color: var(--fm-primary); }
+.quokka-open-tag { background: var(--fm-surface-2); color: var(--fm-muted); }
+.quokka-acc-link, .quokka-box-act { font-size: 13px; color: var(--fm-muted) !important; text-decoration: none !important; white-space: nowrap; }
+.quokka-acc-link:hover, .quokka-box-act:hover { color: var(--fm-primary) !important; }
+.quokka-acc-delete { color: var(--fm-muted) !important; text-decoration: none !important; font-size: 14px; white-space: nowrap; }
+.quokka-acc-delete:hover, .quokka-acc-delete.is-asking { color: var(--fm-danger) !important; }
+.quokka-acc-delete { display: inline-flex; align-items: center; gap: 6px; }
+.quokka-acc-delete svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.quokka-acc-delete.is-asking { font-size: 13px; font-weight: 600; }
+.quokka-acc-body { border-top: 1px solid var(--fm-line); padding: 6px 18px 18px; display: flex; flex-direction: column; gap: 8px; }
+.quokka-acc-body h4 { margin: 14px 0 0; font-size: 14px; font-weight: 700; color: var(--fm-ink); }
+.quokka-acc-body .quokka-note { margin: 0; color: var(--fm-muted); font-size: 13px; }
+.quokka-box-error { color: var(--fm-danger); font-size: 14px; padding-top: 8px; }
+.quokka-box-loading { padding: 16px 0; color: var(--fm-muted); }
+.quokka-box-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--fm-line); border-radius: 10px; }
+.quokka-box-list:empty { display: none; }
+.quokka-box-list li { display: flex; align-items: center; gap: 14px; min-height: 46px; padding: 0 14px; box-sizing: border-box; }
+.quokka-box-list li + li { border-top: 1px solid var(--fm-line); }
+.quokka-box-item { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fm-ink) !important; text-decoration: none !important; font-size: 14px; }
+a.quokka-box-item:hover { color: var(--fm-primary) !important; }
+.quokka-box-item.is-hidden { color: var(--fm-muted) !important; }
+.quokka-box-input { flex: 1; min-width: 120px; height: 36px; box-sizing: border-box; margin: 0 !important; }
+.quokka-box-list .btn { height: 34px; }
+.quokka-box-add { align-self: flex-start; height: 38px; display: inline-flex !important; align-items: center; }
+.quokka-box-new { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0; }
+.quokka-box-new label { margin: 0; color: var(--fm-muted); font-size: 13px; }
+.quokka-box-new select { min-width: 180px; height: 38px; margin: 0; }
+.quokka-box-new .quokka-box-input { height: 38px; max-width: 280px; }
+.quokka-box-new .btn { height: 38px; }
+.quokka-box-system { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 16px; }
+.quokka-box-system label { display: flex; flex-direction: column; gap: 4px; margin: 0; font-size: 13px; color: var(--fm-muted); }
+.quokka-box-system select { width: 100%; height: 38px; margin: 0; }
+@media screen and (max-width: 1023px) {
+	.quokka-acc-head { flex-wrap: wrap; gap: 4px 14px; padding-bottom: 8px; }
+	.quokka-acc-toggle { flex-basis: 100%; min-height: 52px; }
+	.quokka-acc-toggle + .quokka-acc-link { margin-left: 42px; }
+	.quokka-acc-body { padding: 4px 14px 16px; }
+	.quokka-box-new .quokka-box-input, .quokka-box-new select { flex: 1 1 100%; max-width: none; }
+}
+
+/* ---------- writing: "Attach files" like the other buttons, the attached files as quiet cards ---------- */
+#V-PopupsCompose #composeUploadButton { background: var(--fm-surface) !important; background-image: none !important; box-shadow: none !important;
+	border: 1px solid var(--fm-line) !important; border-radius: 8px !important; height: 34px; color: var(--fm-ink) !important; text-shadow: none !important; }
+#V-PopupsCompose #composeUploadButton:hover { background: var(--fm-surface-2) !important; }
+#V-PopupsCompose .attachmentList { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 24px; margin: 0; }
+#V-PopupsCompose .attachmentList .attachmentItem { margin: 0 !important; width: 240px; display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+	border: 1px solid var(--fm-line) !important; border-radius: 10px !important; background: var(--fm-surface) !important; box-shadow: none !important; }
+#V-PopupsCompose .attachmentList .attachmentItem.error { border-color: var(--fm-danger) !important; }
+#V-PopupsCompose .attachmentList .attachmentIcon { position: relative; flex-shrink: 0; width: 36px; height: 36px; margin: 0 !important; border: 0 !important;
+	border-radius: 8px; background: var(--fm-primary-soft) !important; color: var(--fm-primary); display: grid; place-items: center; }
+#V-PopupsCompose .attachmentList .attachmentIcon .iconMain { font-size: 18px; color: inherit; margin: 0; }
+#V-PopupsCompose .attachmentList .attachmentNameParent { flex: 1; min-width: 0; margin: 0 !important; padding: 0 !important; border: 0 !important; background: none !important; }
+#V-PopupsCompose .attachmentList .attachmentName { font-size: 13px; color: var(--fm-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#V-PopupsCompose .attachmentList .attachmentSize { font-size: 12px; color: var(--fm-muted); }
+#V-PopupsCompose .attachmentList .close { color: var(--fm-muted); opacity: 1; text-shadow: none; font-size: 18px; margin: 0 !important; }
+#V-PopupsCompose .attachmentList .close:hover { color: var(--fm-danger); }
+#V-PopupsCompose .b-attachment-place { border-radius: 12px; border: 1.5px dashed var(--fm-line-strong) !important; color: var(--fm-muted); }

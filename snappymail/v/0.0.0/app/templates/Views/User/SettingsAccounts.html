@@ -1,80 +1,114 @@
-<div class="quokka-cols">
-<div class="quokka-section" data-bind="visible: allowAdditionalAccount">
+<!-- Quokka: each mailbox as a card that opens on its own things (identities, folders, system folders);
+	everything else in Settings is the same for all the mailboxes -->
+<div class="quokka-boxes">
 	<div class="legend">
-		<span data-i18n="SETTINGS_ACCOUNTS/LEGEND_ACCOUNTS"></span>
-		&nbsp;&nbsp;&nbsp;
-		<i class="icon-spinner" style="margin-top: 5px" data-bind="visible: loading"></i>
+		<span data-i18n="QUOKKA/BOX_TITLE"></span>
+		<i class="icon-spinner" data-bind="visible: loading"></i>
 	</div>
-	<div data-bind="component: {
+	<p class="quokka-intro" data-i18n="QUOKKA/BOX_INTRO"></p>
+	<div data-bind="visible: allowAdditionalAccount, component: {
 		name: 'Checkbox',
 		params: {
 			label: 'SETTINGS_ACCOUNTS/SHOW_UNREAD',
 			value: showUnread
 		}
 	}"></div>
-	<a class="btn" data-bind="click: addNewAccount">
-		<i class="icon-user-add"></i>
+	<!-- ko foreach: boxes -->
+	<div class="quokka-acc" data-bind="css: {'is-open': open}">
+		<div class="quokka-acc-head">
+			<a href="#" class="quokka-acc-toggle" data-bind="click: $root.toggleBox, attr: {'aria-expanded': open() ? 'true' : 'false'}">
+				<svg class="box-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+				<span class="quokka-acc-name" data-bind="text: account.displayName"></span>
+				<!-- ko ifnot: account.isAdditional -->
+				<span class="quokka-main-tag" data-bind="text: $root.tr('QUOKKA/MAIN_ACCOUNT')"></span>
+				<!-- /ko -->
+				<!-- ko if: $root.isOpenMailbox($data) -->
+				<span class="quokka-open-tag" data-bind="text: $root.tr('QUOKKA/BOX_OPEN_NOW')"></span>
+				<!-- /ko -->
+			</a>
+			<!-- ko if: account.isAdditional -->
+			<a href="#" class="quokka-acc-link" data-bind="click: () => $root.editAccount(account), text: $root.tr('QUOKKA/BOX_EDIT_ACCOUNT')"></a>
+			<a href="#" class="quokka-acc-link" data-bind="click: () => $root.makeMain(account), text: $root.tr('QUOKKA/MAKE_MAIN')"></a>
+			<a href="#" class="quokka-acc-delete" data-bind="css: {'is-asking': account.askDelete},
+				click: () => account.askDelete() ? $root.deleteAccount(account) : $root.accountForDeletion(account),
+				attr: {title: $root.tr('GLOBAL/DELETE')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg><span data-bind="visible: account.askDelete(), text: $root.tr('GLOBAL/ARE_YOU_SURE')"></span></a>
+			<!-- /ko -->
+		</div>
+		<!-- ko if: open -->
+		<div class="quokka-acc-body">
+			<div class="quokka-box-error" data-bind="visible: error, text: error"></div>
+			<div class="quokka-box-loading" data-bind="visible: loading"><i class="icon-spinner"></i></div>
+
+			<!-- ko ifnot: loading -->
+			<h4 data-bind="text: $root.tr('SETTINGS_ACCOUNTS/LEGEND_IDENTITIES')"></h4>
+			<p class="quokka-note" data-bind="text: $root.tr('QUOKKA/BOX_IDENTITIES_NOTE')"></p>
+			<ul class="quokka-box-list" data-bind="foreach: identities">
+				<li>
+					<a href="#" class="quokka-box-item" data-bind="click: () => $root.editIdentity($parent, $data)">
+						<span data-bind="text: $data.toString()"></span>
+						<!-- ko ifnot: id -->
+						<span class="quokka-note" data-bind="text: '(' + $root.tr('GLOBAL/DEFAULT') + ')'"></span>
+						<!-- /ko -->
+					</a>
+					<!-- ko if: id -->
+					<a href="#" class="quokka-acc-delete" data-bind="css: {'is-asking': askDelete},
+						click: () => $root.deleteIdentity($parent, $data),
+						attr: {title: $root.tr('GLOBAL/DELETE')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg><span data-bind="visible: askDelete(), text: $root.tr('GLOBAL/ARE_YOU_SURE')"></span></a>
+					<!-- /ko -->
+				</li>
+			</ul>
+			<a href="#" class="btn quokka-box-add" data-bind="click: () => $root.editIdentity($data), text: '+ ' + $root.tr('SETTINGS_ACCOUNTS/BUTTON_ADD_IDENTITY')"></a>
+
+			<h4 data-bind="text: $root.tr('QUOKKA/BOX_FOLDERS')"></h4>
+			<p class="quokka-note" data-bind="text: $root.tr('QUOKKA/BOX_FOLDERS_NOTE')"></p>
+			<ul class="quokka-box-list quokka-box-folders" data-bind="foreach: folders">
+				<li data-bind="style: {paddingLeft: (14 + depth * 22) + 'px'}">
+					<!-- ko ifnot: renaming -->
+					<span class="quokka-box-item" data-bind="text: name, css: {'is-hidden': !subscribed() && !system}"></span>
+					<!-- ko ifnot: system -->
+					<a href="#" class="quokka-box-act" data-bind="click: () => $root.toggleSubscribed($parent, $data),
+						text: subscribed() ? $root.tr('QUOKKA/BOX_HIDE') : $root.tr('QUOKKA/BOX_SHOW'),
+						attr: {title: $root.tr('SETTINGS_FOLDERS/HELP_SHOW_HIDE_FOLDER')}"></a>
+					<a href="#" class="quokka-box-act" data-bind="click: () => $root.startRename($parent, $data), text: $root.tr('QUOKKA/BOX_RENAME')"></a>
+					<a href="#" class="quokka-acc-delete" data-bind="css: {'is-asking': askDelete},
+						click: () => $root.deleteFolder($parent, $data),
+						attr: {title: $root.tr('SETTINGS_FOLDERS/HELP_DELETE_FOLDER')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg><span data-bind="visible: askDelete(), text: $root.tr('GLOBAL/ARE_YOU_SURE')"></span></a>
+					<!-- /ko -->
+					<!-- /ko -->
+					<!-- ko if: renaming -->
+					<input type="text" class="quokka-box-input" data-bind="textInput: rename, hasFocus: true,
+						event: {keydown: (d, e) => $root.renameKey($parent, d, e)}">
+					<a href="#" class="btn" data-bind="click: () => $root.renameFolder($parent, $data), text: $root.tr('GLOBAL/SAVE')"></a>
+					<a href="#" class="quokka-box-act" data-bind="click: () => renaming(false), text: $root.tr('GLOBAL/CANCEL')"></a>
+					<!-- /ko -->
+				</li>
+			</ul>
+			<form class="quokka-box-new" data-bind="submit: () => $root.createFolder($data)">
+				<input type="text" class="quokka-box-input" data-bind="textInput: newName, attr: {placeholder: $root.tr('POPUPS_CREATE_FOLDER/TITLE_CREATE_FOLDER')}">
+				<label data-bind="text: $root.tr('QUOKKA/BOX_INSIDE')"></label>
+				<select data-bind="options: parents, optionsText: 'name', optionsValue: 'id', value: newParent"></select>
+				<button class="btn" data-bind="enable: newName().trim() && !busy(), text: $root.tr('POPUPS_CREATE_FOLDER/BUTTON_CREATE')"></button>
+			</form>
+
+			<h4 data-bind="text: $root.tr('SETTINGS_FOLDERS/BUTTON_SYSTEM')"></h4>
+			<div class="quokka-box-system">
+				<label><span data-bind="text: $root.tr('FOLDER_LIST/SENT_NAME')"></span>
+					<select data-bind="options: choices, optionsText: 'name', optionsValue: 'id', value: system.sent"></select></label>
+				<label><span data-bind="text: $root.tr('FOLDER_LIST/DRAFTS_NAME')"></span>
+					<select data-bind="options: choices, optionsText: 'name', optionsValue: 'id', value: system.drafts"></select></label>
+				<label><span data-bind="text: $root.tr('FOLDER_LIST/SPAM_NAME')"></span>
+					<select data-bind="options: choices, optionsText: 'name', optionsValue: 'id', value: system.junk"></select></label>
+				<label><span data-bind="text: $root.tr('FOLDER_LIST/TRASH_NAME')"></span>
+					<select data-bind="options: choices, optionsText: 'name', optionsValue: 'id', value: system.trash"></select></label>
+				<label><span data-bind="text: $root.tr('FOLDER_LIST/ARCHIVE_NAME')"></span>
+					<select data-bind="options: choices, optionsText: 'name', optionsValue: 'id', value: system.archive"></select></label>
+			</div>
+			<!-- /ko -->
+		</div>
+		<!-- /ko -->
+	</div>
+	<!-- /ko -->
+	<a class="btn quokka-box-add" data-bind="visible: allowAdditionalAccount, click: addNewAccount">
 		<span data-i18n="SETTINGS_ACCOUNTS/BUTTON_ADD_ACCOUNT"></span>
 	</a>
-	<table class="table table-hover list-table accounts-list" data-bind="i18nUpdate: accounts">
-		<tbody data-bind="foreach: accounts">
-			<tr draggable="true" data-bind="sortableItem: { list: $root.accounts, afterMove: $root.accountsAndIdentitiesAfterMove }">
-				<td>
-					<i class="fontastic drag-handle">⬍</i>
-				</td>
-				<!-- ko if:!isAdditional() -->
-				<td colspan="4">
-					<span data-bind="text: displayName"></span>
-					<span class="quokka-main-tag" data-i18n="QUOKKA/MAIN_ACCOUNT"></span>
-				</td>
-				<!-- /ko -->
-				<!-- ko if:isAdditional -->
-				<td class="e-action">
-					<span class="account-name" data-bind="text: displayName"></span>
-				</td>
-				<td class="quokka-make-main-cell">
-					<a class="quokka-make-main" href="#" data-bind="click: function(oAccount) { $root.makeMain(oAccount); }" data-i18n="QUOKKA/MAKE_MAIN"></a>
-				</td>
-<!--
-				<td><span class="icon-import" data-bind="click: importAll"></span></td>
--->
-				<td>
-					<a class="btn btn-small btn-danger button-confirm-delete" data-bind="css: {'delete-access': askDelete}, click: function(oAccount) { $root.deleteAccount(oAccount); }"
-						data-i18n="GLOBAL/ARE_YOU_SURE"></a>
-				</td>
-				<td>
-					<span class="delete fontastic" data-bind="visible: !askDelete(), click: function (oAccount) { $root.accountForDeletion(oAccount); }">🗑</span>
-				</td>
-				<!-- /ko -->
-			</tr>
-		</tbody>
-	</table>
-</div>
-<div class="quokka-section" data-bind="visible: allowIdentities">
-	<div class="legend" data-i18n="SETTINGS_ACCOUNTS/LEGEND_IDENTITIES"></div>
-	<a class="btn" data-bind="click: addNewIdentity">
-		<i class="icon-user-add"></i>
-		<span data-i18n="SETTINGS_ACCOUNTS/BUTTON_ADD_IDENTITY"></span>
-	</a>
-	<table class="table table-hover list-table identities-list" data-bind="i18nUpdate: identities">
-		<tbody data-bind="foreach: identities">
-			<tr draggable="true" data-bind="attr: {'data-identity-id': id}, sortableItem: { list: $root.identities, afterMove: $root.accountsAndIdentitiesAfterMove }">
-				<td>
-					<i class="fontastic drag-handle">⬍</i>
-				</td>
-				<td class="e-action">
-					<span class="identity-name" data-bind="text: $data"></span>
-					<span class="identity-default" data-i18n="GLOBAL/DEFAULT"></span>
-				</td>
-				<td>
-					<a class="btn btn-small btn-danger button-confirm-delete" data-bind="visible: id, css: {'delete-access': askDelete}, click: function(oIdentity) { $root.deleteIdentity(oIdentity); }"
-						data-i18n="GLOBAL/ARE_YOU_SURE"></a>
-				</td>
-				<td>
-					<span class="delete fontastic" data-bind="visible: !askDelete() && id(), click: function (oIdentity) { $root.identityForDeletion(oIdentity); }">🗑</span>
-				</td>
-			</tr>
-		</tbody>
-	</table>
-</div>
 </div>

@@ -245,7 +245,7 @@ export class MailFolderList extends AbstractViewLeft {
 	}
 
 	configureFolders() {
-		hasher.setHash(settings('folders'));
+		hasher.setHash(settings('accounts'));     // Quokka: the folders of each mailbox are there
 	}
 
 	contactsClick() {

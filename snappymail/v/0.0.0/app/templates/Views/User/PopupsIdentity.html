@@ -127,7 +127,7 @@
 					autocomplete="off" autocorrect="off" autocapitalize="off"
 					data-bind="value: bcc">
 			</div>
-			<div class="control-group">
+			<div class="control-group" data-bind="visible: !$root.quokkaOther()">
 				<label data-i18n="FOLDER_LIST/SENT_NAME"></label>
 				<select name="sentFolder" data-bind="options: $root.folderSelectList, value: sentFolder,
 					optionsText: 'name', optionsValue: 'id', optionsAfterRender: $root.defaultOptionsAfterRender"></select>

@@ -13,7 +13,9 @@ import { showScreenPopup } from 'Knoin/Knoin';
 
 import { AccountPopupView } from 'View/Popup/Account';
 import { AskPopupView } from 'View/Popup/Ask';
-import { i18n, getNotification } from 'Common/Translator';
+import { i18n, getNotification, translateTrigger } from 'Common/Translator';
+import { koComputable } from 'External/ko';
+import * as Boxes from 'Settings/User/Boxes';
 
 export class UserSettingsAccounts /*extends AbstractViewSettings*/ {
 	constructor() {
@@ -27,6 +29,18 @@ export class UserSettingsAccounts /*extends AbstractViewSettings*/ {
 
 		this.accountForDeletion = ko.observable(null).askDeleteHelper();
 		this.identityForDeletion = ko.observable(null).askDeleteHelper();
+
+		// Quokka: each mailbox with its identities and folders (Settings/User/Boxes.js)
+		this.boxes = koComputable(() => AccountUserStore().map(account => Boxes.boxOf(account)));
+		this.tr = key => (translateTrigger(), i18n(key));
+		this.isOpenMailbox = box => box.email.toLowerCase() === (rl.settings.get('Email') || '').toLowerCase();
+		['toggleBox', 'createFolder', 'startRename', 'renameFolder', 'deleteFolder', 'toggleSubscribed',
+			'editIdentity', 'deleteIdentity'].forEach(name => this[name] = Boxes[name]);
+		this.renameKey = (box, folder, event) => {
+			'Enter' === event.key && Boxes.renameFolder(box, folder);
+			'Escape' === event.key && folder.renaming(false);
+			return true;
+		};
 
 		this.showUnread = SettingsUserStore.showUnreadCount;
 		SettingsUserStore.showUnreadCount.subscribe(value => Remote.saveSetting('ShowUnreadCount', value));

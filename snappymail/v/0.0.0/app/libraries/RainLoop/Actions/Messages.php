@@ -174,6 +174,20 @@ trait Messages
 		$sSaveFolder = $this->GetActionParam('saveFolder', '');
 		$aDraftInfo = $this->GetActionParam('draftInfo', null);
 
+		// Quokka: sent from another of the person's mailboxes (QuokkaAccount, an identity of that mailbox): the files
+		// were uploaded in the mailbox open in the page, and go with the email
+		$oOpenAccount = $this->quokkaOpenAccount(false);
+		if ($oOpenAccount && \strtolower($oOpenAccount->Email()) !== \strtolower($oAccount->Email())) {
+			foreach (\array_keys((array) $this->GetActionParam('attachments', [])) as $sTempName) {
+				$rFile = $this->FilesProvider()->GetFile($oOpenAccount, (string) $sTempName);
+				if (\is_resource($rFile)) {
+					$this->FilesProvider()->PutFile($oAccount, (string) $sTempName, $rFile);
+					\fclose($rFile);
+					$this->FilesProvider()->Clear($oOpenAccount, (string) $sTempName);
+				}
+			}
+		}
+
 		$oMessage = $this->buildMessage($oAccount, false);
 
 		$this->Plugins()->RunHook('filter.send-message', array($oMessage));

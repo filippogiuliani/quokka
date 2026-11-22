@@ -238,6 +238,9 @@ class Service:
         if path == '/act':
             import inbox
             return inbox.handle_act(self, data, self.connect)
+        if path == '/folders':
+            import inbox
+            return inbox.handle_refresh(self, data, self.connect)
         if path == '/search':
             import inbox
             return inbox.handle_search(self, data, self.connect, self.parse, self.categories)

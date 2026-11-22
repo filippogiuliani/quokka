@@ -577,3 +577,6 @@ export class FolderModel extends AbstractModel {
 		);
 	}
 }
+
+/** Quokka: the role a folder has by its usual name (Settings → Accounts, folders of any mailbox) */
+export const quokkaRoleByName = folder => roleByName(folder);

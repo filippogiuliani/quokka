@@ -91,6 +91,23 @@ const
 		}
 	},
 
+	// Quokka: in "From", the identities of the person's other mailboxes too; an email from one of them leaves
+	// from that mailbox (its server, its Sent folder), without switching to it
+	otherIdentities = ko.observableArray([]),
+	loadOtherIdentities = () => {
+		const open = (rl.settings.get('Email') || '').toLowerCase(),
+			others = AccountUserStore().map(account => account.email).filter(email => email.toLowerCase() !== open);
+		Promise.all(others.map(email => new Promise(resolve => Remote.request('AccountsAndIdentities', (iError, oData) =>
+			resolve(iError ? [] : (oData?.Result?.Identities || []).map(json => {
+				const identity = IdentityModel.reviveFromJson(json);
+				identity && (identity.quokkaAccount = email);
+				return identity;
+			}).filter(v => v)), { QuokkaAccount: email }))))
+		.then(lists => otherIdentities(lists.flat()));
+	},
+	sentFolderOf = email => new Promise(resolve => rl.pluginRemoteRequest((iError, oData) =>
+		resolve(iError ? '' : oData?.Result?.sentFolder || ''), 'QuokkaBoxInfo', { QuokkaAccount: email, detect: 1 })),
+
 	findIdentity = addresses => {
 		addresses = addresses.map(item => item.email);
 		return IdentityUserStore.find(item => addresses.includes(item.email));
@@ -341,9 +358,9 @@ export class ComposePopupView extends AbstractViewPopup {
 			signOptionsText: () => this.signOptions().map(o => o[0]).join(', '),
 
 			identitiesOptions: () =>
-				IdentityUserStore.map(item => ({
+				[...IdentityUserStore(), ...otherIdentities()].map(item => ({
 					item: item,
-					optValue: item.id(),
+					optValue: (item.quokkaAccount || '') + '|' + item.id(),
 					optText: item
 				})),
 
@@ -490,7 +507,8 @@ export class ComposePopupView extends AbstractViewPopup {
 		}
 
 		if (!this.emptyToError() && !this.attachmentsInErrorError() && !this.attachmentsInProcessError()) {
-			const sSentFolder = this.sentFolder();
+			const other = this.currentIdentity()?.quokkaAccount || '',
+				sSentFolder = other ? null : this.sentFolder();
 			if ('' === sSentFolder) {
 				showScreenPopup(FolderSystemPopupView, [FolderType.Sent]);
 			} else {
@@ -559,6 +577,9 @@ export class ComposePopupView extends AbstractViewPopup {
 											}
 										}
 									}
+									// Quokka: sent from another mailbox: its draft was in this one's Drafts
+									params.QuokkaAccount && params.quokkaDraft?.uid && Remote.request('MessageDelete', null,
+										{ folder: params.quokkaDraft.folder, uids: String(params.quokkaDraft.uid) });
 									this.close();
 								}
 								setFolderETag(this.draftsFolder(), '');
@@ -573,7 +594,13 @@ export class ComposePopupView extends AbstractViewPopup {
 						);
 					};
 
-					this.getMessageRequestParams(sSentFolder)
+					(other
+						// another mailbox: its own Sent folder; the draft and the replied email are in this one
+						? sentFolderOf(other).then(sent => this.getMessageRequestParams(sent || null)).then(params => {
+							params.quokkaDraft = { folder: params.messageFolder, uid: params.messageUid };
+							return Object.assign(params, { QuokkaAccount: other, messageFolder: '', messageUid: 0, draftInfo: null });
+						})
+						: this.getMessageRequestParams(sSentFolder))
 					.then(sendMessage)
 					.catch(sendError);
 				} catch (e) {
@@ -792,6 +819,7 @@ export class ComposePopupView extends AbstractViewPopup {
 	 */
 	onShow(type, oMessageOrArray, aToEmails, aCcEmails, aBccEmails, sCustomSubject, sCustomPlainText) {
 		this.autosaveStart();
+		loadOtherIdentities();
 
 		this.viewModelDom.dataset.wysiwyg = SettingsUserStore.editorDefaultType();
 

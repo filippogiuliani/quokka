@@ -601,3 +601,8 @@ def test_the_folders_of_every_mailbox_for_the_column(tmp_path):
     assert [f['name'] for f in out['folders']['me@example.it']][:3] == ['INBOX', 'Posta inviata', 'ARCHIVED']
     assert 'folders' not in svc.handle('/inbox', {'accounts': ['me@example.it']})[1] or \
         svc.handle('/inbox', {'accounts': ['me@example.it']})[1]['folders'] == {}
+    # Quokka changed the folders of that mailbox: read again at once, not at the next round
+    svc.connect = lambda acc: Imap()
+    out = svc.handle('/folders', {'account': 'ME@example.it'})
+    assert out[0] == 200 and [f['name'] for f in out[1]['folders']][-1] == 'Lavoro.Clienti'
+    assert svc.handle('/folders', {'account': 'nobody@example.it'})[0] == 404

@@ -660,6 +660,18 @@
 		"UnknownError": "Unknown error"
 	},
 	"QUOKKA": {
+		"BOX_TITLE": "Mailboxes",
+		"BOX_INTRO": "Open a mailbox for its identities, its folders and its system folders. All the other settings are the same for every mailbox.",
+		"BOX_OPEN_NOW": "open now",
+		"BOX_EDIT_ACCOUNT": "Edit",
+		"BOX_IDENTITIES_NOTE": "The name, address and signature you write with from this mailbox. More identities when the mailbox also receives for other addresses.",
+		"BOX_FOLDERS": "Folders",
+		"BOX_FOLDERS_NOTE": "This mailbox's folders on the mail server. Hidden ones are not in the column. Only an empty folder can be deleted.",
+		"BOX_HIDE": "Hide",
+		"BOX_SHOW": "Show",
+		"BOX_RENAME": "Rename",
+		"BOX_INSIDE": "inside",
+		"BOX_TOP_LEVEL": "(none, top level)",
 		"SEARCH_FOLDER_HIDDEN": "The folder \"%FOLDER%\" is hidden in Quokka: show it in Settings → Folders to open this email.",
 		"SEARCH_EVERYWHERE_BUSY": "Searching every mailbox and every folder, older emails too…",
 		"SEARCH_EVERYWHERE_DONE": "%COUNT% found in every mailbox and folder.",

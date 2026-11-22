@@ -59,6 +59,8 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addJsonHook('QuokkaPushEvery', 'JsonPushEvery');
 		$this->addJsonHook('QuokkaPushTest', 'JsonPushTest');
 		$this->addJsonHook('QuokkaOpenAccount', 'JsonOpenAccount');
+		$this->addJsonHook('QuokkaBoxInfo', 'JsonBoxInfo');
+		$this->addJsonHook('QuokkaBoxRefresh', 'JsonBoxRefresh');
 		// "All mailboxes": the INBOX of every mailbox of the person in one list (the sorter's index, sorter/inbox.py)
 		$this->addJsonHook('QuokkaUnifiedList', 'JsonUnifiedList');
 		$this->addJsonHook('QuokkaUnifiedAct', 'JsonUnifiedAct');
@@ -688,6 +690,55 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			$bOk = false;   // not one of this person's mailboxes, or it does not open: stay where we are
 		}
 		return $this->jsonResponse(__FUNCTION__, array('switched' => $bOk));
+	}
+
+	// ---------- Settings → Accounts: each mailbox with its own things, without switching to it ----------
+	// The mailbox is the one named in QuokkaAccount (see Actions/UserAuth.php getAccountFromToken), else the open one.
+
+	/** The folders this mailbox uses as Sent, Drafts, Spam, Trash and Archive ('' when not chosen) */
+	public function JsonBoxInfo()
+	{
+		$oAccount = \RainLoop\Api::Actions()->getAccountFromToken();
+		$oSettings = \RainLoop\Api::Actions()->SettingsProvider(true)->Load($oAccount);
+		$aOut = array('email' => $oAccount->Email());
+		foreach (array('sent' => 'SentFolder', 'drafts' => 'DraftsFolder', 'junk' => 'JunkFolder',
+			'trash' => 'TrashFolder', 'archive' => 'ArchiveFolder') as $sKey => $sConf) {
+			$aOut[$sKey] = (string) $oSettings->GetConf($sConf, '');
+		}
+		// detect: 1, for sending from it: where the sent email goes when none was chosen (as the server or the name says)
+		$aOut['sentFolder'] = '__UNUSE__' === $aOut['sent'] ? '' : $aOut['sent'];
+		if ('' === $aOut['sent'] && $this->jsonParam('detect', 0)) {
+			try {
+				$oActions = \RainLoop\Api::Actions();
+				if (!$oActions->ImapClient()->IsLoggined()) {
+					$oAccount->ImapConnectAndLogin($oActions->Plugins(), $oActions->ImapClient(), $oActions->Config());
+				}
+				$aNames = array('sent', 'sent items', 'sent messages', 'sent mail', 'inviata', 'inviate', 'posta inviata',
+					'elementi inviati', 'messaggi inviati', 'inbox.sent', 'inbox.inviata', 'inbox.posta inviata');
+				$sByName = '';
+				foreach ($oActions->ImapClient()->FolderList('', '*') as $oFolder) {
+					if ('sent' === $oFolder->Role()) {
+						$aOut['sentFolder'] = $oFolder->FullName;
+						break;
+					}
+					if (!$sByName && \in_array(\mb_strtolower($oFolder->FullName), $aNames, true)) {
+						$sByName = $oFolder->FullName;
+					}
+				}
+				$aOut['sentFolder'] = $aOut['sentFolder'] ?: $sByName;
+			} catch (\Throwable $oException) {
+				\error_log('Quokka: the Sent folder of ' . $aOut['email'] . ': ' . $oException->getMessage());
+			}
+		}
+		return $this->jsonResponse(__FUNCTION__, $aOut);
+	}
+
+	/** Its folders changed: the sorter reads them again now, for the column (else at its next round) */
+	public function JsonBoxRefresh()
+	{
+		$oAccount = \RainLoop\Api::Actions()->getAccountFromToken();
+		[$iStatus, $aOut] = self::sorter('/folders', array('account' => $oAccount->Email()), 30);
+		return $this->jsonResponse(__FUNCTION__, array('ok' => 200 === $iStatus));
 	}
 
 	// ---------- "All mailboxes": one list for all of a person's mailboxes ----------
