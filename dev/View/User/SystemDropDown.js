@@ -16,7 +16,7 @@ import { KeyboardShortcutsHelpPopupView } from 'View/Popup/KeyboardShortcutsHelp
 import { AccountPopupView } from 'View/Popup/Account';
 import { ContactsPopupView } from 'View/Popup/Contacts';
 
-import { fireEvent, stopEvent, SettingsCapa, registerShortcut, leftPanelDisabled, toggleLeftPanel } from 'Common/Globals';
+import { fireEvent, stopEvent, SettingsCapa, SettingsGet, registerShortcut, leftPanelDisabled, toggleLeftPanel } from 'Common/Globals';
 
 import Remote from 'Remote/User/Fetch';
 import { getNotification } from 'Common/Translator';
@@ -37,6 +37,8 @@ export class SystemDropDownUserView extends AbstractViewRight {
 
 		// Quokka: the phone's bottom menu (Mail, Categories, Archive, Settings), on every screen
 		this.inboxHref = ko.computed(() => (FolderUserStore.folderList(), mailBox(getFolderHashFromCacheList('INBOX'))));
+		// Quokka: Kooka's calendar in the bottom menu (when Kooka is there)
+		this.calendarUrl = SettingsGet('QuokkaCalendarUrl') || '';
 		this.archiveHref = ko.computed(() => {
 			const archive = FolderUserStore.archiveFolder();
 			return archive && archive !== UNUSED_OPTION_VALUE ? mailBox(getFolderHashFromCacheList(archive)) : '';

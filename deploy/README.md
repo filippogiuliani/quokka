@@ -93,6 +93,14 @@ from the sorter, which keeps an index of each INBOX (sorter/inbox.py, in `SORTER
 back it goes. Opening an email switches to its mailbox; star, read, archive and delete work from the list itself
 (archive and delete use the folders chosen for that mailbox in Settings → Folders, else the server's own).
 
+## 10. Calendar and invitations (Kooka)
+
+With `QUOKKA_KOOKA_URL` set, the column and the phone's bottom menu have **Calendario**, which opens Kooka's calendar.
+An email with an invitation (.ics) shows a card: the event at the local time (`TZ`), what the person already has in
+Kooka at that time, and **Accetta / Forse / Rifiuta** (saved in Kooka, and the answer goes to the organiser from the
+person's own mailbox) or **Aggiungi al calendario** for a plain .ics. Each person links Kooka once in Settings →
+Family apps with a Kooka API token (Kooka → Account → API tokens). Kooka must be a version with `/api/calendar/busy`.
+
 ## Updating
 
 `sh ~/push-images.sh quokka quokka-sorter`, then Portainer → the stack → Update, with "Re-pull image". Settings,

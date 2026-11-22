@@ -11,6 +11,11 @@ import { getFolderHashFromCacheList, getFolderInboxName } from 'Common/Cache';
 import { i18n, getNotification } from 'Common/Translator';
 
 import Remote from 'Remote/User/Fetch';
+import { MessageUserStore } from 'Stores/User/Message';
+import { SettingsUserStore } from 'Stores/User/Settings';
+import { ContactUserStore } from 'Stores/User/Contact';
+import { loadFolders, resetSystemFolders } from 'Model/FolderCollection';
+import { loadAccountsAndIdentities } from 'Common/UtilsUser';
 
 const
 	// one per mailbox, in the order of Settings → Accounts: told apart by lightness too, not only by hue
@@ -56,6 +61,19 @@ export const mailboxes = ko.computed(() => {
 export const hasMailboxes = ko.computed(() => 1 < mailboxes().length, null, deferred);
 
 export const unifiedTotal = ko.computed(() => Object.values(unifiedUnread()).reduce((s, n) => s + n, 0), null, deferred);
+
+/** The list of mailboxes in the column is open (closed: one line, the mailbox chosen) */
+export const mailboxesOpen = ko.observable(false);
+
+/** The mailbox chosen, as the closed line shows it: "All mailboxes" or one of them */
+export const chosenMailbox = ko.computed(() => {
+	if (unifiedOn()) {
+		return { all: true, letter: '∗', color: '', name: i18n('QUOKKA/ALL_MAILBOXES'), unread: unifiedTotal() };
+	}
+	const box = mailboxes().find(b => b.current());
+	return box ? { all: false, letter: box.letter, color: box.color, name: box.name, unread: box.unread() }
+		: { all: false, letter: '?', color: '', name: '', unread: 0 };
+}, null, deferred);
 
 /** The list shows all the mailboxes: chosen, more than one, in the inbox */
 export const unifiedView = ko.computed(() => unifiedOn() && hasMailboxes()
@@ -162,38 +180,77 @@ export const unifiedAct = (msg, action, done) => {
 };
 
 /** To another of the person's mailboxes, then that address (the page starts again there) */
-const switchTo = (email, hash) => {
+/**
+ * To another of the person's mailboxes without reloading the page: the server switches, then here its settings,
+ * folders, identities and contacts take the place of the other mailbox's, and `then` runs (e.g. open an email).
+ * Anything kept from the other mailbox (open email, cached bodies: uids repeat across mailboxes) goes.
+ * Should something fail half way, the page starts again in the new mailbox, as before.
+ */
+const switchTo = (email, then) => {
 	AccountUserStore.loading(true);
-	Remote.request('AccountSwitch', iError => {
+	Remote.request('AccountSwitch', (iError, oData) => {
 		if (iError) {
 			AccountUserStore.loading(false);
 			alert(getNotification(iError).replace('%EMAIL%', email));
-		} else {
-			location.hash = hash;
-			location.reload();
+			return;
 		}
+		try {
+			const { QuokkaToken, ...settings } = oData?.Result || {};
+			QuokkaToken && rl.settings.setToken(QuokkaToken);
+			Object.entries(settings).forEach(([key, value]) => rl.settings.set(key, value));
+			AccountUserStore.email(rl.settings.get('Email') || email);
+			MessageUserStore.message(null);
+			[...(MessageUserStore.bodiesDom()?.children || [])].forEach(el => el.remove());
+			MessagelistUserStore([]);
+			resetSystemFolders();
+			SettingsUserStore.init();
+			ContactUserStore.init();
+		} catch (e) {
+			console.error(e);
+			location.reload();
+			return;
+		}
+		loadFolders((ok, error) => {
+			AccountUserStore.loading(false);
+			if (!ok) {
+				console.error('Quokka: the folders of ' + email + ' did not load', error);
+				location.reload();
+				return;
+			}
+			loadAccountsAndIdentities();
+			setTimeout(then, 1);       // out of loadFolders' promise: a failure there is not a failure of the folders
+		});
 	}, { Email: email });
+};
+
+/** Go to a mailbox address; when it is the one already shown (another mailbox now), the list is read again */
+const go = hash => {
+	const bare = h => String(h || '').replace(/^[#/]+/, '');
+	if (bare(location.hash) === bare(hash)) {
+		MessagelistUserStore.reload(true, true);
+	}
+	hasher.setHash(hash);
 };
 
 const inboxHash = () => getFolderHashFromCacheList(getFolderInboxName());
 
 /** An email of the list: opened in its mailbox (switching to it when it is another one) */
 export const openUnified = msg => {
-	const go = () => lower(msg.account) === lower(AccountUserStore.email())
-		? hasher.setHash(mailBox(inboxHash(), 1, MessagelistUserStore.listSearch(), 0, msg.uid))
-		: switchTo(msg.account, '#/mailbox/INBOX/m' + msg.uid);
-	msg.unseen() ? unifiedAct(msg, 'opened', go) : go();
+	const open = () => go(mailBox(inboxHash(), 1, MessagelistUserStore.listSearch(), 0, msg.uid)),
+		start = () => lower(msg.account) === lower(AccountUserStore.email()) ? open() : switchTo(msg.account, open);
+	msg.unseen() ? unifiedAct(msg, 'opened', start) : start();
 };
 
 /** "All mailboxes" (no box) or one of them, from the column */
 export const selectMailbox = box => {
+	mailboxesOpen(false);
 	if (!box) {
 		unifiedOn(true);
 		hasher.setHash(mailBox(inboxHash()));
 		loadUnified();
 	} else {
 		unifiedOn(false);
-		box.current() ? hasher.setHash(mailBox(inboxHash())) : switchTo(box.email, '#/mailbox/INBOX');
+		box.current() ? hasher.setHash(mailBox(inboxHash())) : switchTo(box.email, () => go(mailBox(inboxHash())));
 	}
 };
 

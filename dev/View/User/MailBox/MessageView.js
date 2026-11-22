@@ -55,6 +55,7 @@ import { MimeToMessage } from 'Mime/Utils';
 import { MessageModel } from 'Model/Message';
 import { CATEGORIES } from 'Common/Categories';
 import { readBill, euros, dayMonth } from 'Common/Bill';
+import { inviteCard } from 'Common/Invite';
 
 import { showScreenPopup } from 'Knoin/Knoin';
 import { OpenPgpImportPopupView } from 'View/Popup/OpenPgpImport';
@@ -240,6 +241,9 @@ export class MailMessageView extends AbstractViewRight {
 			});
 		};
 		this.notABill = () => currentMessage()?.setCategory('');
+
+		// Quokka: an invitation (.ics): the event, what is already on then in Kooka, accept / maybe / decline
+		this.invite = inviteCard(currentMessage);
 
 		// Quokka: an email that may be a scam (Common/Suspicious.js); "Mi fido" is remembered on this device
 		const trustedKey = 'quokka-trusted-senders',

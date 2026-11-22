@@ -11,8 +11,13 @@
 	<div class="b-content">
 		<!-- Quokka: the person's mailboxes, "All mailboxes" first (only with more than one) -->
 		<!-- ko if: hasMailboxes -->
-		<div class="b-categories-title" data-bind="text: mailboxesTitle"></div>
-		<ul class="b-mailboxes">
+		<a href="#" class="b-mailbox-chosen" data-bind="click: toggleMailboxes, css: {open: mailboxesOpen}, attr: {title: mailboxesTitle, 'aria-expanded': mailboxesOpen() ? 'true' : 'false'}">
+			<span class="box-badge" aria-hidden="true" data-bind="text: chosenMailbox().letter, css: {'box-all': chosenMailbox().all}, style: {backgroundColor: chosenMailbox().color}"></span>
+			<span class="box-name" data-bind="text: chosenMailbox().name"></span>
+			<span class="box-unread" data-bind="text: chosenMailbox().unread || ''"></span>
+			<svg class="box-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+		</a>
+		<ul class="b-mailboxes" data-bind="visible: mailboxesOpen">
 			<li>
 				<a href="#" data-bind="click: selectAllMailboxes, css: {selected: allMailboxesSelected}">
 					<span class="box-badge box-all" aria-hidden="true">∗</span>
@@ -52,6 +57,10 @@
 				</a>
 			</li>
 		</ul>
+		<!-- Quokka: Kooka's calendar, in a tab of its own -->
+		<!-- ko if: calendarUrl -->
+		<a class="quokka-calendar-link" target="_blank" rel="noopener" data-bind="attr: {href: calendarUrl}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg><span data-bind="text: calendarLabel"></span><svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg></a>
+		<!-- /ko -->
 		<hr>
 		<div class="search-input-wrp" data-bind="visible: foldersFilterVisible">
 			<input type="search" id="folderSearchInput" data-bind="textInput: foldersFilter" data-i18n="[placeholder]GLOBAL/SEARCH">

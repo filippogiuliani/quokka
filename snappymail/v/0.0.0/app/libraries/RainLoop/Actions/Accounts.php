@@ -329,6 +329,8 @@ trait Accounts
 		if ($this->switchAccount(new \MailSo\Mime\Email($this->GetActionParam('Email', '')))) {
 			$oAccount = $this->getAccountFromToken();
 			$aResult = $this->getAccountData($oAccount);
+			// Quokka: the session's request token changed with the switch; the page keeps going with the new one
+			$aResult['QuokkaToken'] = \RainLoop\Utils::GetCsrfToken();
 //			$this->Plugins()->InitAppData($bAdmin, $aResult, $oAccount);
 			return $this->DefaultResponse($aResult);
 		}

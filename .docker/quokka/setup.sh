@@ -109,10 +109,11 @@ cat > "$DATA/configs/plugin-avatars.json" <<'JSON'
 JSON
 chown www-data:www-data "$DATA/configs/plugin-avatars.json"
 FPM=/usr/local/etc/php-fpm.d/php-fpm.conf
-sed -i '/^env\[QUOKKA_/d' "$FPM"
-# (the Pocket ID settings and QUOKKA_SECRET too: they stay in the container, never in the data volume)
+sed -i '/^env\[QUOKKA_/d; /^env\[TZ\]/d' "$FPM"
+# (the Pocket ID settings and QUOKKA_SECRET too: they stay in the container, never in the data volume;
+#  TZ: the times of the invitations in emails, as people read them)
 for name in QUOKKA_PELICAN_URL QUOKKA_KOOKA_URL QUOKKA_SORTER_URL QUOKKA_OIDC_ISSUER QUOKKA_OIDC_CLIENT_ID QUOKKA_OIDC_CLIENT_SECRET \
-            QUOKKA_PUBLIC_URL QUOKKA_SECRET; do
+            QUOKKA_PUBLIC_URL QUOKKA_SECRET TZ; do
     value=$(printenv "$name" | tr -d '"' || true)
     [ -z "$value" ] || printf 'env[%s] = "%s"\n' "$name" "$value" >> "$FPM"
 done

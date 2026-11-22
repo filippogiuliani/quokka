@@ -49,7 +49,9 @@ window.rl = {
 	settings: {
 		get: name => RL_APP_DATA[name],
 		set: (name, value) => RL_APP_DATA[name] = value,
-		app: name => RL_APP_DATA.System[name]
+		app: name => RL_APP_DATA.System[name],
+		// Quokka: the request token after switching mailbox without reloading (Common/Mailboxes.js)
+		setToken: token => RL_APP_DATA.System && (RL_APP_DATA.System.token = token)
 	},
 
 	setTitle: title =>

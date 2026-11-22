@@ -173,6 +173,49 @@
 					<a class="quokka-warning-trust" href="#" data-bind="click: $root.trustSender" data-i18n="QUOKKA/SCAM_TRUST"></a>
 				</div>
 			</div>
+			<!-- Quokka: an invitation: the event, what is already on at that time (Kooka), the answer -->
+			<!-- ko with: invite -->
+			<div class="quokka-invite" data-bind="css: {cancelled: cancelled}">
+				<div class="quokka-invite-head">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+					<div>
+						<div class="quokka-invite-kind" data-bind="text: reply ? texts.INVITE_REPLY_INFO : texts.INVITE_TITLE"></div>
+						<div class="quokka-invite-title" data-bind="text: title"></div>
+						<div class="quokka-invite-when" data-bind="text: when"></div>
+						<div class="quokka-invite-meta" data-bind="visible: where || by">
+							<span data-bind="visible: where, text: where"></span>
+							<span data-bind="visible: by"><span data-bind="text: texts.INVITE_BY"></span> <span data-bind="text: by"></span></span>
+						</div>
+					</div>
+				</div>
+				<div class="quokka-invite-cancelled" data-bind="visible: cancelled, text: texts.INVITE_CANCELLED"></div>
+				<div class="quokka-invite-busy conflict" data-bind="visible: conflicts.length">
+					<b data-bind="text: texts.INVITE_CONFLICT"></b>
+					<!-- ko foreach: conflicts --><a target="_blank" rel="noopener" data-bind="attr: {href: url}, text: text"></a><!-- /ko -->
+				</div>
+				<div class="quokka-invite-busy free" data-bind="visible: free && !cancelled, text: texts.INVITE_FREE"></div>
+				<div class="quokka-invite-busy" data-bind="visible: sameDay.length">
+					<b data-bind="text: texts.INVITE_SAME_DAY"></b>
+					<!-- ko foreach: sameDay --><a target="_blank" rel="noopener" data-bind="attr: {href: url}, text: text"></a><!-- /ko -->
+				</div>
+				<div class="quokka-invite-note" data-bind="visible: !kooka, text: texts.INVITE_NO_KOOKA"></div>
+				<div class="quokka-invite-note" data-bind="visible: recurring && kooka, text: texts.INVITE_RECURRING"></div>
+				<div class="quokka-invite-actions">
+					<!-- ko if: canReply -->
+					<a class="btn quokka-primary" href="#" data-bind="click: accept, css: {disabled: busy}, text: texts.INVITE_ACCEPT"></a>
+					<a class="btn" href="#" data-bind="click: tentative, css: {disabled: busy}, text: texts.INVITE_TENTATIVE"></a>
+					<a class="btn" href="#" data-bind="click: decline, css: {disabled: busy}, text: texts.INVITE_DECLINE"></a>
+					<!-- /ko -->
+					<a class="btn quokka-primary" href="#" data-bind="visible: canSave && !saved(), click: save, css: {disabled: busy}, text: texts.INVITE_SAVE"></a>
+					<a class="btn" href="#" data-bind="visible: cancelled && saved(), click: remove, css: {disabled: busy}, text: texts.INVITE_REMOVE"></a>
+					<span class="quokka-invite-saved" data-bind="visible: saved() && !cancelled">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg><span data-bind="text: texts.INVITE_SAVED"></span>
+						<a target="_blank" rel="noopener" data-bind="attr: {href: saved()?.url}, text: texts.INVITE_OPEN"></a>
+					</span>
+				</div>
+				<div class="quokka-invite-status" data-bind="visible: status, text: status"></div>
+			</div>
+			<!-- /ko -->
 			<!-- Quokka: what the bill says, and where it can go (scrolls with the email) -->
 			<!-- ko with: bill -->
 			<div class="quokka-bill" data-bind="i18nUpdate: true">

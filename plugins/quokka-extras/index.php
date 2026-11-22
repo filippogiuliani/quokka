@@ -61,6 +61,9 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		// "All mailboxes": the INBOX of every mailbox of the person in one list (the sorter's index, sorter/inbox.py)
 		$this->addJsonHook('QuokkaUnifiedList', 'JsonUnifiedList');
 		$this->addJsonHook('QuokkaUnifiedAct', 'JsonUnifiedAct');
+		// invitations in emails (.ics): what is on in Kooka at that time, saved there, answered to the organiser
+		$this->addJsonHook('QuokkaInvite', 'JsonInvite');
+		$this->addJsonHook('QuokkaInviteAnswer', 'JsonInviteAnswer');
 		$this->addTemplate('templates/QuokkaPushSettingsTab.html');
 	}
 
@@ -70,10 +73,12 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		return \preg_match('#^https?://#i', $sUrl) ? \rtrim($sUrl, '/') : '';
 	}
 
-	/** The categories this person turned off, for the page from the start */
+	/** The categories this person turned off, and Kooka's calendar (when Kooka is there), for the page from the start */
 	public function FilterAppData($bAdmin, &$aResult) : void
 	{
 		if (!$bAdmin && \is_array($aResult) && !empty($aResult['Auth'])) {
+			$sKooka = self::appUrl('QUOKKA_KOOKA_URL');
+			$aResult['QuokkaCalendarUrl'] = $sKooka ? $sKooka . '/#/calendar' : '';
 			try {
 				$aResult['QuokkaHiddenCategories'] = \array_values($this->settings()['hiddenCategories'] ?? array());
 			} catch (\Throwable $oException) {
@@ -272,6 +277,255 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			0 === $iStatus => 'ERR_APP_DOWN',
 			default => 'ERR_APP_STATUS'
 		});
+	}
+
+	// ---------- invitations in emails: Kooka is the calendar ----------
+
+	/** A call to Kooka with the person's own token: [status, data] (0: not linked or not reachable) */
+	private function kooka(string $sMethod, string $sPath, ?array $aData = null) : array
+	{
+		$sBase = self::appUrl('QUOKKA_KOOKA_URL');
+		$sToken = (string) ($this->settings()['kookaToken'] ?? '');
+		if (!$sBase || !$sToken) {
+			return array(0, array());
+		}
+		try {
+			$oRequest = \SnappyMail\HTTP\Request::factory();
+			$oRequest->timeout = 15;
+			$oRequest->block_private_ips = false;   // set by the admin: Kooka may well be on the Docker network
+			$oResponse = $oRequest->doRequest($sMethod, $sBase . '/api' . $sPath, null === $aData ? null : \json_encode($aData), array(
+				'Authorization: Bearer ' . $sToken, 'Content-Type: application/json', 'Accept: application/json'));
+		} catch (\Throwable $oException) {
+			\error_log('Quokka: Kooka: ' . $oException->getMessage());
+			return array(0, array());
+		}
+		$aOut = \json_decode((string) ($oResponse->body ?? ''), true);
+		return array($oResponse ? (int) $oResponse->status : 0, \is_array($aOut) ? $aOut : array());
+	}
+
+	/** The event of the invitation in an email ({folder, uid}), read from the mailbox: [event, account] or [null, …] */
+	private function invitation() : array
+	{
+		require_once __DIR__ . '/Ics.php';
+		$sFolder = (string) $this->jsonParam('folder', '');
+		$iUid = (int) $this->jsonParam('uid', 0);
+		$oActions = \RainLoop\Api::Actions();
+		$oAccount = $oActions->getAccountFromToken();
+		if (!$sFolder || 1 > $iUid) {
+			return array(null, $oAccount);
+		}
+		if (!$oActions->ImapClient()->IsLoggined()) {
+			$oAccount->ImapConnectAndLogin($oActions->Plugins(), $oActions->ImapClient(), $oActions->Config());
+		}
+		$oMessage = $oActions->MailClient()->Message($sFolder, $iUid);
+		$sPart = $sEncoding = '';
+		$iBest = 0;
+		foreach ($oMessage?->Attachments ?: array() as $oAttachment) {
+			$sType = \strtolower($oAttachment->ContentType());
+			$sName = \strtolower($oAttachment->FileName());
+			// the text/calendar part says what the email is (an invitation, a reply, a cancellation): it wins
+			$iScore = 'text/calendar' === $sType ? 2 : ('application/ics' === $sType || \str_ends_with($sName, '.ics') ? 1 : 0);
+			if ($iScore > $iBest) {
+				[$iBest, $sPart, $sEncoding] = array($iScore, $oAttachment->PartID(), \strtolower($oAttachment->ContentTransferEncoding()));
+			}
+		}
+		if (!$sPart) {
+			return array(null, $oAccount);
+		}
+		$sData = '';
+		$oActions->MailClient()->MessageMimeStream(function ($rResource) use (&$sData) {
+			if (\is_resource($rResource)) {
+				$sData = (string) \stream_get_contents($rResource, 512 * 1024);
+			}
+		}, $sFolder, $iUid, $sPart);
+		// decoded by the mail server or by SnappyMail, depending on the server: when it still is not, here
+		if (!\str_contains($sData, 'BEGIN:VCALENDAR')) {
+			$sDecoded = \base64_decode(\preg_replace('/\s+/', '', $sData), true);
+			if ($sDecoded && \str_contains($sDecoded, 'BEGIN:VCALENDAR')) {
+				$sData = $sDecoded;
+			}
+		}
+		if ('quoted-printable' === $sEncoding && \preg_match('/=\r?\n|=3D/', $sData)) {
+			$sData = \quoted_printable_decode($sData);
+		}
+		if (!\mb_check_encoding($sData, 'UTF-8')) {
+			$sData = \mb_convert_encoding($sData, 'UTF-8', 'ISO-8859-1');
+		}
+		$sZone = \trim((string) \getenv('TZ')) ?: \date_default_timezone_get();
+		return array(\QuokkaIcs::parse($sData, $sZone), $oAccount);
+	}
+
+	/** This person among the attendees (any of their mailboxes, or an identity of this one): the attendee or null */
+	private static function myAttendee(array $aEvent, $oAccount) : ?array
+	{
+		$aMine = \array_map('strtolower', self::mailboxes());
+		$aMine[] = \strtolower($oAccount->Email());
+		try {
+			foreach (\RainLoop\Api::Actions()->GetIdentities($oAccount) as $oIdentity) {
+				$aMine[] = \strtolower($oIdentity->Email());
+			}
+		} catch (\Throwable $oException) {
+		}
+		foreach ($aEvent['attendees'] as $aAttendee) {
+			if (\in_array($aAttendee['email'], $aMine, true)) {
+				return $aAttendee;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * {folder, uid} → {event, canReply, kooka: linked, saved {id, url}|null, conflicts [...], sameDay [...]}
+	 * conflicts: the person's timed things in Kooka that overlap the event; sameDay: whole-day ones on its days.
+	 */
+	public function JsonInvite()
+	{
+		[$aEvent, $oAccount] = $this->invitation();
+		if (!$aEvent) {
+			return $this->jsonResponse(__FUNCTION__, array('event' => null));
+		}
+		$aMe = self::myAttendee($aEvent, $oAccount);
+		$aOut = array(
+			'event' => \array_diff_key($aEvent, array('lines' => 1)),
+			'canReply' => 'REQUEST' === $aEvent['method'] && $aEvent['organizer'] && $aMe
+				&& !\in_array($aEvent['organizer']['email'], \array_map('strtolower', self::mailboxes()), true),
+			'kooka' => false, 'saved' => null, 'conflicts' => array(), 'sameDay' => array()
+		);
+		$sFrom = $aEvent['start']['date'];
+		$sTo = \max($sFrom, \min($aEvent['end']['date'], \date('Y-m-d', \strtotime($sFrom . ' +31 days'))));
+		[$iStatus, $aBusy] = $this->kooka('GET', '/calendar/busy?' . \http_build_query(array('from' => $sFrom, 'to' => $sTo)));
+		if (200 === $iStatus) {
+			$aOut['kooka'] = true;
+			$sStart = $sFrom . ' ' . ($aEvent['start']['time'] ?? '00:00');
+			$sEnd = $aEvent['end']['date'] . ' ' . ($aEvent['end']['time'] ?? '24:00');
+			foreach ($aBusy as $aItem) {
+				if ($aItem['all_day'] || $aEvent['allDay']) {
+					$aOut['sameDay'][] = $aItem;
+					continue;
+				}
+				$sItemEnd = $aItem['date'] . ' ' . ($aItem['end_time'] ?: \date('H:i', \strtotime($aItem['time'] . ' +1 hour')));
+				if ($aItem['end_time'] && $aItem['end_time'] <= $aItem['time']) {
+					$sItemEnd = $aItem['date'] . ' 24:00';
+				}
+				if ($aItem['date'] . ' ' . $aItem['time'] < $sEnd && $sItemEnd > $sStart) {
+					$aOut['conflicts'][] = $aItem;
+				}
+			}
+			if ($aEvent['uid']) {
+				[$iSaved, $aSaved] = $this->kooka('GET', '/calendar/invite?' . \http_build_query(array('uid' => $aEvent['uid'])));
+				if (200 === $iSaved && !empty($aSaved['saved'])) {
+					$aOut['saved'] = array('id' => $aSaved['id'], 'url' => $aSaved['url']);
+					// already in the calendar: it is no conflict with itself
+					$fOther = fn($aItem) => $aItem['id'] !== $aSaved['id'];
+					$aOut['conflicts'] = \array_values(\array_filter($aOut['conflicts'], $fOther));
+					$aOut['sameDay'] = \array_values(\array_filter($aOut['sameDay'], $fOther));
+				}
+			}
+		}
+		return $this->jsonResponse(__FUNCTION__, $aOut);
+	}
+
+	/**
+	 * {folder, uid, answer: accept | tentative | decline | save | remove, lang}
+	 * accept, tentative, save: into Kooka (once per event: again, it updates it); decline, remove: out of it.
+	 * accept, tentative, decline on an invitation also answer the organiser by email (iTIP REPLY).
+	 * → {saved {id, url}|null, replied, error?}
+	 */
+	public function JsonInviteAnswer()
+	{
+		$sAnswer = (string) $this->jsonParam('answer', '');
+		if (!\in_array($sAnswer, array('accept', 'tentative', 'decline', 'save', 'remove'), true)) {
+			return $this->jsonResponse(__FUNCTION__, array('error' => 'invalid'));
+		}
+		[$aEvent, $oAccount] = $this->invitation();
+		if (!$aEvent || !$aEvent['uid']) {
+			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_INVITE_UNREADABLE'));
+		}
+		$bEn = \str_starts_with((string) $this->jsonParam('lang', 'it'), 'en');
+		$aOut = array('saved' => null, 'replied' => false);
+
+		// Kooka
+		if ('decline' === $sAnswer || 'remove' === $sAnswer) {
+			$this->kooka('POST', '/calendar/invite', array('uid' => $aEvent['uid'], 'status' => 'cancelled'));
+		} else {
+			$aNotes = array();
+			if ($aEvent['organizer']) {
+				$aNotes[] = ($bEn ? 'Organiser: ' : 'Organizzatore: ') . \trim($aEvent['organizer']['name'] . ' <' . $aEvent['organizer']['email'] . '>');
+			}
+			$bSameDay = $aEvent['start']['date'] === $aEvent['end']['date'];
+			if (!$bSameDay) {
+				$aNotes[] = ($bEn ? 'Until ' : 'Fino al ') . $aEvent['end']['date'] . ($aEvent['end']['time'] ? ' ' . $aEvent['end']['time'] : '');
+			}
+			if ('tentative' === $sAnswer) {
+				$aNotes[] = $bEn ? 'Answered: maybe' : 'Risposta: forse';
+			}
+			if ($aEvent['description']) {
+				$aNotes[] = "\n" . \mb_substr($aEvent['description'], 0, 1500);
+			}
+			[$iStatus, $aSaved] = $this->kooka('POST', '/calendar/invite', array(
+				'uid' => $aEvent['uid'],
+				'status' => 'tentative' === $sAnswer ? 'tentative' : 'confirmed',
+				'title' => $aEvent['summary'] ?: ($bEn ? 'Event' : 'Evento'),
+				'date' => $aEvent['start']['date'],
+				'time' => $aEvent['start']['time'],
+				'end_time' => $bSameDay ? $aEvent['end']['time'] : null,
+				'location' => \mb_substr($aEvent['location'], 0, 200),
+				'notes' => \implode("\n", $aNotes)
+			));
+			if (200 === $iStatus || 201 === $iStatus) {
+				$aOut['saved'] = array('id' => $aSaved['id'] ?? null, 'url' => $aSaved['url'] ?? '');
+			} else {
+				$aOut['error'] = 0 === $iStatus ? 'ERR_KOOKA_NOT_LINKED' : 'ERR_KOOKA_SAVE';
+			}
+		}
+
+		// the organiser
+		$aMe = self::myAttendee($aEvent, $oAccount);
+		$sPartstat = array('accept' => 'ACCEPTED', 'tentative' => 'TENTATIVE', 'decline' => 'DECLINED')[$sAnswer] ?? '';
+		if ($sPartstat && $aMe && 'REQUEST' === $aEvent['method'] && $aEvent['organizer']) {
+			try {
+				$this->sendReply($oAccount, $aEvent, $aMe, $sPartstat, $bEn);
+				$aOut['replied'] = true;
+			} catch (\Throwable $oException) {
+				\error_log('Quokka: invitation reply not sent: ' . $oException->getMessage());
+				$aOut['error'] = 'ERR_INVITE_REPLY';
+			}
+		}
+		return $this->jsonResponse(__FUNCTION__, $aOut);
+	}
+
+	private function sendReply($oAccount, array $aEvent, array $aMe, string $sPartstat, bool $bEn) : void
+	{
+		$oActions = \RainLoop\Api::Actions();
+		$oIdentity = $oActions->GetIdentityByID($oAccount, '', true);
+		$sName = $oIdentity ? $oIdentity->Name() : '';
+		$aWords = $bEn
+			? array('ACCEPTED' => array('Accepted', 'has accepted'), 'TENTATIVE' => array('Tentative', 'might come to'), 'DECLINED' => array('Declined', 'has declined'))
+			: array('ACCEPTED' => array('Accettato', 'ha accettato'), 'TENTATIVE' => array('Forse', 'forse parteciperà a'), 'DECLINED' => array('Rifiutato', 'ha rifiutato'));
+		[$sPrefix, $sVerb] = $aWords[$sPartstat];
+
+		$oMessage = new \MailSo\Mime\Message();
+		$oMessage->DoesNotAddDefaultXMailer();
+		$oMessage->SetFrom(new \MailSo\Mime\Email($oIdentity ? $oIdentity->Email() : $oAccount->Email(), $sName));
+		$oFrom = $oMessage->GetFrom();
+		$oMessage->RegenerateMessageId($oFrom ? $oFrom->GetDomain() : '');
+		$oMessage->SetTo(new \MailSo\Mime\EmailCollection(
+			$aEvent['organizer']['name'] ? "\"{$aEvent['organizer']['name']}\" <{$aEvent['organizer']['email']}>" : $aEvent['organizer']['email']));
+		$oMessage->SetSubject("{$sPrefix}: {$aEvent['summary']}");
+
+		$oAlternative = new \MailSo\Mime\Part;
+		$oAlternative->Headers->AddByName(\MailSo\Mime\Enumerations\Header::CONTENT_TYPE, 'multipart/alternative');
+		$oAlternative->addPlain(\trim(($sName ?: $aMe['email']) . " {$sVerb}: {$aEvent['summary']}"));
+		$oCalendar = new \MailSo\Mime\Part;
+		$oCalendar->Headers->AddByName(\MailSo\Mime\Enumerations\Header::CONTENT_TYPE, 'text/calendar; charset=utf-8; method=REPLY');
+		$oCalendar->Headers->AddByName(\MailSo\Mime\Enumerations\Header::CONTENT_TRANSFER_ENCODING, 'quoted-printable');
+		$oCalendar->Body = \MailSo\Base\StreamWrappers\Binary::CreateStream(
+			\MailSo\Base\ResourceRegistry::CreateMemoryResourceFromString(\QuokkaIcs::reply($aEvent, $aMe['email'], $sName, $sPartstat)),
+			'convert.quoted-printable-encode'
+		);
+		$oAlternative->SubParts->append($oCalendar);
+		$oMessage->SubParts->append($oAlternative);
+		$oActions->SendBuiltMessage($oAccount, $oMessage);
 	}
 
 	// ---------- notifications with Quokka closed: the sorter sends them (sorter/push.py) ----------

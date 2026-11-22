@@ -1,7 +1,7 @@
 import ko from 'ko';
 
 import { ScopeFolderList, ScopeMessageList } from 'Common/Enums';
-import { addShortcut, leftPanelDisabled, stopEvent } from 'Common/Globals';
+import { addShortcut, leftPanelDisabled, stopEvent, SettingsGet } from 'Common/Globals';
 import { mailBox, settings } from 'Common/Links';
 //import { setFolderETag } from 'Common/Cache';
 import { addComputablesTo } from 'External/ko';
@@ -26,7 +26,7 @@ import { CATEGORY_KEYS, CATEGORIES, categorySearch } from 'Common/Categories';
 import { i18n, translateTrigger } from 'Common/Translator';
 import { getFolderHashFromCacheList, getFolderInboxName } from 'Common/Cache';
 import { ThemeStore } from '../../../Stores/Theme';
-import { mailboxes, hasMailboxes, unifiedOn, unifiedTotal, selectMailbox } from 'Common/Mailboxes';
+import { mailboxes, hasMailboxes, unifiedOn, unifiedTotal, selectMailbox, mailboxesOpen, chosenMailbox } from 'Common/Mailboxes';
 
 export class MailFolderList extends AbstractViewLeft {
 	constructor() {
@@ -58,6 +58,13 @@ export class MailFolderList extends AbstractViewLeft {
 		this.allMailboxesUnread = unifiedTotal;
 		this.selectAllMailboxes = () => selectMailbox(null);
 		this.selectMailbox = box => selectMailbox(box);
+		// one line (the mailbox chosen) that opens the list: the categories stay in view on a phone
+		this.mailboxesOpen = mailboxesOpen;
+		this.chosenMailbox = chosenMailbox;
+		this.toggleMailboxes = () => mailboxesOpen(!mailboxesOpen());
+		// Quokka: Kooka's calendar (when Kooka is there), in a tab of its own
+		this.calendarUrl = SettingsGet('QuokkaCalendarUrl') || '';
+		this.calendarLabel = ko.computed(() => (translateTrigger(), i18n('QUOKKA/CALENDAR')));
 		this.mailboxesTitle = ko.computed(() => (translateTrigger(), i18n('QUOKKA/MAILBOXES')));
 		this.allMailboxesLabel = ko.computed(() => (translateTrigger(), i18n('QUOKKA/ALL_MAILBOXES')));
 

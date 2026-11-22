@@ -6,7 +6,6 @@
 	</div>
 	<div class="btn-group dropdown" data-bind="registerBootstrapDropdown: true, initDom: accountMenu">
 		<a id="top-system-dropdown-id" href="#" tabindex="-1" class="btn single btn-block dropdown-toggle">
-			<span class="accountPlace hide-mobile" data-bind="text: accountName(), attr:{ title: accountEmail }"></span>
 			<i class="fontastic" data-bind="css: {'icon-spinner': accountsLoading()}">👤</i>
 <!--
 			<b data-bind="text: accountsUnreadCount, visible: 100 > accountsUnreadCount() && accountsUnreadCount()"></b>
@@ -16,14 +15,8 @@
 		</a>
 		<menu class="dropdown-menu right-edge" tabindex="-1" role="menu" aria-labelledby="top-system-dropdown-id">
 
-			<!-- ko foreach: accounts -->
-			<li role="presentation">
-				<a class="email-title" href="#" data-bind="click: $root.accountClick, text: label(),
-					attr: {title: email, 'data-unread': unreadEmails, 'data-icon': $root.accountEmail() === email ? '✔' : '👤'}"></a>
-			</li>
-			<!-- /ko -->
-
-			<li class="dividerbar" role="presentation" data-bind="visible: allowAccounts">
+			<!-- Quokka: the mailboxes are chosen in the column (Caselle); here only adding one -->
+			<li role="presentation" data-bind="visible: allowAccounts">
 				<a href="#" tabindex="-1" data-bind="click: addAccountClick" data-icon="✚" data-i18n="TOP_TOOLBAR/BUTTON_ADD_ACCOUNT"></a>
 			</li>
 			<li role="presentation" data-bind="visible: allowContacts">
@@ -55,5 +48,6 @@
 		<a class="tab-mail" data-bind="attr: {href: inboxHref}, click: tabClick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span data-i18n="QUOKKA/TAB_MAIL"></span></a>
 		<a class="tab-categories" href="#" data-bind="click: categoriesClick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg><span data-i18n="QUOKKA/TAB_CATEGORIES"></span></a>
 		<a class="tab-archive" data-bind="attr: {href: archiveHref}, visible: archiveHref, click: tabClick"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="5" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"></path></svg><span data-i18n="QUOKKA/TAB_ARCHIVE"></span></a>
+		<a class="tab-calendar" target="_blank" rel="noopener" data-bind="visible: calendarUrl, attr: {href: calendarUrl}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg><span data-i18n="QUOKKA/TAB_CALENDAR"></span></a>
 		<a class="tab-settings" href="#/settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg><span data-i18n="QUOKKA/TAB_SETTINGS"></span></a>
 	</nav>

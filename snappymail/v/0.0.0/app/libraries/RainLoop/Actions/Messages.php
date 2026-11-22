@@ -760,6 +760,23 @@ trait Messages
 	}
 
 	/**
+	 * Quokka: a message a plugin built (the reply to an invitation) sent from the account, as any other
+	 * @throws \RainLoop\Exceptions\ClientException
+	 */
+	public function SendBuiltMessage(Account $oAccount, \MailSo\Mime\Message $oMessage) : void
+	{
+		$rMessageStream = \MailSo\Base\ResourceRegistry::CreateMemoryResource();
+		$iMessageStreamSize = \MailSo\Base\Utils::WriteStream($oMessage->ToStream(true), $rMessageStream, 8192, true, true);
+		if (false === $iMessageStreamSize) {
+			throw new ClientException(Notifications::CantSendMessage);
+		}
+		$this->smtpSendMessage($oAccount, $oMessage, $rMessageStream, $iMessageStreamSize, false);
+		if (\is_resource($rMessageStream)) {
+			\fclose($rMessageStream);
+		}
+	}
+
+	/**
 	 * @throws \RainLoop\Exceptions\ClientException
 	 * @throws \MailSo\Net\Exceptions\ConnectionException
 	 */

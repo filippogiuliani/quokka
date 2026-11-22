@@ -715,7 +715,7 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 .quokka-bill-facts b { font-size: 17px; font-weight: 700; color: var(--fm-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .quokka-bill-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .quokka-bill-actions .btn { display: inline-flex !important; align-items: center; gap: 8px; height: 40px; padding: 0 16px !important; font-size: 13px; font-weight: 600; border-color: var(--fm-primary) !important; color: var(--fm-primary) !important; }
-.quokka-bill-actions .btn.quokka-primary { background: var(--fm-primary) !important; color: var(--fm-primary-ink) !important; }
+.quokka-bill-actions .btn.quokka-primary, .quokka-invite-actions .btn.quokka-primary { background: var(--fm-primary) !important; color: var(--fm-primary-ink) !important; }
 .quokka-bill-actions .btn.disabled { opacity: .5; pointer-events: none; }
 .quokka-bill-no { font-size: 13px; color: var(--fm-muted); text-decoration: none; padding: 0 8px; }
 .quokka-bill-no:hover { color: var(--fm-ink); }
@@ -1369,3 +1369,58 @@ dialog .modal-body.form-horizontal .control-group input[type="text"], dialog .mo
 	#rl-right .quokka-head .quokka-mailbox.toggleLeft:not([style*="none"]) { display: inline !important; }
 }
 .b-folders .b-mailboxes a, .b-folders .b-mailboxes a * { font-style: normal !important; }
+
+/* ---------- Kooka's calendar: a link in the column and in the phone's bottom menu ---------- */
+.b-folders .quokka-calendar-link {
+	display: flex; align-items: center; gap: 10px; margin-top: 6px;
+	padding: 6px 10px; color: var(--folders-color); text-decoration: none; font-style: normal;
+}
+.b-folders .quokka-calendar-link:hover { background-color: var(--fm-surface-2); color: var(--fm-ink); }
+.b-folders .quokka-calendar-link svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.b-folders .quokka-calendar-link span { flex: 1; }
+.b-folders .quokka-calendar-link svg.ext { width: 14px; height: 14px; opacity: .5; }
+@media screen and (max-width: 1023px) {
+	.quokka-tabbar { grid-template-columns: none !important; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+	#rl-left .b-folders .quokka-calendar-link { font-size: 16px; padding: 12px 12px !important; }
+}
+
+/* ---------- an invitation in an email: the event, what is already on then, the answer ---------- */
+.quokka-invite { margin: 14px 22px 4px; padding: 14px 16px; border: 1px solid var(--fm-line); border-radius: 12px; background: var(--fm-surface); display: flex; flex-direction: column; gap: 10px; }
+.quokka-invite svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.quokka-invite-head { display: flex; gap: 12px; align-items: flex-start; }
+.quokka-invite-head > svg { width: 22px; height: 22px; margin-top: 2px; stroke: var(--fm-primary); }
+.quokka-invite-kind { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--fm-muted); }
+.quokka-invite-title { font-size: 17px; font-weight: 700; color: var(--fm-ink); line-height: 1.3; }
+.quokka-invite-when { font-size: 14px; color: var(--fm-ink-2); }
+.quokka-invite-when::first-letter { text-transform: uppercase; }
+.quokka-invite-meta { display: flex; flex-wrap: wrap; column-gap: 14px; font-size: 13px; color: var(--fm-muted); }
+.quokka-invite.cancelled .quokka-invite-title, .quokka-invite.cancelled .quokka-invite-when { text-decoration: line-through; color: var(--fm-muted); }
+.quokka-invite-cancelled { font-size: 13px; font-weight: 600; color: var(--fm-danger); }
+.quokka-invite-busy { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; background: var(--fm-surface-2); font-size: 13px; color: var(--fm-ink-2); }
+.quokka-invite-busy b { font-weight: 600; }
+.quokka-invite-busy a { color: inherit; white-space: pre; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.quokka-invite-busy a:hover { text-decoration: underline; }
+.quokka-invite-busy.conflict { background: var(--fm-danger-soft); color: var(--fm-danger); }
+.quokka-invite-busy.free { background: light-dark(#e8f5ee, #1b3326); color: light-dark(#166534, #86d5a6); font-weight: 600; }
+.quokka-invite-note { font-size: 13px; color: var(--fm-muted); }
+.quokka-invite-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.quokka-invite-actions .btn.disabled { opacity: .5; pointer-events: none; }
+.quokka-invite-saved { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: light-dark(#166534, #86d5a6); }
+.quokka-invite-saved a { font-weight: 400; margin-left: 6px; }
+.quokka-invite-status { font-size: 13px; color: var(--fm-ink-2); }
+@media screen and (max-width: 1023px) { .quokka-invite { margin: 12px 14px 4px; } .quokka-invite-actions .btn { flex: 1 1 auto; justify-content: center; } }
+
+/* the mailboxes: one line (the one chosen) that opens the list */
+.b-folders .b-mailbox-chosen {
+	display: flex; align-items: center; gap: 10px; margin: 0 0 2px;
+	padding: 6px 10px; border-radius: 8px; color: var(--folders-color); text-decoration: none; font-style: normal; font-weight: 600;
+}
+.b-folders .b-mailbox-chosen:hover { background: var(--fm-surface-2); color: var(--fm-ink); }
+.b-folders .b-mailbox-chosen .box-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-folders .b-mailbox-chosen .box-unread { font-size: 12px; font-weight: 600; color: var(--fm-primary); }
+.b-folders .b-mailbox-chosen .box-chevron { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .6; transition: transform .15s; }
+.b-folders .b-mailbox-chosen.open .box-chevron { transform: rotate(180deg); }
+.b-folders .b-mailboxes { margin: 0 0 4px 12px; padding-left: 8px; border-left: 2px solid var(--fm-line); }
+@media screen and (max-width: 1023px) {
+	#rl-left .b-folders .b-mailbox-chosen { font-size: 16px; padding: 12px 12px !important; }
+}

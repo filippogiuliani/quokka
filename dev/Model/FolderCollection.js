@@ -123,6 +123,9 @@ export const
 			.catch(e => fCallback && setTimeout(fCallback, 1, false, e));
 	};
 
+/** Quokka: another mailbox is shown now (switched without reloading): its own Sent, Trash… are found again */
+export const resetSystemFolders = () => Object.keys(SystemFolders).forEach(key => SystemFolders[key] = 0);
+
 export class FolderCollectionModel extends AbstractCollectionModel
 {
 /*

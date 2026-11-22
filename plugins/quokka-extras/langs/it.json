@@ -41,6 +41,9 @@
 		"ERR_APP_DOWN": "%APP% non risponde",
 		"ERR_APP_TOKEN": "%APP% non accetta il token: controllalo in Impostazioni → App di famiglia",
 		"ERR_APP_STATUS": "%APP% risponde con un errore (%STATUS%)",
-		"ERR_TOKEN_PREFIX": "Il token deve cominciare con %PREFIX%"
+		"ERR_TOKEN_PREFIX": "Il token deve cominciare con %PREFIX%",
+		"ERR_KOOKA_SAVE": "Kooka non ha salvato l'evento: riprova tra poco.",
+		"ERR_INVITE_REPLY": "La risposta all'organizzatore non è partita: riprova tra poco.",
+		"ERR_INVITE_UNREADABLE": "Questo invito non si riesce a leggere."
 	}
 }

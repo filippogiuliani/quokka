@@ -45,7 +45,7 @@ import { ComposePopupView } from 'View/Popup/Compose';
 import { MessageModel } from 'Model/Message';
 import { CATEGORY_KEYS, CATEGORIES, categorySearch, isQuickSearch } from 'Common/Categories';
 import { unifiedView, unifiedMessages, unifiedLoading, unifiedAvailable, unifiedMore, unifiedPending, unifiedTotal,
-	mailboxTitle, loadUnified, openUnified, unifiedAct } from 'Common/Mailboxes';
+	mailboxTitle, loadUnified, openUnified, unifiedAct, mailboxesOpen } from 'Common/Mailboxes';
 
 import { LayoutSideView, ClientSideKeyNameMessageListSize } from 'Common/EnumsUser';
 import { setLayoutResizer } from 'Common/UtilsUser';
@@ -643,6 +643,8 @@ export class MailMessageList extends AbstractViewRight {
 		addEventsListeners(dom, {
 			click: event => {
 				if (eqs(event, '.toggleLeft')) {
+					// Quokka: the mailbox under the title opens the column with the list of mailboxes open
+					eqs(event, '.quokka-mailbox') && mailboxesOpen(true);
 					toggleLeftPanel();
 				} else {
 					ThemeStore.isMobile() && leftPanelDisabled(true);
