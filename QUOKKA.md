@@ -130,5 +130,8 @@ steps (images, folders, the sorter's mailboxes, NPM, Pocket ID). The settings:
 | `QUOKKA_LANGUAGE` | `it` | |
 | `TZ` | — | the time zone, e.g. `Europe/Berlin` (required by the compose) |
 | `QUOKKA_ENCRYPTION` | `Off` | `On` brings back OpenPGP/GnuPG/S/MIME (keys in Settings → Security, sign and encrypt when writing) |
+| `QUOKKA_ADMIN_PANEL` | `Off` | `On` opens SnappyMail's admin panel at `/?admin` (logs, cache) |
 
-The admin panel is at `/?admin`; its first password is in the data volume, `_data_/_default_/admin_password.txt`.
+SnappyMail's admin panel (`/?admin`) is off unless `QUOKKA_ADMIN_PANEL=On`: `setup.sh` sets domains, plugins and the
+look at every start, so it would only matter for logs and the cache. Its first password is in the data volume,
+`_data_/_default_/admin_password.txt`.

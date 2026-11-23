@@ -33,6 +33,11 @@ set_ini webmail theme '"Quokka"'
 if [ "${QUOKKA_ENCRYPTION:-Off}" = "On" ]; then crypto=On; else crypto=Off; fi
 set_ini security openpgp "$crypto"
 set_ini security gnupg "$crypto"
+# SnappyMail's admin panel (/?admin): off, since this file sets what it would (domains, plugins, look) at every start;
+# QUOKKA_ADMIN_PANEL=On opens it (logs, cache), protected by the password in _data_/_default_/admin_password.txt
+if [ "${QUOKKA_ADMIN_PANEL:-Off}" = "On" ]; then admin=On; else admin=Off; fi
+set_ini security allow_admin_panel "$admin"
+echo "[INFO] Quokka: admin panel ${admin}"
 # addresses relative to the page: the same image works at the root of a domain and behind a proxy that serves it
 # under a prefix (https://example.it/proxy/8890/); QUOKKA_APP_PATH sets an absolute one when needed
 set_ini webmail app_path "\"${QUOKKA_APP_PATH:-./}\""
@@ -40,11 +45,11 @@ set_ini webmail language "\"$LANGUAGE\""
 set_ini webmail allow_user_background 'Off'
 # the check for new emails (Settings → General, per mailbox): from 1 minute, not upstream's 5
 set_ini webmail min_refresh_interval 1
-set_ini webmail allow_themes 'Off'          # one look for everyone: the family theme (no Themes page)
+set_ini webmail allow_themes 'Off'          # one look for everyone: the Quokka theme (no Themes page)
 set_ini webmail popup_identity 'Off'      # no "set up your identity" window after the first sign-in
 set_ini webmail message_read_delay 0     # an email opened is read at once (upstream waits 5 seconds)
 set_ini login allow_languages_on_login 'Off'
-# the list like the family apps: grouped by day ("Oggi", "Ieri"), no checkboxes (they can be turned on in Settings)
+# the list grouped by day ("Oggi", "Ieri"), no checkboxes (they can be turned on in Settings)
 set_ini defaults mail_list_grouped 'On'
 set_ini defaults view_use_checkboxes 'Off'
 

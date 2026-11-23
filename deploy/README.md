@@ -63,7 +63,9 @@ signs in with Pocket ID and gives their mailbox's password once; after that Pock
 
 ## 7. First sign-in
 
-- The admin panel is at `/?admin`; its first password is in `/srv/quokka/data/_data_/_default_/admin_password.txt`.
+- SnappyMail's admin panel (`/?admin`) is off: domains, plugins and the look come from these settings at every start.
+  To read logs or clear the cache, `QUOKKA_ADMIN_PANEL=On` opens it; its first password is in
+  `/srv/quokka/data/_data_/_default_/admin_password.txt` (change it and turn on its two-step code), then turn it off again.
   Change it, or turn the panel off in it once everything works.
 - Open a mailbox and look at the left column: Sent, Drafts, Spam, Trash and Archive should be there. If
   one is missing or wrong (the usual names, in English and Italian, are recognised automatically), Settings → Folders → System

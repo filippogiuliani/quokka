@@ -37,6 +37,7 @@ services:
       QUOKKA_TITLE: ${QUOKKA_TITLE:-Quokka}
       QUOKKA_LANGUAGE: ${QUOKKA_LANGUAGE:-it}
       QUOKKA_ENCRYPTION: ${QUOKKA_ENCRYPTION:-Off}
+      QUOKKA_ADMIN_PANEL: ${QUOKKA_ADMIN_PANEL:-Off}
       SECURE_COOKIES: "true"
       UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-25M}
       TZ: ${TZ:?your time zone, e.g. Europe/Berlin}
