@@ -1,14 +1,17 @@
 <?php
 /**
- * Quokka – the family apps from an email: "Archivia in Pelican" (the PDF attached, or the whole email) and
- * "Promemoria in Kooka" (a deadline). The calls leave from the server with each person's own API token, so the
- * tokens never reach the browser.
+ * Quokka – the family apps from an email: "Archivia in Pelican" (the PDF attached, or the whole email),
+ * "Promemoria in Kooka" (a deadline) and invitations in Kooka's calendar. For whoever signed in with Pocket ID, through
+ * Wombat, which knows who they are and which apps they may use in which family (plugins/quokka-sso/Hub.php):
+ * QUOKKA_HUB_URL and QUOKKA_HUB_KEY in the environment, nothing for people to paste.
  *
- * Where the apps are: QUOKKA_PELICAN_URL and QUOKKA_KOOKA_URL in the environment (e.g. https://pelican.example.it).
- * Each person pastes their tokens once in Settings → Family apps (Pelican: pt_…, Kooka: dt_…).
+ * Kooka's calendar inside Quokka: its address from Wombat, or QUOKKA_KOOKA_URL (that one for everybody, also without
+ * Pocket ID: the calendar has its own sign-in). Kooka allows it with KOOKA_EMBED_FROM=<Quokka's address>.
  *
  * Also: which categories each person sees (Settings → Categories), and "Unsubscribe" on newsletters, from their List-Unsubscribe header (RFC 2369, one-click RFC 8058).
  */
+require_once __DIR__ . '/../quokka-sso/Hub.php';
+
 class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 {
 	const
@@ -21,19 +24,67 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		LICENSE  = 'AGPL-3.0',
 		DESCRIPTION = 'Categories settings, one-click unsubscribe, an email to Pelican and its deadline to Kooka.';
 
-	const MAX_FILE = 30 * 1024 * 1024;
+	// a file goes through Wombat as base64 (a third more), and Wombat passes on at most 30 MB
+	const MAX_FILE = 20 * 1024 * 1024;
 
-	/** The user's settings; the app tokens saved before the rename (paTrack, doTrack until 2026-11) under the new names */
+	/** The user's settings, without the personal app tokens of before Wombat (until 2026-11): no longer used */
 	private function settings() : array
 	{
-		$aSettings = $this->getUserSettings();
-		foreach (array('patrackToken' => 'pelicanToken', 'dotrackToken' => 'kookaToken') as $sOld => $sNew) {
-			if (!isset($aSettings[$sNew]) && isset($aSettings[$sOld])) {
-				$aSettings[$sNew] = $aSettings[$sOld];
-			}
-			unset($aSettings[$sOld]);
+		return \array_diff_key($this->getUserSettings(),
+			\array_flip(array('pelicanToken', 'kookaToken', 'patrackToken', 'dotrackToken')));
+	}
+
+	/** The person as Wombat sees them (QuokkaHub::who), from the main mailbox of this session */
+	private function who(bool $bFresh = false) : array
+	{
+		$oMain = \RainLoop\Api::Actions()->getMainAccountFromToken(false);
+		return $oMain ? \QuokkaHub::who($oMain->Email(), $bFresh) : array('state' => 'no_pocket_id');
+	}
+
+	/** [who, family] when this person may use the app here, else [null, error for the page] */
+	private function linked(string $sApp) : array
+	{
+		$aWho = $this->who();
+		$aFamily = 'ok' === $aWho['state'] ? \QuokkaHub::family($aWho, (int) ($this->settings()['hubFamily'] ?? 0)) : null;
+		if (!$aFamily) {
+			return array(null, null, array('error' => 'down' === $aWho['state'] ? 'ERR_APP_DOWN' : 'ERR_NOT_LINKED',
+				'app' => 'down' === $aWho['state'] ? 'Wombat' : \ucfirst($sApp), 'why' => $aWho['state']));
 		}
-		return $aSettings;
+		if (!\in_array($sApp, $aFamily['apps'], true)) {
+			return array(null, null, array('error' => 'ERR_APP_ACCESS', 'app' => \ucfirst($sApp), 'family' => $aFamily['name']));
+		}
+		return array($aWho, $aFamily, null);
+	}
+
+	/** Kooka's calendar for the page: QUOKKA_KOOKA_URL, else Kooka's address from Wombat when this person uses it */
+	private function calendarBase() : string
+	{
+		$sUrl = self::appUrl('QUOKKA_KOOKA_URL');
+		if ($sUrl) {
+			return $sUrl;
+		}
+		try {
+			$aWho = $this->who();
+			$aFamily = 'ok' === $aWho['state'] ? \QuokkaHub::family($aWho, (int) ($this->settings()['hubFamily'] ?? 0)) : null;
+			return $aFamily && \in_array('kooka', $aFamily['apps'], true) ? ($aFamily['urls']['kooka'] ?? '') : '';
+		} catch (\Throwable $oException) {
+			return '';
+		}
+	}
+
+	/** An answer of Kooka or Pelican (through Wombat) for the page */
+	private static function appResult(int $iStatus, array $aData, string $sApp) : array
+	{
+		if (200 <= $iStatus && 300 > $iStatus) {
+			return array('ok' => true, 'status' => (string) ($aData['status'] ?? ''));
+		}
+		return array('app' => $sApp, 'status' => $iStatus, 'message' => \mb_substr((string) ($aData['error'] ?? ''), 0, 200),
+			'error' => match (true) {
+				0 === $iStatus => 'ERR_APP_DOWN',
+				403 === $iStatus => 'ERR_APP_REFUSED',
+				404 === $iStatus => 'ERR_APP_FAMILY',
+				default => 'ERR_APP_STATUS'
+			});
 	}
 
 	public function Init() : void
@@ -80,7 +131,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	/** Kooka's calendar is shown inside Quokka (Common/CalendarPanel.js): its address, and only it, may be framed */
 	public function ContentSecurityPolicy(\SnappyMail\HTTP\CSP $CSP) : void
 	{
-		$aUrl = \parse_url(self::appUrl('QUOKKA_KOOKA_URL'));
+		$aUrl = \parse_url($this->calendarBase());
 		if (!empty($aUrl['scheme']) && !empty($aUrl['host'])) {
 			$CSP->add('frame-src', "'self'");
 			$CSP->add('frame-src', $aUrl['scheme'] . '://' . $aUrl['host'] . (empty($aUrl['port']) ? '' : ':' . $aUrl['port']));
@@ -91,7 +142,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 	public function FilterAppData($bAdmin, &$aResult) : void
 	{
 		if (!$bAdmin && \is_array($aResult) && !empty($aResult['Auth'])) {
-			$sKooka = self::appUrl('QUOKKA_KOOKA_URL');
+			$sKooka = $this->calendarBase();
 			$aResult['QuokkaCalendarUrl'] = $sKooka ? $sKooka . '/#/calendar' : '';
 			try {
 				$aResult['QuokkaHiddenCategories'] = \array_values($this->settings()['hiddenCategories'] ?? array());
@@ -110,43 +161,44 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		return $this->jsonResponse(__FUNCTION__, $this->saveUserSettings($aSettings));
 	}
 
-	/** What the page may know: whether each app is there and whether this person has a token for it. */
+	/**
+	 * Settings → Family apps: {state: off | no_pocket_id | unknown | no_family | down | ok, name, families [{id, name,
+	 * apps}], family (the one in use), kooka, pelican (may use them there)}
+	 */
 	public function JsonGet()
 	{
-		$aSettings = $this->settings();
-		return $this->jsonResponse(__FUNCTION__, array(
-			'pelican' => '' !== self::appUrl('QUOKKA_PELICAN_URL'),
-			'kooka' => '' !== self::appUrl('QUOKKA_KOOKA_URL'),
-			'pelicanToken' => !empty($aSettings['pelicanToken']),
-			'kookaToken' => !empty($aSettings['kookaToken'])
-		));
+		$aWho = $this->who((bool) $this->jsonParam('fresh', false));
+		$aOut = array('state' => $aWho['state'], 'name' => '', 'families' => array(), 'family' => 0, 'kooka' => false, 'pelican' => false);
+		if ('ok' === $aWho['state']) {
+			$aFamily = \QuokkaHub::family($aWho, (int) ($this->settings()['hubFamily'] ?? 0));
+			$aOut['name'] = $aWho['user']['name'];
+			$aOut['families'] = \array_map(fn($f) => array('id' => $f['id'], 'name' => $f['name'], 'apps' => $f['apps']), $aWho['families']);
+			$aOut['family'] = $aFamily['id'];
+			$aOut['kooka'] = \in_array('kooka', $aFamily['apps'], true);
+			$aOut['pelican'] = \in_array('pelican', $aFamily['apps'], true);
+		}
+		return $this->jsonResponse(__FUNCTION__, $aOut);
 	}
 
-	/** A token left empty keeps the one saved; "-" removes it. */
+	/** {family: Wombat id}: the family the apps are used in, for who is in more than one */
 	public function JsonSave()
 	{
-		$aSettings = $this->settings();
-		foreach (array('pelicanToken' => 'pt_', 'kookaToken' => 'dt_') as $sKey => $sPrefix) {
-			$sValue = \trim((string) $this->jsonParam($sKey, ''));
-			if ('-' === $sValue) {
-				unset($aSettings[$sKey]);
-			} else if ('' !== $sValue) {
-				if (!\str_starts_with($sValue, $sPrefix) || 200 < \strlen($sValue)) {
-					return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_TOKEN_PREFIX', 'prefix' => $sPrefix));
-				}
-				$aSettings[$sKey] = $sValue;
-			}
+		$aWho = $this->who();
+		$iFamily = (int) $this->jsonParam('family', 0);
+		if ('ok' !== $aWho['state'] || !\in_array($iFamily, \array_column($aWho['families'], 'id'), true)) {
+			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_NOT_LINKED'));
 		}
+		$aSettings = $this->settings();
+		$aSettings['hubFamily'] = $iFamily;
 		return $this->jsonResponse(__FUNCTION__, $this->saveUserSettings($aSettings));
 	}
 
 	/** {folder, uid, mimeIndex ('' = the whole email), fileName, title} → Pelican's import queue */
 	public function JsonToPelican()
 	{
-		$sBase = self::appUrl('QUOKKA_PELICAN_URL');
-		$sToken = (string) ($this->settings()['pelicanToken'] ?? '');
-		if (!$sBase || !$sToken) {
-			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_PELICAN_NOT_LINKED'));
+		[$aWho, $aFamily, $aError] = $this->linked('pelican');
+		if ($aError) {
+			return $this->jsonResponse(__FUNCTION__, $aError);
 		}
 		$sFolder = (string) $this->jsonParam('folder', '');
 		$iUid = (int) $this->jsonParam('uid', 0);
@@ -171,39 +223,35 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			return $this->jsonResponse(__FUNCTION__, array('error' => '' === $sData ? 'ERR_ATTACHMENT_NOT_FOUND' : 'ERR_FILE_TOO_BIG'));
 		}
 
-		$sBoundary = 'quokka' . \bin2hex(\random_bytes(12));
-		$fField = fn($sName, $sValue) => "--{$sBoundary}\r\nContent-Disposition: form-data; name=\"{$sName}\"\r\n\r\n{$sValue}\r\n";
-		$sSafeName = \str_replace(array('"', "\r", "\n"), '', $sFileName);
-		$sBody = $fField('source', 'api')
-			. $fField('category', 'home')
-			. $fField('title', \str_replace(array("\r", "\n"), ' ', \mb_substr((string) $this->jsonParam('title', ''), 0, 200)))
-			. "--{$sBoundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{$sSafeName}\"\r\n"
-			. "Content-Type: application/octet-stream\r\n\r\n{$sData}\r\n--{$sBoundary}--\r\n";
-		return $this->jsonResponse(__FUNCTION__, $this->call('POST', $sBase . '/api/imports', $sBody, $sToken,
-			"multipart/form-data; boundary={$sBoundary}", 'Pelican'));
+		[$iStatus, $aData] = \QuokkaHub::ask($aWho, $aFamily, 'pelican', 'POST', '/imports', array(), array(
+			'file_name' => \mb_substr(\str_replace(array('"', "\r", "\n", '/', '\\'), '', $sFileName), 0, 200),
+			'content' => \base64_encode($sData),
+			'title' => \str_replace(array("\r", "\n"), ' ', \mb_substr((string) $this->jsonParam('title', ''), 0, 200)),
+			'category' => 'home'
+		), 60);
+		unset($sData);
+		return $this->jsonResponse(__FUNCTION__, self::appResult($iStatus, $aData, 'Pelican'));
 	}
 
 	/** {title, dueDate (YYYY-MM-DD), notes} → a deadline in Kooka, reminded three days before */
 	public function JsonToKooka()
 	{
-		$sBase = self::appUrl('QUOKKA_KOOKA_URL');
-		$sToken = (string) ($this->settings()['kookaToken'] ?? '');
-		if (!$sBase || !$sToken) {
-			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_KOOKA_NOT_LINKED'));
+		[$aWho, $aFamily, $aError] = $this->linked('kooka');
+		if ($aError) {
+			return $this->jsonResponse(__FUNCTION__, $aError);
 		}
 		$sDue = (string) $this->jsonParam('dueDate', '');
 		if (!\preg_match('/^\d{4}-\d{2}-\d{2}$/D', $sDue)) {
 			return $this->jsonResponse(__FUNCTION__, array('error' => 'ERR_NO_DUE_DATE'));
 		}
-		$sBody = \json_encode(array(
-			'kind' => 'deadline',
+		[$iStatus, $aData] = \QuokkaHub::ask($aWho, $aFamily, 'kooka', 'POST', '/reminders', array(), array(
 			'category' => 'money',
 			'title' => \mb_substr(\trim((string) $this->jsonParam('title', '')) ?: 'Deadline', 0, 200),
 			'due_date' => $sDue,
 			'remind_days' => 3,
 			'notes' => \mb_substr((string) $this->jsonParam('notes', ''), 0, 2000)
 		));
-		return $this->jsonResponse(__FUNCTION__, $this->call('POST', $sBase . '/api/items', $sBody, $sToken, 'application/json', 'Kooka'));
+		return $this->jsonResponse(__FUNCTION__, self::appResult($iStatus, $aData, 'Kooka'));
 	}
 
 	/**
@@ -265,56 +313,13 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		return $aLinks;
 	}
 
-	private function call(string $sMethod, string $sUrl, string $sBody, string $sToken, string $sType, string $sApp) : array
-	{
-		try {
-			$oRequest = \SnappyMail\HTTP\Request::factory();
-			$oRequest->timeout = 30;
-			// the addresses come from the environment, set by the admin: the apps may well be on the Docker network
-			$oRequest->block_private_ips = false;
-			$oResponse = $oRequest->doRequest($sMethod, $sUrl, $sBody, array(
-				'Authorization: Bearer ' . $sToken,
-				'Content-Type: ' . $sType,
-				'Accept: application/json'
-			));
-		} catch (\Throwable $oException) {
-			\error_log('Quokka: ' . $oException);
-			return array('error' => 'ERR_APP_DOWN', 'app' => $sApp);
-		}
-		$iStatus = $oResponse ? (int) $oResponse->status : 0;
-		if (200 <= $iStatus && 300 > $iStatus) {
-			$aData = \json_decode((string) $oResponse->body, true);
-			return array('ok' => true, 'status' => \is_array($aData) ? ($aData['status'] ?? '') : '');
-		}
-		return array('app' => $sApp, 'status' => $iStatus, 'error' => match (true) {
-			401 === $iStatus || 403 === $iStatus => 'ERR_APP_TOKEN',
-			0 === $iStatus => 'ERR_APP_DOWN',
-			default => 'ERR_APP_STATUS'
-		});
-	}
-
 	// ---------- invitations in emails: Kooka is the calendar ----------
 
-	/** A call to Kooka with the person's own token: [status, data] (0: not linked or not reachable) */
-	private function kooka(string $sMethod, string $sPath, ?array $aData = null) : array
+	/** A call to Kooka's calendar through Wombat, as this person: [status, data] (0: not linked or not reachable) */
+	private function kooka(string $sMethod, string $sPath, array $aQuery = array(), ?array $aData = null) : array
 	{
-		$sBase = self::appUrl('QUOKKA_KOOKA_URL');
-		$sToken = (string) ($this->settings()['kookaToken'] ?? '');
-		if (!$sBase || !$sToken) {
-			return array(0, array());
-		}
-		try {
-			$oRequest = \SnappyMail\HTTP\Request::factory();
-			$oRequest->timeout = 15;
-			$oRequest->block_private_ips = false;   // set by the admin: Kooka may well be on the Docker network
-			$oResponse = $oRequest->doRequest($sMethod, $sBase . '/api' . $sPath, null === $aData ? null : \json_encode($aData), array(
-				'Authorization: Bearer ' . $sToken, 'Content-Type: application/json', 'Accept: application/json'));
-		} catch (\Throwable $oException) {
-			\error_log('Quokka: Kooka: ' . $oException->getMessage());
-			return array(0, array());
-		}
-		$aOut = \json_decode((string) ($oResponse->body ?? ''), true);
-		return array($oResponse ? (int) $oResponse->status : 0, \is_array($aOut) ? $aOut : array());
+		[$aWho, $aFamily, $aError] = $this->linked('kooka');
+		return $aError ? array(0, array()) : \QuokkaHub::ask($aWho, $aFamily, 'kooka', $sMethod, $sPath, $aQuery, $aData, 15);
 	}
 
 	/** The event of the invitation in an email ({folder, uid}), read from the mailbox: [event, account] or [null, …] */
@@ -407,7 +412,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 		);
 		$sFrom = $aEvent['start']['date'];
 		$sTo = \max($sFrom, \min($aEvent['end']['date'], \date('Y-m-d', \strtotime($sFrom . ' +31 days'))));
-		[$iStatus, $aBusy] = $this->kooka('GET', '/calendar/busy?' . \http_build_query(array('from' => $sFrom, 'to' => $sTo)));
+		[$iStatus, $aBusy] = $this->kooka('GET', '/calendar/busy', array('start' => $sFrom, 'end' => $sTo));
 		if (200 === $iStatus) {
 			$aOut['kooka'] = true;
 			$sStart = $sFrom . ' ' . ($aEvent['start']['time'] ?? '00:00');
@@ -426,7 +431,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 				}
 			}
 			if ($aEvent['uid']) {
-				[$iSaved, $aSaved] = $this->kooka('GET', '/calendar/invite?' . \http_build_query(array('uid' => $aEvent['uid'])));
+				[$iSaved, $aSaved] = $this->kooka('GET', '/calendar/invite', array('uid' => $aEvent['uid']));
 				if (200 === $iSaved && !empty($aSaved['saved'])) {
 					$aOut['saved'] = array('id' => $aSaved['id'], 'url' => $aSaved['url']);
 					// already in the calendar: it is no conflict with itself
@@ -460,7 +465,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 
 		// Kooka
 		if ('decline' === $sAnswer || 'remove' === $sAnswer) {
-			$this->kooka('POST', '/calendar/invite', array('uid' => $aEvent['uid'], 'status' => 'cancelled'));
+			$this->kooka('POST', '/calendar/invite', array(), array('uid' => $aEvent['uid'], 'status' => 'cancelled'));
 		} else {
 			$aNotes = array();
 			if ($aEvent['organizer']) {
@@ -476,7 +481,7 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			if ($aEvent['description']) {
 				$aNotes[] = "\n" . \mb_substr($aEvent['description'], 0, 1500);
 			}
-			[$iStatus, $aSaved] = $this->kooka('POST', '/calendar/invite', array(
+			[$iStatus, $aSaved] = $this->kooka('POST', '/calendar/invite', array(), array(
 				'uid' => $aEvent['uid'],
 				'status' => 'tentative' === $sAnswer ? 'tentative' : 'confirmed',
 				'title' => $aEvent['summary'] ?: ($bEn ? 'Event' : 'Evento'),
@@ -489,7 +494,8 @@ class QuokkaExtrasPlugin extends \RainLoop\Plugins\AbstractPlugin
 			if (200 === $iStatus || 201 === $iStatus) {
 				$aOut['saved'] = array('id' => $aSaved['id'] ?? null, 'url' => $aSaved['url'] ?? '');
 			} else {
-				$aOut['error'] = 0 === $iStatus ? 'ERR_KOOKA_NOT_LINKED' : 'ERR_KOOKA_SAVE';
+				$aOut['error'] = 0 === $iStatus ? 'ERR_NOT_LINKED' : 'ERR_KOOKA_SAVE';
+				$aOut['app'] = 'Kooka';
 			}
 		}
 

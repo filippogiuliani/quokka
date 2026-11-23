@@ -87,7 +87,7 @@ const
 		&& !(currentMessage()?.smimeEncrypted() && (item.mimeType || '').toLowerCase().includes('pkcs7'));
 
 /** Quokka: an error of the quokka-extras plugin ({error: 'ERR_…', app, status}) in the person's language */
-const appError = r => i18n('QUOKKA_EXTRAS/' + r.error, { APP: r.app || '', STATUS: r.status || '' });
+const appError = r => i18n('QUOKKA_EXTRAS/' + r.error, { APP: r.app || '', STATUS: r.status || '', FAMILY: r.family || '', MESSAGE: r.message || '' });
 
 export class MailMessageView extends AbstractViewRight {
 	constructor() {

@@ -98,13 +98,25 @@ any date, on the mail servers themselves (the sorter asks them all at once). Ope
 
 ## 10. Calendar and invitations (Kooka)
 
-With `QUOKKA_KOOKA_URL` set, the column and the phone's bottom menu have **Calendario**: Kooka's calendar in a panel
-inside Quokka ("Posta" goes back to the mail). Kooka must allow it: `KOOKA_EMBED_FROM=<Quokka's address>` in Kooka's
+For whoever signs in with Pocket ID and uses Kooka in their family in Wombat (or for everyone, with `QUOKKA_KOOKA_URL`
+set), the column and the phone's bottom menu have **Calendario**: Kooka's calendar in a panel inside Quokka ("Posta" goes back to the mail). Kooka must allow it: `KOOKA_EMBED_FROM=<Quokka's address>` in Kooka's
 environment (and both on the same domain, e.g. kooka.example.com and quokka.example.com, so the Kooka sign-in is kept).
 An email with an invitation (.ics) shows a card: the event at the local time (`TZ`), what the person already has in
 Kooka at that time, and **Accetta / Forse / Rifiuta** (saved in Kooka, and the answer goes to the organiser from the
-person's own mailbox) or **Aggiungi al calendario** for a plain .ics. Each person links Kooka once in Settings →
-Family apps with a Kooka API token (Kooka → Account → API tokens). Kooka must be a version with `/api/calendar/busy`.
+person's own mailbox) or **Aggiungi al calendario** for a plain .ics.
+
+## 11. Kooka and Pelican through Wombat
+
+Quokka reaches Kooka and Pelican through Wombat, as the other apps do: no personal tokens.
+1. A key: `python3 -c 'import secrets; print(secrets.token_urlsafe(32))'`.
+2. In Wombat's stack: `quokka` in `WOMBAT_APPS`, `WOMBAT_APP_QUOKKA_URL=<Quokka's address>`, `WOMBAT_APP_QUOKKA_KEY=<the key>`.
+   Then in Wombat → Family, give the members access to Quokka (new members get it by themselves).
+3. Here: `QUOKKA_HUB_URL=<Wombat's address>` (the public one, or `http://wombat:3004` with Quokka attached to Wombat's
+   network) and `QUOKKA_HUB_KEY=<the key>`.
+
+It works for whoever signs in with **Pocket ID** (the same Pocket ID as Wombat): Quokka asks Wombat who they are and
+which apps they use in which family. With address and password the family apps stay off. Kooka and Pelican must know the
+family: each person signs in there once with Pocket ID.
 
 ## Updating
 

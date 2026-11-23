@@ -688,7 +688,7 @@
 		"INVITE_CONFLICT": "At that time you already have:",
 		"INVITE_FREE": "Nothing else at that time",
 		"INVITE_SAME_DAY": "On the same day:",
-		"INVITE_NO_KOOKA": "Link Kooka (Settings → Family apps) to see what else is on and save it in the calendar.",
+		"INVITE_NO_KOOKA": "Sign in to Quokka with Pocket ID (and use Kooka in your family in Wombat) to see what else is on and save it in the calendar.",
 		"INVITE_ACCEPT": "Accept",
 		"INVITE_TENTATIVE": "Maybe",
 		"INVITE_DECLINE": "Decline",

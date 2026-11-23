@@ -26,8 +26,11 @@ services:
       QUOKKA_OIDC_ISSUER: ${QUOKKA_OIDC_ISSUER:-}
       QUOKKA_OIDC_CLIENT_ID: ${QUOKKA_OIDC_CLIENT_ID:-}
       QUOKKA_OIDC_CLIENT_SECRET: ${QUOKKA_OIDC_CLIENT_SECRET:-}
-      # the family apps (optional), for "Archivia in Pelican" and "Promemoria in Kooka"
-      QUOKKA_PELICAN_URL: ${QUOKKA_PELICAN_URL:-}
+      # the family apps through Wombat (optional): "Archivia in Pelican", "Promemoria in Kooka", invitations and the
+      # calendar, for who signs in with Pocket ID. The key is WOMBAT_APP_QUOKKA_KEY in Wombat (README.md, 11)
+      QUOKKA_HUB_URL: ${QUOKKA_HUB_URL:-}
+      QUOKKA_HUB_KEY: ${QUOKKA_HUB_KEY:-}
+      # optional: Kooka's calendar inside Quokka for everyone, also without Pocket ID
       QUOKKA_KOOKA_URL: ${QUOKKA_KOOKA_URL:-}
       # notifications with Quokka closed: the sorter sends them (its service on the "quokka" network)
       QUOKKA_SORTER_URL: ${QUOKKA_SORTER_URL:-http://quokka-sorter:8025}

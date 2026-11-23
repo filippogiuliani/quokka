@@ -86,14 +86,19 @@ done
 [ -z "$first" ] || set_ini login default_domain "\"$first\""
 
 # The family apps from an email (plugins/quokka-extras): installed and turned on at every start, so an update of the
-# image brings its new version; where Pelican and Kooka are reaches PHP through php-fpm (which hides the environment)
+# image brings its new version; Wombat's address and key reach PHP through php-fpm (which hides the environment)
 secret=${QUOKKA_SECRET:-}
 [ -z "${QUOKKA_OIDC_ISSUER:-}" ] || [ ${#secret} -ge 32 ] || echo "[WARN] Quokka: QUOKKA_SECRET must be at least 32 characters: Pocket ID sign-in is off"
-# the names before 2026-11 (paTrack, doTrack) still work
-QUOKKA_PELICAN_URL=${QUOKKA_PELICAN_URL:-${QUOKKA_PATRACK_URL:-}}
+# the name before 2026-11 (doTrack) still works
 QUOKKA_KOOKA_URL=${QUOKKA_KOOKA_URL:-${QUOKKA_DOTRACK_URL:-}}
-export QUOKKA_PELICAN_URL QUOKKA_KOOKA_URL
-echo "[INFO] Quokka: plugin quokka-extras (Pelican: ${QUOKKA_PELICAN_URL:-none}, Kooka: ${QUOKKA_KOOKA_URL:-none})"
+export QUOKKA_KOOKA_URL
+hubkey=${QUOKKA_HUB_KEY:-}
+if [ -n "${QUOKKA_HUB_URL:-}" ] && [ ${#hubkey} -ge 24 ] && [ -n "${QUOKKA_OIDC_ISSUER:-}" ]; then
+    echo "[INFO] Quokka: family apps through Wombat (${QUOKKA_HUB_URL}), for who signs in with Pocket ID"
+elif [ -n "${QUOKKA_HUB_URL:-}" ]; then
+    echo "[WARN] Quokka: QUOKKA_HUB_URL needs QUOKKA_HUB_KEY (24+ characters) and Pocket ID (QUOKKA_OIDC_*): family apps are off"
+fi
+[ -z "${QUOKKA_PELICAN_URL:-}${QUOKKA_PATRACK_URL:-}" ] || echo "[INFO] Quokka: QUOKKA_PELICAN_URL is no longer used (Pelican is reached through Wombat)"
 mkdir -p "$DATA/plugins"
 for plugin in quokka-extras quokka-sso quokka-security avatars; do
     rm -rf "$DATA/plugins/$plugin"
@@ -112,7 +117,7 @@ FPM=/usr/local/etc/php-fpm.d/php-fpm.conf
 sed -i '/^env\[QUOKKA_/d; /^env\[TZ\]/d' "$FPM"
 # (the Pocket ID settings and QUOKKA_SECRET too: they stay in the container, never in the data volume;
 #  TZ: the times of the invitations in emails, as people read them)
-for name in QUOKKA_PELICAN_URL QUOKKA_KOOKA_URL QUOKKA_SORTER_URL QUOKKA_OIDC_ISSUER QUOKKA_OIDC_CLIENT_ID QUOKKA_OIDC_CLIENT_SECRET \
+for name in QUOKKA_KOOKA_URL QUOKKA_HUB_URL QUOKKA_HUB_KEY QUOKKA_SORTER_URL QUOKKA_OIDC_ISSUER QUOKKA_OIDC_CLIENT_ID QUOKKA_OIDC_CLIENT_SECRET \
             QUOKKA_PUBLIC_URL QUOKKA_SECRET TZ; do
     value=$(printenv "$name" | tr -d '"' || true)
     [ -z "$value" ] || printf 'env[%s] = "%s"\n' "$name" "$value" >> "$FPM"

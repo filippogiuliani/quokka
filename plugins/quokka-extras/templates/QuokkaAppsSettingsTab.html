@@ -2,40 +2,25 @@
 	<div class="legend" data-i18n="QUOKKA_EXTRAS/TAB_APPS"></div>
 	<p class="quokka-intro" data-i18n="QUOKKA_EXTRAS/APPS_INTRO"></p>
 
-	<div class="legend">Pelican</div>
-	<!-- ko if: pelican -->
-	<div class="control-group" data-bind="i18nUpdate: true">
-		<label for="quokka-pelican-token" data-i18n="QUOKKA_EXTRAS/PELICAN_TOKEN"></label>
-		<input id="quokka-pelican-token" type="password" autocomplete="off" spellcheck="false"
-			data-bind="textInput: pelicanToken, attr: {placeholder: pelicanSaved() ? savedText : 'pt_…'}">
-	</div>
-	<div class="control-group quokka-note" data-bind="i18nUpdate: true">
-		<span data-i18n="QUOKKA_EXTRAS/PELICAN_HOWTO"></span>
-		<a href="#" data-bind="visible: pelicanSaved, click: forgetPelican" data-i18n="QUOKKA_EXTRAS/UNLINK"></a>
+	<!-- ko if: 'ok' === state() -->
+	<p class="quokka-note" data-bind="text: hello"></p>
+	<!-- ko if: families().length > 1 -->
+	<div class="control-group">
+		<label for="quokka-hub-family" data-i18n="QUOKKA_EXTRAS/FAMILY"></label>
+		<select id="quokka-hub-family" data-bind="options: families, optionsText: 'name', optionsValue: 'id', value: family, disable: saving"></select>
 	</div>
 	<!-- /ko -->
-	<!-- ko ifnot: pelican -->
-	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/PELICAN_NOT_SET"></span></div>
+	<ul class="quokka-apps-list">
+		<li><b>Kooka</b> — <span data-bind="text: kooka() ? onText : offText"></span></li>
+		<li><b>Pelican</b> — <span data-bind="text: pelican() ? onText : offText"></span></li>
+	</ul>
+	<p class="quokka-note" data-bind="visible: !kooka() || !pelican()" data-i18n="QUOKKA_EXTRAS/APPS_ACCESS_HOWTO"></p>
 	<!-- /ko -->
-
-	<div class="legend">Kooka</div>
-	<!-- ko if: kooka -->
-	<div class="control-group" data-bind="i18nUpdate: true">
-		<label for="quokka-kooka-token" data-i18n="QUOKKA_EXTRAS/KOOKA_TOKEN"></label>
-		<input id="quokka-kooka-token" type="password" autocomplete="off" spellcheck="false"
-			data-bind="textInput: kookaToken, attr: {placeholder: kookaSaved() ? savedText : 'dt_…'}">
-	</div>
-	<div class="control-group quokka-note" data-bind="i18nUpdate: true">
-		<span data-i18n="QUOKKA_EXTRAS/KOOKA_HOWTO"></span>
-		<a href="#" data-bind="visible: kookaSaved, click: forgetKooka" data-i18n="QUOKKA_EXTRAS/UNLINK"></a>
-	</div>
+	<!-- ko ifnot: 'ok' === state() || 'loading' === state() -->
+	<p class="quokka-note" data-bind="text: stateText"></p>
 	<!-- /ko -->
-	<!-- ko ifnot: kooka -->
-	<div class="control-group quokka-note" data-bind="i18nUpdate: true"><span data-i18n="QUOKKA_EXTRAS/KOOKA_NOT_SET"></span></div>
-	<!-- /ko -->
-
 	<div class="quokka-save">
-		<button class="btn btn-primary" data-bind="click: saveTokens, enable: !saving() && (pelicanToken() || kookaToken())" data-i18n="QUOKKA_EXTRAS/SAVE"></button>
+		<button class="btn" data-bind="click: refresh, enable: !saving()" data-i18n="QUOKKA_EXTRAS/APPS_REFRESH"></button>
 		<span data-bind="text: message, css: {'quokka-error': error}"></span>
 	</div>
 </div>

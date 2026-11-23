@@ -63,34 +63,56 @@
 		setTimeout(() => clearInterval(wait), 30000);
 	})();
 
-	// Settings → Family apps: each person's tokens for Pelican and Kooka (written once, never shown back)
+	// Settings → Family apps: Kooka and Pelican through Wombat, for whoever signed in with Pocket ID (nothing to paste)
 	class QuokkaAppsSettings
 	{
 		constructor()
 		{
-			this.pelican = ko.observable(false);
+			this.state = ko.observable('loading');   // loading | off | no_pocket_id | unknown | no_family | down | ok
+			this.name = ko.observable('');
+			this.families = ko.observableArray([]);
+			this.family = ko.observable(0);
 			this.kooka = ko.observable(false);
-			this.pelicanSaved = ko.observable(false);
-			this.kookaSaved = ko.observable(false);
-			this.pelicanToken = ko.observable('');
-			this.kookaToken = ko.observable('');
-			this.savedText = rl.i18n('QUOKKA_EXTRAS/TOKEN_SAVED');
+			this.pelican = ko.observable(false);
+			this.onText = rl.i18n('QUOKKA_EXTRAS/APP_ON');
+			this.offText = rl.i18n('QUOKKA_EXTRAS/APP_OFF');
+			this.hello = ko.computed(() => rl.i18n('QUOKKA_EXTRAS/APPS_HELLO', { NAME: this.name() }));
+			this.stateText = ko.computed(() => rl.i18n('QUOKKA_EXTRAS/STATE_' + this.state().toUpperCase()));
 			this.saving = ko.observable(false);
 			this.message = ko.observable('');
 			this.error = ko.observable(false);
+			this.loading = false;
+			this.family.subscribe(id => {
+				if (this.loading || !id) return;
+				this.saving(true);
+				rl.pluginRemoteRequest((iError, oData) => {
+					this.saving(false);
+					const r = oData?.Result;
+					this.error(!!(iError || r?.error));
+					this.message(this.error() ? rl.i18n('QUOKKA_EXTRAS/NOT_SAVED') : rl.i18n('QUOKKA_EXTRAS/SAVED'));
+					this.load();
+				}, 'QuokkaExtrasSave', { family: id });
+			});
 		}
 
-		load()
+		load(fresh)
 		{
 			rl.pluginRemoteRequest((iError, oData) => {
 				const r = oData?.Result;
-				if (!iError && r) {
-					this.pelican(!!r.pelican);
-					this.kooka(!!r.kooka);
-					this.pelicanSaved(!!r.pelicanToken);
-					this.kookaSaved(!!r.kookaToken);
+				this.saving(false);
+				if (iError || !r) {
+					this.state('down');
+					return;
 				}
-			}, 'QuokkaExtrasGet');
+				this.loading = true;
+				this.state(r.state);
+				this.name(r.name || '');
+				this.families(r.families || []);
+				this.family(r.family || 0);
+				this.kooka(!!r.kooka);
+				this.pelican(!!r.pelican);
+				this.loading = false;
+			}, 'QuokkaExtrasGet', { fresh: !!fresh });
 		}
 
 		onShow()
@@ -99,29 +121,12 @@
 			this.load();
 		}
 
-		save(pelican, kooka)
+		refresh()
 		{
+			this.message('');
 			this.saving(true);
-			rl.pluginRemoteRequest((iError, oData) => {
-				this.saving(false);
-				const r = oData?.Result;
-				this.error(!!(iError || r?.error));
-				this.message(iError ? rl.i18n('QUOKKA_EXTRAS/NOT_SAVED') : r?.error ? rl.i18n('QUOKKA_EXTRAS/' + r.error, { PREFIX: r.prefix || '' }) : rl.i18n('QUOKKA_EXTRAS/SAVED'));
-				if (!iError && !r?.error) {
-					this.pelicanToken('');
-					this.kookaToken('');
-					this.load();
-				}
-			}, 'QuokkaExtrasSave', { pelicanToken: pelican, kookaToken: kooka });
+			this.load(true);
 		}
-
-		saveTokens()
-		{
-			this.save(this.pelicanToken().trim(), this.kookaToken().trim());
-		}
-
-		forgetPelican() { this.save('-', ''); }
-		forgetKooka() { this.save('', '-'); }
 	}
 
 	// Settings → Notifications: one switch per mailbox and device; every new email of the inbox, at once, also with

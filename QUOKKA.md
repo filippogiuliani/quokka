@@ -62,9 +62,14 @@ Quokka reads the amount, the due date and the period (`dev/Common/Bill.js`) and 
 - **Reminder in Kooka**: a deadline (category money) on the due date, reminded 3 days before;
 - **Not a bill**: takes the category off (the sorter learns from it).
 
-The calls leave from the server with each person's own token (Settings → Family apps: Pelican `pt_…`, Kooka
-`dt_…`), kept in their Quokka settings and never sent back to the browser. Where the apps are: `QUOKKA_PELICAN_URL`,
-`QUOKKA_KOOKA_URL`.
+Quokka is an app of Wombat, like Kooka and Pelican, but it only asks (`plugins/quokka-sso/Hub.php`). After a sign-in
+with Pocket ID it asks Wombat who the person is (`/api/service/whoami`, with the Pocket ID identity) and calls Kooka and
+Pelican through Wombat (`/api/service/apps/<app>/families/<id>/…`), which holds the apps' keys and checks that the
+person may use them in that family. One key in the container (`QUOKKA_HUB_KEY` = `WOMBAT_APP_QUOKKA_KEY`), nothing for
+people to paste. The identity is kept in an encrypted cookie of the browser (key from `QUOKKA_SECRET`), bound to the
+mailbox it opened, and forgotten at sign-out. A sign-in with address and password has none: there the family apps stay
+off, because the mail server's password says nothing about who someone is in the family. Settings → Family apps shows
+the link and, for whoever is in more than one family, which one to use.
 
 ## Sign in with Pocket ID
 
@@ -114,7 +119,8 @@ steps (images, folders, the sorter's mailboxes, NPM, Pocket ID). The settings:
 | `IMAP_HOST` / `IMAP_PORT` | — / `993` | your mail provider's IMAP server (required) |
 | `SMTP_HOST` / `SMTP_PORT` | — / `465` | its SMTP server (required) |
 | `IMAP_SECURITY` / `SMTP_SECURITY` | `ssl` on 993/465 | `ssl`, `starttls` or `none` |
-| `QUOKKA_PELICAN_URL` / `QUOKKA_KOOKA_URL` | — | where Pelican and Kooka are (e.g. `https://pelican.example.it` or `http://pelican:8000` on the same Docker network) |
+| `QUOKKA_HUB_URL` / `QUOKKA_HUB_KEY` | — | Wombat as Quokka's server reaches it, and the key (the same as `WOMBAT_APP_QUOKKA_KEY`, with `quokka` in `WOMBAT_APPS`): Kooka and Pelican from an email, for who signs in with Pocket ID |
+| `QUOKKA_KOOKA_URL` | — | optional: Kooka's calendar inside Quokka for everyone (else its address comes from Wombat, for who signs in with Pocket ID) |
 | `QUOKKA_OIDC_ISSUER` / `QUOKKA_OIDC_CLIENT_ID` / `QUOKKA_OIDC_CLIENT_SECRET` | — | Pocket ID (callback: `<QUOKKA_PUBLIC_URL>/?QuokkaSsoCallback`) |
 | `QUOKKA_PUBLIC_URL` | — | Quokka's address, e.g. `https://mail.example.it` |
 | `QUOKKA_SECRET` | — | at least 32 random characters (`openssl rand -hex 32`); changing it forgets the Pocket ID links |

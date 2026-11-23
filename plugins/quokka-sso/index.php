@@ -14,7 +14,11 @@
  *   QUOKKA_PUBLIC_URL          Quokka's address as people open it, e.g. https://mail.example.it
  *                             (Pocket ID's callback: <QUOKKA_PUBLIC_URL>/?QuokkaSsoCallback)
  *   QUOKKA_SECRET              at least 32 random characters (openssl rand -hex 32); changing it forgets every link
+ *
+ * Who signed in with Pocket ID is also what opens the family apps (Kooka, Pelican) through Wombat: see Hub.php.
  */
+require_once __DIR__ . '/Hub.php';
+
 class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 {
 	const
@@ -41,6 +45,13 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 		$this->addJsonHook('QuokkaSsoStatus', 'JsonStatus');
 		$this->addJsonHook('QuokkaSsoUnlink', 'JsonUnlink');
 		$this->addHook('quokka.main-account', 'MainAccountChanged');
+		$this->addHook('json.before-Logout', 'Logout');
+	}
+
+	/** Signed out: this browser no longer stands for the Pocket ID identity (the family apps go off) */
+	public function Logout() : void
+	{
+		\QuokkaHub::forget();
 	}
 
 	// ---------- settings ----------
@@ -232,17 +243,23 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 			return $this->page($this->t('PAGE_FAILED'), '<p>' . $this->t('PAGE_NO_IDENTITY') . '</p><p><a class="btn" href="./">' . $this->t('BACK_TO_SIGN_IN') . '</a></p>');
 		}
 
+		// who it is, for the family apps through Wombat (Hub.php): the issuer as it writes it in its tokens
+		$aIdentity = array('iss' => (string) ($aDiscovery['issuer'] ?? \rtrim(self::env('QUOKKA_OIDC_ISSUER'), '/')), 'sub' => $sSub,
+			'email' => (string) ($aUser['email'] ?? ''), 'email_verified' => !empty($aUser['email_verified']),
+			'name' => (string) ($aUser['name'] ?? ''));
+
 		$aLinked = self::load($sSub);
 		if ($aLinked) {
 			// links made before the identity was kept in them get it now
 			if (empty((\json_decode((string) \file_get_contents(self::file($sSub)), true) ?: [])['sub'])) {
 				self::save($sSub, $aLinked['email'], $aLinked['password']);
 			}
+			\QuokkaHub::remember($aLinked['email'], $aIdentity);
 			return $this->enter($aLinked['email'], $aLinked['password']);
 		}
 		// Not linked yet: the form, with a one-time ticket that stands for this identity for 10 minutes
 		$sTicket = self::b64url(\random_bytes(24));
-		$oCacher->Set('quokka-sso/ticket/' . $sTicket, \json_encode(array('sub' => $sSub, 'time' => \time())));
+		$oCacher->Set('quokka-sso/ticket/' . $sTicket, \json_encode(array('sub' => $sSub, 'identity' => $aIdentity, 'time' => \time())));
 		return $this->linkForm($sTicket, (string) ($aUser['email'] ?? ''), (string) ($aUser['name'] ?? ''), '');
 	}
 
@@ -288,6 +305,7 @@ class QuokkaSsoPlugin extends \RainLoop\Plugins\AbstractPlugin
 		if (!self::save($aSaved['sub'], $sEmail, $sPassword)) {
 			\error_log('Quokka SSO: cannot write the link');
 		}
+		\QuokkaHub::remember($sEmail, $aSaved['identity'] ?? array('sub' => $aSaved['sub']));
 		\header('Location: ./');
 		return true;
 	}
@@ -390,6 +408,9 @@ HTML;
 	/** Another account became the main one (Settings → Accounts): Pocket ID opens that one now */
 	public function MainAccountChanged(string $sOldEmail, \RainLoop\Model\MainAccount $oNewMain, \SnappyMail\SensitiveString $oPassword) : void
 	{
+		if ($aIdentity = \QuokkaHub::identity($sOldEmail)) {
+			\QuokkaHub::remember($oNewMain->Email(), $aIdentity);   // the family apps stay on with the new main mailbox
+		}
 		if (!self::configured()) {
 			return;
 		}

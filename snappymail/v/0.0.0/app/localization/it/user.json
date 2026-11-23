@@ -688,7 +688,7 @@
 		"INVITE_CONFLICT": "A quell'ora hai già:",
 		"INVITE_FREE": "Nessun altro impegno a quell'ora",
 		"INVITE_SAME_DAY": "Nello stesso giorno:",
-		"INVITE_NO_KOOKA": "Collega Kooka (Impostazioni → App di famiglia) per vedere gli altri impegni e salvarlo nel calendario.",
+		"INVITE_NO_KOOKA": "Entra in Quokka con Pocket ID (e usa Kooka nella tua famiglia in Wombat) per vedere gli altri impegni e salvarlo nel calendario.",
 		"INVITE_ACCEPT": "Accetta",
 		"INVITE_TENTATIVE": "Forse",
 		"INVITE_DECLINE": "Rifiuta",

@@ -51,7 +51,7 @@ export const inviteCard = currentMessage => {
 						if (iError || !a) return status(i18n('QUOKKA/INVITE_DOWN'));
 						('decline' === what || 'remove' === what) ? saved(null) : a.saved && saved(a.saved);
 						status(a.error
-							? i18n('QUOKKA_EXTRAS/' + a.error) + (a.replied ? ' ' + i18n('QUOKKA/INVITE_REPLY_SENT') : '')
+							? i18n('QUOKKA_EXTRAS/' + a.error, { APP: a.app || 'Kooka' }) + (a.replied ? ' ' + i18n('QUOKKA/INVITE_REPLY_SENT') : '')
 							: i18n('QUOKKA/INVITE_DONE_' + what.toUpperCase()));
 					}, 'QuokkaInviteAnswer', { folder: message.folder, uid: message.uid, answer: what, lang: lang() }, 30000);
 				};
