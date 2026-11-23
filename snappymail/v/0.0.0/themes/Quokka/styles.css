@@ -674,7 +674,7 @@ input:focus, select:focus, textarea:focus {
 }
 .quokka-folder-actions a { white-space: nowrap; }
 .quokka-folder-actions svg { width: 16px; height: 16px; }
-/* dialogs: labels above the fields, the main button in the family's blue */
+/* dialogs: labels above the fields, the main button in Quokka's blue */
 .modal .modal-body.form-horizontal .control-group, dialog .modal-body.form-horizontal .control-group { display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 12px !important; }
 .modal .modal-body.form-horizontal .control-group > label, dialog .modal-body.form-horizontal .control-group > label { float: none !important; width: auto !important; text-align: left !important; padding: 0 !important; font-size: 13px; font-weight: 600; color: var(--fm-ink-2); }
 .modal .modal-body.form-horizontal .control-group > div, dialog .modal-body.form-horizontal .control-group > div { margin: 0 !important; }

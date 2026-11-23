@@ -1,8 +1,9 @@
-# Quokka – the family webmail
+# Quokka – how it is made
 
-Quokka is a fork of [SnappyMail](https://github.com/the-djmaze/snappymail) (AGPL-3.0), made for a family: the look of the
-family apps (Wombat, Pelican, Kooka, Wallaby), categories, bills, scam warnings, two-step sign-in, phones first.
-The code and its texts are in English; the interface is translated (Italian included, as the family uses it).
+Quokka is a customised version of [SnappyMail](https://github.com/the-djmaze/snappymail) (AGPL-3.0): its own look,
+categories, bills, scam warnings, two-step sign-in, phones first, and optional integrations with other self-hosted
+apps (Wombat, Pelican, Kooka).
+The code and its texts are in English; the interface is translated (Italian included).
 
 **Licence.** Like SnappyMail, Quokka is under the GNU AGPL v3 (see `LICENSE`). Whoever uses it over the network can ask
 for its source: this repository, branch `quokka`. The original authors' copyright notices stay as they are.

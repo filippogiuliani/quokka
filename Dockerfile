@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# Quokka: the family webmail, a fork of SnappyMail (AGPL-3.0, https://github.com/the-djmaze/snappymail).
-# Built like upstream's .docker/release/Dockerfile, with only the PHP extensions a family install uses
+# Quokka: a customised SnappyMail (AGPL-3.0, https://github.com/the-djmaze/snappymail).
+# Built like upstream's .docker/release/Dockerfile, with only the PHP extensions Quokka uses
 # (no LDAP, MySQL, Postgres, Redis, ImageMagick): smaller and quicker to build.
 
 # package.json without its version: raising the version (on every build) must not reinstall all the
@@ -27,7 +27,7 @@ RUN set -eux; \
     rm -v /snappymail/README.md /snappymail/_include.php
 
 FROM php:8.5-fpm-alpine AS final
-LABEL org.opencontainers.image.description="Quokka: family webmail (fork of SnappyMail), nginx + php-fpm on Alpine" \
+LABEL org.opencontainers.image.description="Quokka: a customised SnappyMail, nginx + php-fpm on Alpine" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 
 RUN apk add --no-cache ca-certificates nginx supervisor bash

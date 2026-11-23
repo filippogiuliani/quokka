@@ -1,242 +1,44 @@
-<div align="center">
-  <a href="https://github.com/the-djmaze/snappymail">
-    <img src="https://snappymail.eu/static/img/logo-256x256-white.png">
-  </a>
-  <br>
-  <h1>SnappyMail</h1>
-  <br>
+# Quokka
 
-[![github-actions](https://github.com/the-djmaze/snappymail/actions/workflows/docker.yml/badge.svg)](https://github.com/the-djmaze/snappymail/actions/workflows/docker.yml)
-[![docker-image-size](https://img.shields.io/docker/image-size/djmaze/snappymail/latest)](https://hub.docker.com/r/djmaze/snappymail/tags)
+My customised version of [SnappyMail](https://github.com/the-djmaze/snappymail).
 
-  <p>
-    Simple, modern, lightweight &amp; fast web-based email client.
-  </p>
-  <p>
-    The drastically upgraded &amp; secured fork of <a href="https://github.com/RainLoop/rainloop-webmail">RainLoop Webmail Community edition</a>.
-  </p>
-  <p>
-    We thank the RainLoop Team for making a great PHP 5 product that was good in the past.
-  </p>
-  <p>
-    Up to date system requirements, snappy performance, simple installation and upgrade, no database required
-    - all these make SnappyMail a good choice.
-  </p>
-  <h2></h2>
-  <br>
-</div>
+The mail engine, the IMAP/SMTP code and most of the interface are SnappyMail's, by DJ Maze and its contributors (and
+RainLoop before them); Quokka adds a different look and the features below. Fixes that are useful to everyone are
+sent upstream.
 
-For more information about the product, check [snappymail.eu](https://snappymail.eu/).
+## What it adds
 
-Information about installing the product, check the [wiki page](https://github.com/the-djmaze/snappymail/wiki/Installation-instructions).
+- **Every mailbox in one place**: all of them in the column with their folders, "All mailboxes" (inboxes, Sent,
+  Trash… of every mailbox in one list), switching mailbox without reloading, search across every mailbox and
+  folder; manage the folders and identities of any mailbox, and write from any of them.
+- **Categories**: a small service (the *sorter*) tags new emails as bills, school, bank, shipping, account, social,
+  promotions, and learns when someone moves an email to another category. Its word lists are Italian.
+- **Bills, scams, newsletters**: amount and due date read from a bill; a warning on emails that look like a scam;
+  one-click unsubscribe (RFC 8058).
+- **Notifications** of new emails also with the app closed (Web Push, sent by the sorter).
+- **Phones**: a bottom bar, swipe to archive or delete, hold to select.
+- **Sign-in**: with an OpenID Connect provider such as Pocket ID (the mailbox password is asked once and kept
+  encrypted), two-step verification (TOTP) for the usual sign-in, recent sign-ins, a check of the password against
+  known breaches (opt-in).
+- **Integrations** (optional): a calendar inside the webmail and invitations saved there, a deadline or a document
+  sent from an email to other self-hosted apps (Kooka, Pelican, through Wombat).
 
-And don't forget to read the whole [Wiki](https://github.com/the-djmaze/snappymail/wiki).
+## Running it
 
-## License
+Two Docker images, `quokka` and `quokka-sorter`: see [deploy/README.md](deploy/README.md) for the stack, the
+settings and the steps. [QUOKKA.md](QUOKKA.md) explains how the code is organised, what changed from SnappyMail and
+how each feature works.
 
-**SnappyMail** is released under
-**GNU AFFERO GENERAL PUBLIC LICENSE Version 3 (AGPL)**.
-http://www.gnu.org/licenses/agpl-3.0.html
+## Branches
 
-Copyright (c) 2020 - 2026 SnappyMail
-Copyright (c) 2013 - 2022 RainLoop
+- `quokka`: Quokka (this README).
+- `master`: SnappyMail as it is upstream. Its releases are merged into `quokka`.
 
-## Modifications
+## Licence
 
-This fork of RainLoop has the following changes:
+GNU Affero General Public License v3, like SnappyMail: see [LICENSE](LICENSE). Whoever uses Quokka over a network
+may ask for its source: this repository. The original copyright notices are kept. Fonts: Inter and Fredoka (SIL
+Open Font License).
 
-* Privacy/GDPR friendly (no: Social, Gravatar, Facebook, Google, Twitter, DropBox, X-Mailer)
-* Admin uses password_hash/password_verify
-* Auth failed attempts written to syslog
-* Added Fail2ban instructions
-* ES2020
-* PHP 8.2+ required
-* PHP mbstring extension required
-* PHP replaced pclZip with PharData and ZipArchive
-* Dark mode
-* Added option to remove background/font colors from messages for real "dark mode"
-* Removed BackwardCapability (class \RainLoop\Account)
-* Removed ChangePassword (re-implemented as plugin)
-* Removed POP3 support
-* Removed background video support
-* Removed Sentry (Application Monitoring and Error Tracking Software)
-* Removed Spyc yaml
-* Removed OwnCloud
-* Replaced gulp-uglify with gulp-terser
-* CRLF => LF line endings
-* Embed boot.js and boot.css into index.html
-* Removal of old JavaScript code (things are native these days)
-* Added modified [Squire](https://github.com/the-djmaze/Squire/tree/snappymail) HTML editor as replacement for CKEditor
-* Updated [Sabre/VObject](https://github.com/sabre-io/vobject)
-* Split Admin specific JavaScript code from User code
-* Split Sieve specific JavaScript code from User code
-* JSON reviver
-* Better memory garbage collection management
-* Added serviceworker for Notifications
-* Added advanced Sieve scripts editor
-* Slimmed down language files
-* Replaced webpack with rollup
-* No user-agent detection (use device width)
-* Added support to load plugins as .phar
-* Replaced old Sabre library
-* AddressBook Contacts support MySQL/MariaDB utf8mb4
-* Added [Fetch Metadata Request Headers](https://www.w3.org/TR/fetch-metadata/) checks
-* Reduced excessive DOM size
-* Support [Kolab groupware](https://kolab.org/)
-* Support many more [IMAP RFC's](https://snappymail.eu/comparison#IMAP)
-* Support Sodium and OpenSSL for encryption
-* Much better PGP support
-
-
-### Supported browsers
-
-This fork uses downsized/simplified versions of scripts and has no support for Internet Explorer nor Edge Legacy.
-Supported are:
-
-* Chrome 85+
-* Edge 85+
-* Firefox 78+
-* Opera 67+
-* Safari 13.1+
-
-
-### Removal of old JavaScript
-
-The result is faster and smaller download code (good for mobile networks).
-
-* Added dev/prototype.js for some additional features
-* Modified Jua.js to be without jQuery
-* Replaced Autolinker with simple https/email detection
-* Replaced momentToNode with proper HTML5 `<time>`
-* Replaced resize listeners with ResizeObserver
-* Replaced bootstrap.js with native drop-in replacement
-* Replaced dev/Common/ClientStorageDriver/* with Web Storage Objects polyfill
-* Replaced *Ajax with *Fetch classes because we use the Fetch API, not jQuery.ajax
-* Replaced [knockoutjs](https://github.com/knockout/knockout) 3.4 with a modified 3.5.1
-* Replaced knockout-sortable with native HTML5 drag&drop
-* Replaced simplestatemanager with CSS @media
-* Replaced inputosaurus with own code
-* Replaced keymaster with own shortcuts handler
-* Replaced OpenPGP.js v2 with OpenPGP.js v5
-* Removed ifvisible.js
-* Removed pikaday
-* Removed underscore
-* Removed polyfills
-* Removed Modernizr
-* Removed nanoscroll
-* Removed lightgallery
-* Removed jQuery
-* Removed jquery-ui
-* Removed jquery-scrollstop
-* Removed jquery-mousewheel
-* Removed matchmedia-polyfill
-* Removed momentjs (use Intl)
-* Removed opentip (use CSS)
-* Removed non-community (aka Prem/Premium/License) code
-* Removed ProgressJS
-
-
-RainLoop 1.17 vs SnappyMail
-
-|js/*           	|RainLoop 	|Snappy   	|
-|---------------	|--------:	|--------:	|
-|admin.js        	|2.170.153	|   88.901	|
-|app.js          	|4.207.787	|  470.096	|
-|boot.js         	|  868.735	|    4.510	|
-|libs.js         	|  658.812	|  240.739	|
-|sieve.js         	|         	|   91.424	|
-|polyfills.js    	|  334.608	|         	|
-|TOTAL           	|8.240.095	|  895.955	|
-
-|js/min/*       	|RainLoop 	|Tachyon	|Snappy   	|SM gzip	|SM brotli	|
-|---------------	|--------:	|--------:	|--------:	|------:	|--------:	|
-|admin.min.js    	|  256.831	|   47.567	|   43.296	| 14.569	| 13.084	|
-|app.min.js      	|  515.367	|  234.162	|  208.977	| 70.785	| 60.362	|
-|boot.min.js     	|   84.659	|    2.273	|    2.269	|       	|       	|
-|libs.min.js     	|  584.772	|  113.032	|  113.689	| 40.366	| 35.936	|
-|sieve.min.js     	|         	|   45.377	|   45.380	| 11.095	|  9.909	|
-|polyfills.min.js	|   32.837	|         	|         	|       	|       	|
-|TOTAL user      	|1.217.635	|  349.467	|  322.666	|111.151	| 96.298	|
-|TOTAL user+sieve	|1.217.635	|  394.844	|  368.046	|122.246	|106.207	|
-|TOTAL admin     	|  959.099	|  182.872	|  156.985	| 54.935	| 49.020	|
-
-For a user it is much smaller and faster than traditional RainLoop.
-
-### CSS changes
-
-* Solve jQuery removed "features" with native css code
-* Themes work in mobile mode
-* Bugfix invalid/conflicting css rules
-* Use flexbox
-* Use border-box
-* Split app.css to have separate admin.css
-* Remove oldschool 'float'
-* Remove unused css
-* Removed html.no-css
-* Removed dev/Styles/Cmd.less
-* Removed dev/Styles/Scroll.less
-* Removed Internet Explorer from normalize.css
-* Removed node_modules/opentip/css/opentip.css
-* Removed node_modules/pikaday/css/pikaday.css
-* Removed unused vendors/bootstrap/less/*
-* Removed vendors/jquery-nanoscroller/nanoscroller.css
-* Removed vendors/jquery-letterfx/jquery-letterfx.min.css
-* Removed vendors/Progress.js/minified/progressjs.min.css
-* Removed gulp-autoprefixer
-
-
-|css/*       	|RainLoop	|Snappy   	|SM gzip	|SM brotli	|
-|------------	|-------:	|------:	|------:	|--------:	|
-|app.css     	| 340.331	| 88.878	| 18.674	| 15.878	|
-|app.min.css 	| 274.947	| 69.338	| 15.787	| 13.747	|
-|boot.css    	|       	|  2.386	|       	|       	|
-|boot.min.css	|       	|  2.107	|       	|       	|
-|admin.css    	|       	| 33.554	|  7.548	|  6.537	|
-|admin.min.css	|       	| 25.340	|  6.390	|  5.644	|
-
-### PGP
-RainLoop uses the old OpenPGP.js v2
-SnappyMail v2.12 uses OpenPGP.js v5, GnuPG and Mailvelope.
-SnappyMail is able to use and generate ECDSA and EDDSA keys, where RainLoop does not.
-
-Since SnappyMail tries to achieve the best mobile experience, it forked OpenPGP.js to strip it down.
-* remove all unused Node.js
-* remove all old browsers support
-See https://github.com/the-djmaze/openpgpjs for development
-
-|OpenPGP        	|RainLoop 	|Snappy   	|RL gzip	|SM gzip	|RL brotli	|SM brotli	|
-|---------------	|--------:	|--------:	|------:	|-------:	|--------:	|--------:	|
-|openpgp.min.js 	|  330.742	|  545.121	|102.388	| 168.745	| 84.241  	|  138.302	|
-|openpgp.worker 	|    1.499	|         	|    824	|        	|    695 	|        	|
-
-
-### Squire vs CKEditor
-The [Squire](https://github.com/the-djmaze/Squire/tree/snappymail) implementation is not 100% compatible yet, but it shows the massive overhead of CKEditor.
-
-Still TODO:
-
-* support for tables (really needed?!?)
-
-|       	| normal	| min    	| gzip  	| min gzip	|
-|--------	|-------:	|-------:	|------:	|--------:	|
-|squire  	| 122.321	|  41.906	| 31.867	|   14.330	|
-|ckeditor	|       ?	| 520.035	|      ?	|  155.916	|
-
-CKEditor including the 7 asset requests (css,language,plugins,icons) is 633.46 KB / 180.47 KB (gzip).
-
-### Developer
-To create a distribution, you must built a release.
-You can do that with: `cli/release.php`
-After that the package is at `build/dist/releases/webmail/*`
-
-Other options:
-`cli/compile.php --knockout`
-`cli/compile.php --squire`
-`cli/compile.php --openpgp`
-`cli/compile.php --readme`
-`cli/compile.php --source`
-`cli/release.php --plugins`
-`cli/release.php --debian`
-`cli/release.php --nextcloud`
-`cli/release.php --cpanel`
-`cli/release.php --debian --nextcloud --cpanel`
+For SnappyMail itself (documentation, support, releases): https://github.com/the-djmaze/snappymail and
+https://snappymail.eu.

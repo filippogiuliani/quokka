@@ -29,7 +29,7 @@ echo "[INFO] Quokka: title, theme and language"
 set_ini webmail title "\"$TITLE\""
 set_ini webmail loading_description "\"$TITLE\""
 set_ini webmail theme '"Quokka"'
-# Encryption (OpenPGP, GnuPG, and with them S/MIME and Mailvelope in the settings): off for a family, QUOKKA_ENCRYPTION=On to have it
+# Encryption (OpenPGP, GnuPG, and with them S/MIME and Mailvelope in the settings): off by default, QUOKKA_ENCRYPTION=On to have it
 if [ "${QUOKKA_ENCRYPTION:-Off}" = "On" ]; then crypto=On; else crypto=Off; fi
 set_ini security openpgp "$crypto"
 set_ini security gnupg "$crypto"

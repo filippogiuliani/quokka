@@ -1,4 +1,4 @@
-"""Notifications of new emails on the family's devices, also with Quokka closed (Web Push).
+"""Notifications of new emails on people's devices, also with Quokka closed (Web Push).
 
 The sorter already looks at every mailbox each minute: the new unread emails of INBOX are kept here and sent as one
 notification per email (like Gmail), sent at most every N minutes as chosen for that mailbox in Quokka (0 = as soon as they arrive).

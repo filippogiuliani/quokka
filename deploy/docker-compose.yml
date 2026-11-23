@@ -1,4 +1,4 @@
-# Quokka (family webmail) for Portainer: Stacks → Add stack → paste this, and the variables of .env.example below it
+# Quokka (webmail) for Portainer: Stacks → Add stack → paste this, and the variables of .env.example below it
 # (Portainer: "Environment variables" → "Advanced mode", one NAME=value per line).
 # Behind Nginx Proxy Manager: a proxy host to http://quokka:8888, with NPM attached to the "quokka" network
 # (no port is published here). See README.md in this folder.
