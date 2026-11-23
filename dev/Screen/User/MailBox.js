@@ -143,8 +143,6 @@ export class MailBoxUserScreen extends AbstractScreen {
 		return [
 			// Folder: INBOX | INBOX.sub | Sent | fullNameHash
 			[/^([^/]*)$/, { normalize_: fNormS }],
-			// Quokka: a folder may have spaces and accents ("Posta inviata", "Già letti"): upstream allowed only
-			// [a-zA-Z0-9.~_-] in these three, so its emails, pages and searches could not be opened by address
 			// Search: {folder}/{string}
 			[/^([^/]+)\/(.+)\/?$/, { normalize_: (request, vals) =>
 				[folder(request, vals), 1, decodeURI(pString(vals[1]))]

@@ -523,7 +523,6 @@ MessagelistUserStore.moveMessages = (
 				let next = MessagelistUserStore.indexOf(currentMessage) + 1;
 				if (0 < next && (next = MessagelistUserStore()[next])) {
 					currentMessage = null;
-					// Quokka: urlHash is a getter: called as a function it threw, and the email was never deleted
 					hasher.setHash(next.urlHash);
 				}
 			}

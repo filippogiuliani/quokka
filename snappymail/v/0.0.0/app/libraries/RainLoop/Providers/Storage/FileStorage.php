@@ -39,9 +39,7 @@ class FileStorage implements \RainLoop\Providers\Storage\IStorage
 			for ($i = 0; $i < 5; ++$i) {
 				$i && \usleep(20000);
 				$mValue = \file_get_contents($sFileName);
-				// Quokka: the "remember me" token is a raw key, not JSON: with the JSON check alone it was never found
-				// (and then cleared as invalid), so "Remember me" never worked
-				if (false !== $mValue && \strlen($mValue) && (StorageType::SIGN_ME === $iStorageType || \json_validate($mValue))) {
+				if (false !== $mValue) {
 					// Update mtime to prevent garbage collection
 					if (StorageType::SESSION === $iStorageType) {
 						\touch($sFileName);
